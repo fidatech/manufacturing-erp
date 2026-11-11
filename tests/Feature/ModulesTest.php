@@ -36,7 +36,7 @@ class ModulesTest extends TestCase
             $this->get(route('lookups.create', ['type' => $type]))->assertOk();
             $this->post(route('lookups.store', ['type' => $type]), ['name' => 'Production'])->assertRedirect(route('lookups.index', ['type' => $type]));
         }
-        $this->assertSame(4, Lookup::where('name', 'Production')->count());
+        $this->assertSame(count(LookupController::LISTS), Lookup::where('name', 'Production')->count());
 
         // the same name twice in one list is refused
         $this->post(route('lookups.store', ['type' => 'department']), ['name' => 'Production'])->assertSessionHasErrors('name');

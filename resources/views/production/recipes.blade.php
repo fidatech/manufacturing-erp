@@ -22,7 +22,11 @@
                         $price = $recipe->item->sale_price;
                     @endphp
                     <tr>
-                        <td>{{ $recipe->item->label() }}@unless ($recipe->is_active) <span class="badge-soft warning">{{ __('Off') }}</span>@endunless@if ($recipe->name !== $recipe->item->name)<div class="small text-muted">{{ $recipe->name }}</div>@endif</td>
+                        <td>{{ $recipe->item->label() }}@unless ($recipe->is_active) <span class="badge-soft warning">{{ __('Off') }}</span>@endunless
+                            @if ($recipe->name !== $recipe->item->name)
+                                <div class="small text-muted">{{ $recipe->name }}</div>
+                            @endif
+                        </td>
                         <td>{{ $recipe->method === 'liquid' ? __('Liquid') : __('Powder') }}@if (\App\Support\Num::isPositive($recipe->pack_weight)) · {{ qty($recipe->pack_weight) }} kg @endif</td>
                         <td>{{ $recipe->lines->count() }}@if (\App\Support\Num::isPositive($recipe->water())) <span class="small text-muted">+ {{ __('water') }} {{ qty($recipe->water()) }} kg</span>@endif</td>
                         <td class="text-end fw-semibold">{{ \App\Support\Num::format($cost, 2) }}</td>
