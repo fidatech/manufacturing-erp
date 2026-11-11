@@ -7,6 +7,8 @@
 */
 
 return [
+    'production' => 'Manufacturing: recipes and production batches',
+    'lab' => 'Laboratory and quality control',
     'sales' => 'Sales, quotations, deliveries and returns',
     'purchases' => 'Purchases, orders, goods received and returns',
     'inventory' => 'Stock, transfers and physical count',

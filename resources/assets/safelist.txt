@@ -16,3 +16,4 @@ is-success is-danger is-warning is-info
 # screen icons chosen in PHP lists (LookupController::LISTS, HrRecordController::SCREENS)
 #s-building-user #s-user-tag #s-folder-tree #s-layer-group
 #s-umbrella-beach #s-star #s-file-signature #s-clock #s-business-time #s-scale-unbalanced
+#s-list-check #s-vial

@@ -15,10 +15,13 @@ use App\Http\Controllers\Hr\PayrollController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
+use App\Http\Controllers\Lab\LabTestController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\Money\PettyCashController;
 use App\Http\Controllers\PreferenceController;
+use App\Http\Controllers\Production\ProductionController;
+use App\Http\Controllers\Production\RecipeController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Trade\PriceListController;
 use App\Http\Controllers\Trade\PurchaseController;
@@ -83,6 +86,22 @@ Route::middleware('auth')->group(function () use ($crud) {
 
     // Products and raw materials
     $crud('items/{type}', ItemController::class, 'items');
+
+    // Manufacturing: recipes and production batches
+    $crud('recipes', RecipeController::class, 'recipes');
+    Route::get('production', [ProductionController::class, 'index'])->name('production.index');
+    Route::get('production/create', [ProductionController::class, 'create'])->name('production.create');
+    Route::get('production/report', [ProductionController::class, 'report'])->name('production.report');
+    Route::post('production', [ProductionController::class, 'store'])->name('production.store');
+    Route::get('production/{id}', [ProductionController::class, 'show'])->name('production.show')->whereNumber('id');
+    Route::post('production/{id}/cancel', [ProductionController::class, 'cancel'])->name('production.cancel')->whereNumber('id');
+
+    // Laboratory and quality control
+    Route::get('lab', [LabTestController::class, 'index'])->name('lab.index');
+    Route::get('lab/create', [LabTestController::class, 'create'])->name('lab.create');
+    Route::post('lab', [LabTestController::class, 'store'])->name('lab.store');
+    Route::get('lab/{id}', [LabTestController::class, 'show'])->name('lab.show')->whereNumber('id');
+    Route::delete('lab/{id}', [LabTestController::class, 'destroy'])->name('lab.destroy')->whereNumber('id');
 
     // Purchases: orders, bills, goods received, returns
     Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');

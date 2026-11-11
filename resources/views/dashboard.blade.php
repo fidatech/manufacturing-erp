@@ -3,6 +3,7 @@
 @php
     $actions = [
         ['sales.manage', __('New sale'), route('sales.create', ['type' => 'invoice']), 'file-invoice-dollar', 'btn-primary'],
+        ['production.manage', __('Record production'), route('production.create'), 'industry', 'btn-outline-soft'],
         ['purchases.manage', __('New purchase'), route('purchases.create', ['type' => 'invoice']), 'cart-flatbed', 'btn-outline-soft'],
         ['money.manage', __('Money in'), route('money.create', ['kind' => 'in']), 'arrow-down', 'btn-success'],
         ['money.manage', __('Money out'), route('money.create', ['kind' => 'out']), 'arrow-up', 'btn-danger'],
@@ -97,6 +98,23 @@
                         <tbody>
                             @foreach ($waiting as $purchase)
                                 <tr><td><a href="{{ route('purchases.show', ['id' => $purchase->id]) }}">{{ $purchase->number }}</a> · {{ $purchase->supplier->name }}</td><td class="text-end text-nowrap">{{ fmt_date($purchase->date) }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($toTest->isNotEmpty())
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="card-title">{{ __('Batches for the laboratory') }}</h5></div>
+                <div class="card-body">
+                    <table class="table w-100 keep-table mb-0">
+                        <tbody>
+                            @foreach ($toTest as $batch)
+                                <tr><td><a href="{{ route('production.show', ['id' => $batch->id]) }}">{{ $batch->batch_no }}</a> · {{ $batch->item->name }}</td><td class="text-end">@include('production.qc')</td></tr>
                             @endforeach
                         </tbody>
                     </table>

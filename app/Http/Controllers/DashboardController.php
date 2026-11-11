@@ -19,7 +19,11 @@ class DashboardController extends Controller
     public function __invoke(Request $request): View
     {
         $user = $request->user();
-        $data = ['base' => Rates::base()->code, 'money' => null, 'owed' => null, 'stock' => null, 'sales' => null, 'low' => [], 'waiting' => collect(), 'toDeliver' => collect(), 'expiring' => collect()];
+        $data = ['base' => Rates::base()->code, 'money' => null, 'owed' => null, 'stock' => null, 'sales' => null, 'low' => [], 'waiting' => collect(), 'toDeliver' => collect(), 'expiring' => collect(), 'toTest' => collect()];
+
+        if ($user->can('production.view')) {
+            $data['toTest'] = \App\Models\ProductionBatch::with('item')->where('status', 'posted')->whereIn('qc_status', ['pending', 'failed'])->orderByDesc('date')->limit(8)->get();
+        }
 
         $balances = ($user->can('money.view') || $user->can('accounts.view')) ? Ledger::balances() : [];
 

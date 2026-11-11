@@ -21,6 +21,24 @@
 return [
     ['label' => 'Dashboard', 'icon' => 'gauge-high', 'route' => 'dashboard'],
 
+    ['label' => 'Manufacturing', 'icon' => 'industry', 'children' => [
+        ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Recipes & Formulas', 'route' => 'recipes.index', 'active' => 'recipes.*', 'can' => 'production.view'],
+        ['label' => 'Record Production', 'route' => 'production.create', 'can' => 'production.manage'],
+        ['label' => 'Production Batches', 'route' => 'production.index', 'active' => 'production.*', 'can' => 'production.view'],
+        ['label' => 'Production Report', 'route' => 'production.report', 'can' => 'production.view'],
+    ]],
+
+    ['label' => 'Laboratory & QC', 'icon' => 'vial', 'children' => [
+        ['label' => 'Lab Tests', 'route' => 'lab.index', 'active' => 'lab.*', 'can' => 'lab.view'],
+        ['label' => 'Test a Batch', 'route' => 'lab.create', 'params' => ['subject' => 'product'], 'can' => 'lab.manage'],
+        ['label' => 'Test a Raw Material', 'route' => 'lab.create', 'params' => ['subject' => 'raw'], 'can' => 'lab.manage'],
+        ['label' => 'Batches Not Tested', 'route' => 'production.index', 'params' => ['qc' => 'pending'], 'can' => 'production.view'],
+        ['label' => 'Failed Batches', 'route' => 'production.index', 'params' => ['qc' => 'failed'], 'can' => 'production.view'],
+        ['label' => 'Test Parameters', 'route' => 'lookups.index', 'params' => ['type' => 'qc_parameter'], 'active' => 'lookups.*', 'can' => 'lab.view'],
+    ]],
+
     ['label' => 'Accounts', 'icon' => 'address-book', 'children' => [
         ['label' => 'Cash', 'route' => 'accounts.index', 'params' => ['type' => 'cash'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Customers', 'route' => 'accounts.index', 'params' => ['type' => 'customer'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
