@@ -27,6 +27,9 @@
 .ss-item.focus, .ss-item:hover { background: rgba(var(--primary-rgb), .1); color: var(--primary); }
 .ss-empty { padding: 10px; color: var(--muted); font-size: 14px; }
 
+/* An open pick list must not be cut off by a scrolling table. */
+.table-responsive:has(.ss.open) { overflow: visible; }
+
 /* Rows of a sale, purchase or journal entry. */
 [data-rows] td { vertical-align: middle; }
 [data-rows] .form-control, [data-rows] .form-select { min-width: 90px; }

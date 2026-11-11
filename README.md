@@ -16,9 +16,57 @@ nothing is loaded from a CDN:
 CSS, JavaScript and icons are cached by the browser for a year, so after the first
 visit a page costs only its HTML.
 
+## What it does
+
+| Area | Screens |
+|---|---|
+| Sales | bills, quotations, delivery tracking, returns, printed bill and delivery note |
+| Purchases | bills with transport and customs costs, purchase orders, goods on the way and received (GRN), supplier advances, returns |
+| Stock | stock on hand with value, stock card, batches and expiry, opening stock, transfers, physical count |
+| Money | money in, money out, expenses, transfer and exchange, day book (roznamcha), journal entries |
+| Accounts | customers, suppliers, banks, sarafi, cash boxes, shareholders, employees, warehouse managers, loans, chart of accounts, statements |
+| Owners | capital put in, money taken out, profit sharing |
+| Assets | fixed and current, tangible and intangible, monthly depreciation and amortization |
+| Employees | employee records, advances, monthly payroll with tax |
+| Reports | profit and loss, balance sheet, trial balance, cash flow, who owes whom, sales, purchases |
+| Office | documents, users, roles and permissions, audit log, company, currencies, rates, warehouses, units |
+
+Laboratory & Quality Control and Manufacturing & Production are planned next.
+
+### How it is built: three engines
+
+1. **One accounts list.** Customers, suppliers, banks, cash boxes, shareholders, employees,
+   expenses and everything else are accounts of a kind (`accounts`, `account_types`).
+2. **One journal.** Every sale, purchase, payment and salary posts to `journal_entries` /
+   `journal_lines` through `App\Services\Ledger`. Statements and all accounting reports read from it.
+3. **One stock ledger.** Every movement of goods is a row in `stock_movements`, written by
+   `App\Services\Stock`. Stock on hand, stock cards and batches read from it.
+
+Rules the code enforces:
+
+- Money and quantities use exact decimals (`App\Support\Num`, bcmath), never floats.
+- Every paper is saved in one database transaction; a form can be sent only once.
+- Stock can never go below zero. Goods leave oldest expiry first. Cost is the weighted average.
+- Nothing is edited after saving: a paper is cancelled and entered again. Cancelled papers stay visible.
+- Each account has one currency. Reports are in the main currency (USD) using the exchange
+  rate of the day of each paper.
+- Users choose the Gregorian or the Solar Hijri calendar; the database always stores Gregorian
+  (`App\Support\Shamsi`, `ConvertShamsiDates` middleware, `<x-date>`).
+- All screen text goes through `__()`, so Dari and Pashto can be added as `lang/fa.json` and `lang/ps.json`.
+
+### Known limits (kept simple on purpose)
+
+- Cancelling a purchase does not recalculate the average cost of its items.
+- Balances in other currencies are not revalued when the exchange rate changes.
+- Purchase orders are received in full; partial receipts are not tracked.
+- Payroll months are Gregorian months. Attendance and leave are not included.
+- Depreciation is straight line only.
+
+A short guide for the people who use the system is in [docs/user-guide.md](docs/user-guide.md).
+
 ## Requirements
 
-- PHP 8.3 or newer (8.4 recommended) with `mbstring`, `bcmath`, `intl`, `pdo_mysql`
+- PHP 8.3 or newer (8.4 recommended) with `mbstring`, `bcmath`, `intl`, `pdo_mysql`, `fileinfo`
 - MySQL 8
 - Composer
 
@@ -36,7 +84,9 @@ php artisan serve
 ```
 
 There is no default user and no sample data. The first administrator is created
-with `php artisan app:create-admin`.
+with `php artisan app:create-admin`. The system starts with three currencies
+(USD as the main one, AFN, PKR), a cash box for each, common units and the kinds
+of account it needs; everything else is entered by the company.
 
 For production set `APP_ENV=production`, `APP_DEBUG=false` and run
 `php artisan optimize`.
@@ -96,8 +146,11 @@ write `badge-success` or add the names to `safelist.txt`.
 ```
 
 - Sidebar entries: `config/menu.php`
-- Every label: `lang/en/app.php` (Dari and Pashto can be added as `lang/fa`, `lang/ps`;
-  the layout switches to right-to-left by itself)
+- Labels: written in English inside `__('...')`; translations go in `lang/fa.json`, `lang/ps.json`
+  (the layout switches to right-to-left by itself)
+- A simple list-and-form screen: extend `App\Http\Controllers\CrudController` and declare
+  its fields and columns (see `Setup/UnitController.php`)
+- Dates: `<x-date name="date" :value="$iso" />` in forms and `fmt_date($date)` on screens
 - Success and error messages: `return back()->with('success', '...')` shows a toast
 - Ask before a dangerous action: `<form data-confirm="Delete this?" ...>`
 - Forms can be sent only once, which prevents double posting on slow connections

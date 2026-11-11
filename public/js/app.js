@@ -377,19 +377,19 @@ function recalc(form) {
 if (!form || !form.hasAttribute('data-totals')) return;
 var subtotal = 0;
 $$('[data-row]', form).forEach(function (row) {
-var qty = $('[data-qty]', row);
-var price = $('[data-price]', row);
+var qty = $('input[data-qty]', row);
+var price = $('input[data-price]', row);
 var out = $('[data-line-total]', row);
 if (!qty || !price) return;
 var total = Math.round(num(qty.value) * num(price.value) * 100) / 100;
 subtotal += total;
 if (out) out.textContent = show2(total);
 });
-var discount = num(($('[data-discount]', form) || {}).value);
+var discount = num(($('input[data-discount]', form) || {}).value);
 var set = function (sel, value) { var el = $(sel, form); if (el) el.textContent = show2(value); };
 set('[data-subtotal]', subtotal);
 set('[data-grand]', subtotal - discount);
-var paid = num(($('[data-paid]', form) || {}).value);
+var paid = num(($('input[data-paid]', form) || {}).value);
 set('[data-remaining]', subtotal - discount - paid);
 }
 document.addEventListener('input', function (e) { recalc(e.target.closest('form')); });
@@ -399,7 +399,7 @@ if (!select.matches || !select.matches('select[data-item]')) return;
 var option = select.options[select.selectedIndex];
 var row = select.closest('[data-row]');
 if (!option || !row) return;
-var price = $('[data-price]', row);
+var price = $('input[data-price]', row);
 var form = select.closest('form');
 var party = $('select[data-party]', form);
 var partyOption = party ? party.options[party.selectedIndex] : null;
