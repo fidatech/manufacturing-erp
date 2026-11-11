@@ -76,10 +76,13 @@ return [
     ]],
     ['label' => 'Employees', 'icon' => 'id-badge', 'children' => [
         ['label' => 'Employees', 'route' => 'accounts.index', 'params' => ['type' => 'employee'], 'active' => 'accounts.*', 'can' => 'hr.view'],
+        ['label' => 'Payroll (monthly salaries)', 'route' => 'payroll.index', 'active' => 'payroll.*', 'can' => 'hr.view'],
         ['label' => 'Pay salary or advance', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'employee'], 'can' => 'money.manage'],
     ]],
 
     ['heading' => 'Office'],
+    ['label' => 'Reports', 'icon' => 'chart-pie', 'route' => 'reports.index', 'active' => 'reports.*', 'can' => 'reports.view'],
+    ['label' => 'Assets', 'icon' => 'industry', 'route' => 'assets.index', 'active' => 'assets.*', 'can' => 'assets.view'],
     ['label' => 'Chart of accounts', 'icon' => 'sitemap', 'route' => 'chart', 'can' => 'accounts.view'],
     ['label' => 'Documents', 'icon' => 'folder-open', 'route' => 'documents.index', 'can' => 'documents.view'],
     ['label' => 'Setup', 'icon' => 'gear', 'children' => [

@@ -6,14 +6,17 @@ use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Assets\AssetController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Hr\PayrollController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\PreferenceController;
+use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Trade\PurchaseController;
 use App\Http\Controllers\Trade\SaleController;
 use App\Http\Controllers\Setup\AccountTypeController;
@@ -99,6 +102,31 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::post('stock/{type}', [StockDocController::class, 'store'])->name('stock-docs.store')->whereIn('type', StockDocController::TYPES);
     Route::get('stock/{type}/{id}', [StockDocController::class, 'show'])->name('stock-docs.show')->whereIn('type', StockDocController::TYPES)->whereNumber('id');
     Route::post('stock/{type}/{id}/cancel', [StockDocController::class, 'cancel'])->name('stock-docs.cancel')->whereIn('type', StockDocController::TYPES)->whereNumber('id');
+
+    // Assets, depreciation and amortization
+    Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
+    Route::get('assets/create', [AssetController::class, 'create'])->name('assets.create');
+    Route::post('assets', [AssetController::class, 'store'])->name('assets.store');
+    Route::post('assets/depreciate', [AssetController::class, 'depreciate'])->name('assets.depreciate');
+    Route::post('assets/undo', [AssetController::class, 'undo'])->name('assets.undo');
+    Route::post('assets/{id}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose')->whereNumber('id');
+
+    // Payroll
+    Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+    Route::post('payroll', [PayrollController::class, 'store'])->name('payroll.store');
+    Route::get('payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show')->whereNumber('id');
+    Route::delete('payroll/{id}', [PayrollController::class, 'destroy'])->name('payroll.destroy')->whereNumber('id');
+
+    // Reports
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/profit-and-loss', [ReportController::class, 'profit'])->name('reports.profit');
+    Route::get('reports/balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance');
+    Route::get('reports/trial-balance', [ReportController::class, 'trial'])->name('reports.trial');
+    Route::get('reports/cash-flow', [ReportController::class, 'cashFlow'])->name('reports.cash');
+    Route::get('reports/balances', [ReportController::class, 'balances'])->name('reports.balances');
+    Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+    Route::get('reports/purchases', [ReportController::class, 'purchases'])->name('reports.purchases');
 
     // Money and day book
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');
