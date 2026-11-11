@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\Warehouse;
 use App\Services\Ledger;
 use App\Services\Stock;
+use App\Support\Num;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -84,9 +85,9 @@ class TradeTest extends TestCase
             'paid' => '50', 'paid_from_id' => $this->cash('USD')->id,
         ]);
 
-        $this->assertSame('200.00', $purchase->total);
+        $this->assertSame('200.00', Num::money($purchase->total));
         $this->assertSame('100.0000', Stock::onHand($acid->id));
-        $this->assertSame('3.000000', $acid->fresh()->avg_cost);                           // (200 + 100) / 100 kg
+        $this->assertSame('3.000000', Num::round($acid->fresh()->avg_cost, 6));                          // (200 + 100) / 100 kg
         $this->assertSame('300.00', Ledger::balance(Account::system('inventory')->id));
         $this->assertSame('-150.00', Ledger::balance($supplier->id));                      // we still owe 150
         $this->assertSame('-7000.00', Ledger::balance($this->cash('AFN')->id));
@@ -155,9 +156,9 @@ class TradeTest extends TestCase
         ])->assertRedirect();
         $sale = Sale::firstOrFail();
 
-        $this->assertSame('975.00', $sale->total);
-        $this->assertSame('255.00', $sale->previous_balance);
-        $this->assertSame('735.00', $sale->cost_base);                         // 15 x 40 + 45 x 3
+        $this->assertSame('975.00', Num::money($sale->total));
+        $this->assertSame('255.00', Num::money($sale->previous_balance));
+        $this->assertSame('735.00', Num::money($sale->cost_base));                        // 15 x 40 + 45 x 3
         $this->assertSame('35.0000', Stock::onHand($mango->id));
         $this->assertSame('55.0000', Stock::onHand($gum->id));
         $this->assertSame('1230.00', Ledger::balance($customer->id));          // 255 + 975
