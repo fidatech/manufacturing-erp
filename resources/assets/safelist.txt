@@ -1,0 +1,10 @@
+# Class names and icons that the build cannot see in the views or scripts.
+# One or more per line. Icons are written as #s-name (solid) or #r-name (regular).
+
+# icons used from JavaScript
+#s-sun #s-moon #s-file #s-arrow-right
+#s-circle-check #s-circle-xmark #s-circle-info #s-circle-question #s-triangle-exclamation
+#r-eye #r-eye-slash
+
+# toast colours are built in JavaScript as "is-" + type
+is-success is-danger is-warning is-info

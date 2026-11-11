@@ -1,0 +1,49 @@
+/* ==========================================================================
+   ERP additions to the fida-admin stylesheet.
+   Everything here replaces something the template loaded from a CDN:
+   web fonts, the Font Awesome icon font, SweetAlert2 and Select2.
+   ========================================================================== */
+
+/* System fonts: nothing to download. */
+:root {
+    --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-rtl: 'Vazirmatn', Tahoma, system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Icons: <x-icon name="box" /> prints <i class="fi"><svg><use/></svg></i>. */
+.fi { display: inline-block; font-style: normal; line-height: 1; vertical-align: -.125em; }
+.fi svg { display: block; width: 1.25em; height: 1em; fill: currentColor; }
+
+/* Long company names fit the sidebar brand. */
+.sidebar-brand .brand-link { min-width: 0; }
+.sidebar-brand .brand-text { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Buttons of a form that is being sent. */
+.is-busy { opacity: .65; pointer-events: none; }
+
+/* Toasts (ERP.toast and flash messages). */
+.erp-toasts { position: fixed; top: 16px; inset-inline-end: 16px; z-index: 1100; display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); }
+.erp-toast { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius); background: var(--card); color: var(--heading); border: 1px solid var(--border); border-inline-start: 4px solid var(--info); box-shadow: var(--shadow-lg); font-weight: 600; font-size: 14px; animation: erpToastIn .2s ease; }
+.erp-toast .fi { margin-top: 3px; color: var(--info); }
+.erp-toast.is-success { border-inline-start-color: var(--success); }
+.erp-toast.is-success .fi { color: var(--success); }
+.erp-toast.is-danger { border-inline-start-color: var(--danger); }
+.erp-toast.is-danger .fi { color: var(--danger); }
+.erp-toast.is-warning { border-inline-start-color: var(--warning); }
+.erp-toast.is-warning .fi { color: var(--warning); }
+.erp-toast.is-out { opacity: 0; transition: opacity .25s; }
+@keyframes erpToastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+/* Confirm dialog (ERP.confirm and <form data-confirm>). */
+.erp-confirm .modal-content { border: 0; border-radius: 18px; background: var(--card); box-shadow: var(--shadow-lg); }
+.erp-confirm .modal-body { padding: 28px 22px 22px; }
+.erp-confirm-icon { font-size: 40px; margin-bottom: 12px; }
+.erp-confirm h5 { color: var(--heading); font-weight: 800; }
+
+@media (max-width: 991.98px) {
+    .erp-toasts { top: calc(env(safe-area-inset-top, 0px) + 10px); inset-inline: 16px; width: auto; }
+    /* The tab bar and the drawer shortcuts share the width equally, however many there are. */
+    .app-tabbar { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
+    .drawer-quick { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
+}

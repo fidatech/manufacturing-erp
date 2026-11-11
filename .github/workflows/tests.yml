@@ -1,0 +1,71 @@
+name: tests
+
+on:
+  push:
+    branches: [development, main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: manufacturing_erp
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -psecret"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, bcmath, intl, pdo_mysql, pdo_sqlite
+          coverage: none
+
+      - name: Check PHP syntax
+        run: find app bootstrap config database lang routes tests tools -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Check that the built assets are up to date
+        run: php tools/build-assets.php --check
+
+      - name: Note whether composer.lock is committed
+        id: lock
+        run: echo "committed=$([ -f composer.lock ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Keep composer.lock when the repository has none yet
+        if: steps.lock.outputs.committed == 'no'
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-lock
+          path: composer.lock
+
+      - name: Prepare the application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run the migrations on MySQL 8
+        env:
+          DB_PASSWORD: secret
+        run: |
+          php artisan migrate --force
+          php artisan migrate:fresh --force
+
+      - name: Compile every view
+        run: php artisan view:cache
+
+      - name: Run the tests
+        run: php artisan test
