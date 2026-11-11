@@ -164,6 +164,38 @@ class ReportController extends Controller
         ]);
     }
 
+    public const PARTY_REPORTS = [
+        'customers' => ['Customers Report', 'customer'],
+        'suppliers' => ['Suppliers Report', 'supplier'],
+        'shareholders' => ['Shareholder Statements', 'shareholder'],
+        'debtors' => ['Debtors', null],
+        'creditors' => ['Creditors', null],
+    ];
+
+    /** A list of people with their balance and a link to the statement. */
+    public function parties(Request $request): View
+    {
+        $group = $request->route('group');
+        abort_unless(isset(self::PARTY_REPORTS[$group]), 404);
+        Gate::authorize('reports.view');
+        $to = $request->validate(['to' => ['nullable', 'date']])['to'] ?? today_iso();
+        [$title, $type] = self::PARTY_REPORTS[$group];
+
+        $rows = $this->accounts(null, $to)->filter(function ($account) use ($group, $type) {
+            if ($type) {
+                return $account->type->key === $type;
+            }
+            // debtors owe us; creditors are owed by us
+            return $account->type->is_party && ! $account->type->is_money
+                && ($group === 'debtors' ? Num::isPositive($account->own) : Num::isNegative($account->own));
+        })->sortByDesc(fn ($account) => abs((float) $account->base))->values();
+
+        return view('reports.parties', [
+            'title' => __($title), 'to' => $to, 'base' => Rates::base()->code, 'rows' => $rows,
+            'total' => Num::money(Num::sum($rows->pluck('base'))),
+        ]);
+    }
+
     /** Sales by product and by customer, with cost and profit. Returns are taken off. */
     public function sales(Request $request): View
     {

@@ -2,45 +2,12 @@
 
 @section('content')
 <x-page-header :title="__('Assets')" icon="industry" :subtitle="__('Machines, furniture, licences and other things the company keeps.')">
+    <a class="btn btn-outline-soft" href="{{ route('assets.write-off', ['kind' => 'depreciation']) }}">{{ __('Depreciation') }}</a>
+    <a class="btn btn-outline-soft" href="{{ route('assets.write-off', ['kind' => 'amortization']) }}">{{ __('Amortization') }}</a>
     @can('assets.manage')
         <a class="btn btn-primary" href="{{ route('assets.create') }}"><x-icon name="plus" class="me-1" /> {{ __('Add :name', ['name' => __('Asset')]) }}</a>
     @endcan
 </x-page-header>
-
-@can('assets.manage')
-    <div class="card mb-4">
-        <div class="card-header"><div><h5 class="card-title">{{ __('Monthly loss of value (depreciation and amortization)') }}</h5><div class="small text-muted">{{ __('Press once a month. Every asset with a life loses one month of its value. Pressing twice does no harm.') }}</div></div></div>
-        <div class="card-body">
-            <form method="POST" action="{{ route('assets.depreciate') }}" class="row g-2 align-items-end">
-                @csrf
-                <div class="col-8 col-md-auto">
-                    <label class="form-label small mb-1" for="f-period">{{ __('Month') }}</label>
-                    <input type="month" class="form-control" id="f-period" name="period" value="{{ now()->format('Y-m') }}" required>
-                </div>
-                <div class="col-4 col-md-auto"><button type="submit" class="btn btn-primary w-100">{{ __('Write off this month') }}</button></div>
-            </form>
-            @if ($periods->isNotEmpty())
-                <table class="table w-100 mt-3 keep-table">
-                    <thead><tr><th>{{ __('Month') }}</th><th>{{ __('Assets') }}</th><th class="text-end">{{ __('Written off (:base)', ['base' => $base]) }}</th><th></th></tr></thead>
-                    <tbody>
-                        @foreach ($periods as $period)
-                            <tr>
-                                <td>{{ $period->period }}</td><td>{{ $period->assets }}</td><td class="text-end">{{ money($period->total) }}</td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ route('assets.undo') }}" class="d-inline" data-confirm="{{ __('Take back the write-off of :period?', ['period' => $period->period]) }}" data-confirm-ok="{{ __('Take it back') }}">
-                                        @csrf
-                                        <input type="hidden" name="period" value="{{ $period->period }}">
-                                        <button type="submit" class="btn btn-sm btn-light-danger">{{ __('Take back') }}</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
-        </div>
-    </div>
-@endcan
 
 <div class="card">
     <div class="card-body">
@@ -71,7 +38,7 @@
                     @endphp
                     <tr>
                         <td>{{ $asset->name }}@if ($asset->status !== 'active') <span class="badge-soft danger">{{ __('Removed') }}</span>@endif<div class="small text-muted">{{ $asset->life_months ? __('Life: :months months', ['months' => $asset->life_months]) : __('Does not lose value') }}</div></td>
-                        <td>{{ $asset->class === 'fixed' ? __('Fixed') : __('Current') }} · {{ $asset->kind === 'tangible' ? __('Tangible') : __('Intangible') }}</td>
+                        <td>{{ $asset->class === 'fixed' ? __('Fixed') : __('Current') }} · {{ $asset->kind === 'tangible' ? __('Tangible') : __('Intangible') }}{{ $asset->category ? ' · '.$asset->category : '' }}</td>
                         <td class="text-nowrap">{{ fmt_date($asset->purchase_date) }}</td>
                         <td class="text-end text-nowrap">{{ money($asset->cost, $asset->currency->code) }}</td>
                         <td class="text-end text-nowrap">{{ money($row['off']) }}</td>

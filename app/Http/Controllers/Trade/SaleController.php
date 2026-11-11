@@ -19,16 +19,16 @@ use Illuminate\View\View;
 
 class SaleController extends Controller
 {
-    public const TYPES = ['invoice', 'quotation', 'return'];
+    public const TYPES = ['invoice', 'order', 'quotation', 'return'];
 
     public static function names(): array
     {
-        return ['invoice' => __('Sales'), 'quotation' => __('Quotations'), 'return' => __('Sale returns')];
+        return ['invoice' => __('Sale invoices'), 'order' => __('Sale orders'), 'quotation' => __('Sale quotations'), 'return' => __('Sale returns')];
     }
 
     public static function singular(string $type): string
     {
-        return ['invoice' => __('Sale'), 'quotation' => __('Quotation'), 'return' => __('Sale return')][$type];
+        return ['invoice' => __('Sale invoice'), 'order' => __('Sale order'), 'quotation' => __('Sale quotation'), 'return' => __('Sale return')][$type];
     }
 
     public function index(Request $request): View
@@ -43,11 +43,12 @@ class SaleController extends Controller
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
             ->when($filters['delivery'] ?? null, fn ($q, $status) => $q->where('status', 'posted')->where('delivery_status', $status))
+            ->when($request->query('view') === 'dispatch', fn ($q) => $q->where('status', 'posted')->where('delivery_status', '!=', 'delivered'))
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%$term%"))))
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(25)->withQueryString();
 
-        return view('sales.index', ['sales' => $sales, 'type' => $type, 'names' => self::names(), 'filters' => $filters]);
+        return view('sales.index', ['sales' => $sales, 'type' => $type, 'names' => self::names(), 'filters' => $filters, 'view' => in_array($request->query('view'), ['delivery', 'dispatch'], true) ? $request->query('view') : null]);
     }
 
     public function create(Request $request): View
@@ -66,6 +67,8 @@ class SaleController extends Controller
             'items' => Item::where('is_active', true)->with('unit')->orderBy('type')->orderBy('name')->get(),
             'moneyAccounts' => Account::money()->active()->with('currency')->orderBy('name')->get(),
             'base' => Rates::base()->code,
+            // [customer id => [item id => price]] so the form can fill in a customer's own prices
+            'prices' => \App\Models\PriceList::all()->groupBy('customer_id')->map(fn ($rows) => $rows->mapWithKeys(fn ($row) => [$row->item_id => \App\Support\Num::format($row->price, 6, true)]))->all(),
         ]);
     }
 
@@ -95,8 +98,9 @@ class SaleController extends Controller
 
         $sale = SaleService::create($data);
 
-        if (! empty($data['parent_id']) && $data['type'] === 'invoice') {
-            Sale::where('id', $data['parent_id'])->where('type', 'quotation')->update(['status' => 'converted']);
+        // the quotation or order this paper was made from is now done
+        if (! empty($data['parent_id']) && in_array($data['type'], ['order', 'invoice'], true)) {
+            Sale::where('id', $data['parent_id'])->whereIn('type', SaleService::OPEN_TYPES)->where('status', 'open')->update(['status' => 'converted']);
         }
 
         return redirect()->route('sales.show', ['id' => $sale->id])->with('success', __('Saved as :number.', ['number' => $sale->number]));
@@ -127,6 +131,7 @@ class SaleController extends Controller
             'sale' => $sale,
             'delivery' => $request->query('paper') === 'delivery',
             'title' => self::singular($sale->type).' '.$sale->number,
+            'logo' => \App\Http\Controllers\Setup\CompanyController::logoDataUri(),
         ]);
     }
 

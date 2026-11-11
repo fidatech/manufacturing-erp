@@ -36,7 +36,16 @@ class PayrollController extends Controller
 
         $period = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('period')) ? $request->query('period') : now()->format('Y-m');
 
+        $start = $period.'-01';
+        $end = date('Y-m-t', strtotime($start));
+        $adjustments = \App\Models\HrRecord::whereIn('type', ['allowance', 'deduction'])
+            ->whereDate('date', '<=', $end)
+            ->where(fn ($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', $start))
+            ->groupBy('employee_id', 'type')->selectRaw('employee_id, type, SUM(amount) as total')->toBase()->get()
+            ->groupBy('employee_id')->map(fn ($rows) => $rows->pluck('total', 'type'));
+
         return view('payroll.form', [
+            'adjustments' => $adjustments,
             'period' => $period,
             'exists' => Payroll::where('period', $period)->exists(),
             'employees' => Account::ofType('employee')->active()->with('currency')->orderBy('name')->get(),

@@ -25,7 +25,7 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #111;padding:6p
 @php
     $code = $sale->currency->code;
     $unit = fn ($line) => $line->item->unit->symbol ?: $line->item->unit->name;
-    $names = ['invoice' => ['Sales Bill', 'بل فروش'], 'quotation' => ['Quotation', 'نرخ نامه'], 'return' => ['Sale Return', 'برگشت فروش']][$sale->type];
+    $names = ['invoice' => ['Sales Bill', 'بل فروش'], 'quotation' => ['Quotation', 'نرخ نامه'], 'order' => ['Sale Order', 'فرمایش فروش'], 'return' => ['Sale Return', 'برگشت فروش']][$sale->type];
     if ($delivery) {
         $names = ['Delivery Note', 'رسید تحویلی'];
     }
@@ -40,6 +40,9 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #111;padding:6p
 <div class="sheet">
     <div class="head">
         <div>
+            @if ($logo)
+                <img src="{{ $logo }}" alt="" style="max-height:64px;max-width:220px;display:block;margin-bottom:6px">
+            @endif
             <h1>{{ setting('company_name', config('app.name')) }}</h1>
             <div class="muted">{{ setting('company_phone') }}{{ setting('company_email') ? ' · '.setting('company_email') : '' }}</div>
             <div class="muted">{{ setting('company_address') }}</div>

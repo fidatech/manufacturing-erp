@@ -30,7 +30,7 @@ class DocumentController extends Controller
             ->paginate(25)
             ->withQueryString();
 
-        return view('admin.documents', ['documents' => $documents, 'term' => (string) $request->query('q', '')]);
+        return view('admin.documents', ['documents' => $documents, 'term' => (string) $request->query('q', ''), 'types' => \App\Models\Lookup::options('document_type')]);
     }
 
     public function store(Request $request): RedirectResponse

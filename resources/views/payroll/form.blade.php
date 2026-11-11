@@ -46,8 +46,8 @@
                                 </td>
                                 <td>{{ $employee->name }}<div class="small text-muted">{{ $employee->metaValue('job_title') }} · {{ $employee->currency->code }}</div></td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][salary]" value="{{ old("lines.$i.salary", $employee->metaValue('salary')) }}" aria-label="{{ __('Salary') }}"></td>
-                                <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][bonus]" value="{{ old("lines.$i.bonus") }}" aria-label="{{ __('Extra') }}"></td>
-                                <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][deduction]" value="{{ old("lines.$i.deduction") }}" aria-label="{{ __('Cut') }}"></td>
+                                <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][bonus]" value="{{ old("lines.$i.bonus", ($a = $adjustments->get($employee->id)?->get('allowance')) ? \App\Support\Num::money($a) : '') }}" aria-label="{{ __('Extra') }}"></td>
+                                <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][deduction]" value="{{ old("lines.$i.deduction", ($d = $adjustments->get($employee->id)?->get('deduction')) ? \App\Support\Num::money($d) : '') }}" aria-label="{{ __('Cut') }}"></td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][tax]" value="{{ old("lines.$i.tax", $employee->metaValue('salary_tax')) }}" aria-label="{{ __('Tax') }}"></td>
                                 <td><input type="text" class="form-control" name="lines[{{ $i }}][note]" value="{{ old("lines.$i.note") }}" aria-label="{{ __('Note') }}"></td>
                                 <td class="text-end text-nowrap small">{{ $employee->describeBalance($balances[$employee->id]['own'] ?? '0') }}</td>
@@ -56,7 +56,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="form-text">{{ __('Extra = overtime or bonus. Cut = absence or fine. Advances are not written here: they are already on the employee\'s account.') }}</div>
+            <div class="form-text">{{ __('Extra = allowances, overtime or bonus. Cut = deductions, absence or fine. Monthly allowances and deductions are filled in by themselves. Advances are not written here: they are already on the employee\'s account.') }}</div>
         </div>
         <div class="card-footer d-flex gap-2 justify-content-end">
             <a class="btn btn-light-secondary" href="{{ route('payroll.index') }}">{{ __('Cancel') }}</a>

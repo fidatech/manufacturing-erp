@@ -8,6 +8,9 @@
     @endif
     @can('sales.manage')
         @if ($sale->type === 'quotation' && $sale->status === 'open')
+            <a class="btn btn-outline-soft" href="{{ route('sales.create', ['type' => 'order', 'from' => $sale->id]) }}">{{ __('Turn into an order') }}</a>
+        @endif
+        @if (in_array($sale->type, ['order', 'quotation'], true) && $sale->status === 'open')
             <a class="btn btn-success" href="{{ route('sales.create', ['type' => 'invoice', 'from' => $sale->id]) }}">{{ __('Turn into a sale') }}</a>
         @endif
         @if ($sale->type === 'invoice' && $sale->status === 'posted')

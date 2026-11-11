@@ -88,8 +88,10 @@ if (! function_exists('setting')) {
     /** A company setting (name, phone, address ...). */
     function setting(string $key, ?string $default = null): ?string
     {
-        static $all = null;
-        $all ??= Setting::where('key', 'not like', 'seq.%')->pluck('value', 'key')->all();
+        if (! app()->bound('erp.settings')) {
+            app()->instance('erp.settings', Setting::where('key', 'not like', 'seq.%')->pluck('value', 'key')->all());
+        }
+        $all = app('erp.settings');
 
         return $all[$key] ?? $default;
     }

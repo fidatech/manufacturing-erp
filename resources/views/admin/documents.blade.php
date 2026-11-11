@@ -13,8 +13,13 @@
                     <input type="text" class="form-control @error('title') is-invalid @enderror" id="f-title" name="title" value="{{ old('title') }}" required>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label" for="f-category">{{ __('Kind') }}</label>
-                    <input type="text" class="form-control" id="f-category" name="category" value="{{ old('category') }}" placeholder="{{ __('Licence, contract, bill…') }}">
+                    <label class="form-label" for="f-category">{{ __('Document type') }}</label>
+                    <select class="form-select" id="f-category" name="category">
+                        <option value="">{{ __('Choose…') }}</option>
+                        @foreach ($types as $type)
+                            <option value="{{ $type }}" @selected(old('category') === $type)>{{ $type }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="f-file">{{ __('File') }} <span class="text-danger">*</span></label>

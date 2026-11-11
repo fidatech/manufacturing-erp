@@ -68,7 +68,7 @@
                     <thead>
                         <tr>
                             <th>{{ __('Item') }}</th><th class="text-end">{{ __('Quantity') }}</th><th class="text-end">{{ __('Price') }}</th><th class="text-end">{{ __('Total') }}</th>
-                            @if ($type !== 'order')
+                            @if (in_array($type, ['invoice', 'return'], true))
                                 <th>{{ __('Batch') }}</th>
                                 @if ($type === 'invoice')
                                     <th>{{ __('Made on') }}</th><th>{{ __('Expires on') }}</th>

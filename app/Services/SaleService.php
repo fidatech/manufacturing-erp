@@ -11,12 +11,16 @@ use Illuminate\Support\Facades\DB;
 /**
  * Sales.
  *   quotation  a price offer: nothing is posted
+ *   order      the customer's order: nothing is posted until it becomes a bill
  *   invoice    the bill: the customer owes us, the goods leave the warehouse
  *   return     goods that came back: stock returns, the customer owes less
  */
 class SaleService
 {
-    public const PREFIX = ['quotation' => 'SQ', 'invoice' => 'SI', 'return' => 'SR'];
+    public const PREFIX = ['quotation' => 'SQ', 'order' => 'SO', 'invoice' => 'SI', 'return' => 'SR'];
+
+    /** Papers that are only an offer or a promise: nothing is posted. */
+    public const OPEN_TYPES = ['quotation', 'order'];
 
     /**
      * @param  array  $data  type, date, customer_id, warehouse_id, lines[], discount, received, received_in_id, ...
@@ -64,7 +68,7 @@ class SaleService
                 'warehouse_id' => $data['warehouse_id'],
                 'currency_id' => $customer->currency_id,
                 'rate' => $rate,
-                'status' => $type === 'quotation' ? 'open' : 'posted',
+                'status' => in_array($type, self::OPEN_TYPES, true) ? 'open' : 'posted',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total' => $total,
@@ -79,7 +83,7 @@ class SaleService
                 'created_by' => auth()->id(),
             ]);
 
-            if ($type === 'quotation') {
+            if (in_array($type, self::OPEN_TYPES, true)) {
                 $sale->lines()->createMany($lines);
 
                 return $sale;

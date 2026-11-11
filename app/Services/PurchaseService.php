@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Purchases.
+ *   quotation  a supplier's price offer: nothing is posted
  *   order    a purchase order (PO): a promise, nothing is posted
  *   invoice  the supplier's bill: we owe the supplier, stock value rises;
  *            the goods enter the warehouse when they arrive (GRN)
@@ -20,7 +21,10 @@ use Illuminate\Support\Facades\DB;
  */
 class PurchaseService
 {
-    public const PREFIX = ['order' => 'PO', 'invoice' => 'PI', 'return' => 'PR'];
+    public const PREFIX = ['quotation' => 'PQ', 'order' => 'PO', 'invoice' => 'PI', 'return' => 'PR'];
+
+    /** Papers that are only an offer or a promise: nothing is posted. */
+    public const OPEN_TYPES = ['quotation', 'order'];
 
     /**
      * @param  array  $data  type, date, supplier_id, warehouse_id, lines[], costs[], discount, paid, paid_from_id, received, ...
@@ -77,7 +81,7 @@ class PurchaseService
                 'currency_id' => $supplier->currency_id,
                 'rate' => $rate,
                 'supplier_invoice_no' => $data['supplier_invoice_no'] ?? null,
-                'status' => $type === 'order' ? 'open' : 'posted',
+                'status' => in_array($type, self::OPEN_TYPES, true) ? 'open' : 'posted',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total' => $total,
@@ -88,7 +92,7 @@ class PurchaseService
                 'created_by' => auth()->id(),
             ]);
 
-            if ($type === 'order') {
+            if (in_array($type, self::OPEN_TYPES, true)) {
                 $purchase->lines()->createMany($lines);
 
                 return $purchase;

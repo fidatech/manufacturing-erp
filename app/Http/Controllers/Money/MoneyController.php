@@ -40,6 +40,8 @@ class MoneyController extends Controller
         'liability' => ['in' => 'Loan received', 'out' => 'Loan paid back'],
         'employee' => ['in' => 'Money returned by an employee', 'out' => 'Salary or advance paid to an employee'],
         'warehouse_manager' => ['in' => 'Money returned by a warehouse manager', 'out' => 'Money given to a warehouse manager'],
+        'exchange' => ['transfer' => 'Currency exchange'],
+        'transfer' => ['transfer' => 'Transfer between accounts'],
     ];
 
     public function index(Request $request): View
@@ -224,7 +226,7 @@ class MoneyController extends Controller
         if ($kind === 'expense') {
             return $query->whereHas('type', fn ($q) => $q->where('nature', 'expense'))->get();
         }
-        if ($group) {
+        if ($group && ! in_array($group, ['exchange', 'transfer'], true)) {
             return $query->ofType($group)->get();
         }
 

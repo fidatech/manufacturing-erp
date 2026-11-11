@@ -144,7 +144,9 @@ class AccountController extends CrudController
             ],
             'employee' => [
                 ['name' => 'father_name', 'label' => 'Father name', 'rules' => ['nullable', 'string', 'max:150']],
-                ['name' => 'job_title', 'label' => 'Job', 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'department', 'label' => 'Department', 'type' => 'select', 'options' => \App\Models\Lookup::options('department'), 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'job_title', 'label' => 'Designation', 'type' => 'select', 'options' => \App\Models\Lookup::options('designation'), 'rules' => ['nullable', 'string', 'max:150'],
+                    'help' => 'Add departments and designations under Human Resource first.'],
                 ['name' => 'gender', 'label' => 'Gender', 'type' => 'select', 'options' => ['male' => __('Male'), 'female' => __('Female')], 'rules' => ['nullable', 'in:male,female']],
                 ['name' => 'id_number', 'label' => 'Tazkira number', 'rules' => ['nullable', 'string', 'max:100']],
                 ['name' => 'tax_number', 'label' => 'Tax number (TIN)', 'rules' => ['nullable', 'string', 'max:100']],
@@ -168,7 +170,8 @@ class AccountController extends CrudController
             $columns['Phone'] = fn (Account $a) => $a->phone;
         }
         if ($type->key === 'employee') {
-            $columns['Job'] = fn (Account $a) => $a->metaValue('job_title');
+            $columns['Department'] = fn (Account $a) => $a->metaValue('department');
+            $columns['Designation'] = fn (Account $a) => $a->metaValue('job_title');
             $columns['Monthly salary'] = fn (Account $a) => $a->metaValue('salary') ? money($a->metaValue('salary'), $a->currency->code) : '';
         }
         $columns['Balance'] = fn (Account $a) => $a->describeBalance($this->balanceOf($a));

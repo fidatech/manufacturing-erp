@@ -23,6 +23,20 @@ class RoleController extends Controller
         return view('admin.roles.index', ['roles' => Role::withCount('users')->orderBy('name')->get()]);
     }
 
+    /** One table that shows what every role may do. */
+    public function permissions(): View
+    {
+        Gate::authorize('users.view');
+        Permissions::sync();
+        $roles = Role::with('permissions')->orderBy('name')->get();
+
+        return view('admin.permissions', [
+            'roles' => $roles,
+            'modules' => config('permissions'),
+            'granted' => $roles->mapWithKeys(fn (Role $role) => [$role->id => $role->permissions->pluck('name')->all()])->all(),
+        ]);
+    }
+
     public function create(): View
     {
         Gate::authorize('users.manage');

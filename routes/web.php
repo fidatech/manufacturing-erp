@@ -9,14 +9,18 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Assets\AssetController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Hr\AttendanceController;
+use App\Http\Controllers\Hr\HrRecordController;
 use App\Http\Controllers\Hr\PayrollController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
+use App\Http\Controllers\Money\PettyCashController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\Trade\PriceListController;
 use App\Http\Controllers\Trade\PurchaseController;
 use App\Http\Controllers\Trade\SaleController;
 use App\Http\Controllers\Setup\AccountTypeController;
@@ -24,6 +28,7 @@ use App\Http\Controllers\Setup\CompanyController;
 use App\Http\Controllers\Setup\CurrencyController;
 use App\Http\Controllers\Setup\ExchangeRateController;
 use App\Http\Controllers\Setup\ItemCategoryController;
+use App\Http\Controllers\Setup\LookupController;
 use App\Http\Controllers\Setup\UnitController;
 use App\Http\Controllers\Setup\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -58,10 +63,13 @@ Route::middleware('auth')->group(function () use ($crud) {
     $crud('setup/item-groups', ItemCategoryController::class, 'item-categories');
     Route::get('setup/company', [CompanyController::class, 'edit'])->name('company.edit');
     Route::put('setup/company', [CompanyController::class, 'update'])->name('company.update');
+    Route::get('setup/company/logo', [CompanyController::class, 'logo'])->name('company.logo');
+    $crud('lists/{type}', LookupController::class, 'lookups');
 
     // Users, roles, audit log, documents
     $crud('users', UserController::class, 'users');
     $crud('roles', RoleController::class, 'roles');
+    Route::get('permissions', [RoleController::class, 'permissions'])->name('permissions');
     Route::get('audit-log', [AuditController::class, 'index'])->name('audit.index');
     Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
     Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');
@@ -93,6 +101,8 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::post('sales/{id}/delivery', [SaleController::class, 'delivery'])->name('sales.delivery')->whereNumber('id');
     Route::post('sales/{id}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel')->whereNumber('id');
 
+    $crud('price-lists', PriceListController::class, 'price-lists');
+
     // Stock
     Route::get('stock', [StockController::class, 'index'])->name('stock.index');
     Route::get('stock/batches', [StockController::class, 'batches'])->name('stock.batches');
@@ -106,10 +116,16 @@ Route::middleware('auth')->group(function () use ($crud) {
     // Assets, depreciation and amortization
     Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
     Route::get('assets/create', [AssetController::class, 'create'])->name('assets.create');
+    Route::get('assets/write-off/{kind}', [AssetController::class, 'writeOff'])->name('assets.write-off')->whereIn('kind', ['depreciation', 'amortization']);
     Route::post('assets', [AssetController::class, 'store'])->name('assets.store');
     Route::post('assets/depreciate', [AssetController::class, 'depreciate'])->name('assets.depreciate');
     Route::post('assets/undo', [AssetController::class, 'undo'])->name('assets.undo');
     Route::post('assets/{id}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose')->whereNumber('id');
+
+    // Human resource
+    Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+    $crud('hr/{screen}', HrRecordController::class, 'hr');
 
     // Payroll
     Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
@@ -127,9 +143,11 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('reports/balances', [ReportController::class, 'balances'])->name('reports.balances');
     Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
     Route::get('reports/purchases', [ReportController::class, 'purchases'])->name('reports.purchases');
+    Route::get('reports/people/{group}', [ReportController::class, 'parties'])->name('reports.parties');
 
     // Money and day book
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');
+    Route::get('petty-cash', PettyCashController::class)->name('petty-cash');
     Route::get('money/profit', [MoneyController::class, 'profitForm'])->name('money.profit');
     Route::post('money/profit', [MoneyController::class, 'profitStore'])->name('money.profit.store');
     Route::get('money/{kind}/create', [MoneyController::class, 'create'])->name('money.create');

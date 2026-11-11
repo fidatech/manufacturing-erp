@@ -43,6 +43,7 @@ class AssetService
                 'name' => $data['name'],
                 'class' => $data['class'],
                 'kind' => $data['kind'],
+                'category' => $data['category'] ?? null,
                 'purchase_date' => $date,
                 'quantity' => Num::money($data['quantity'] ?? 1),
                 'cost' => $cost,
@@ -82,14 +83,15 @@ class AssetService
      *
      * @return array{count: int, total: string}
      */
-    public static function runMonth(string $period): array
+    public static function runMonth(string $period, ?string $kind = null): array
     {
-        return DB::transaction(function () use ($period) {
+        return DB::transaction(function () use ($period, $kind) {
             $date = date('Y-m-t', strtotime($period.'-01'));
             $rows = [];
             $total = '0';
 
-            $assets = Asset::where('status', 'active')->where('life_months', '>', 0)->whereDate('purchase_date', '<=', $date)->lockForUpdate()->get();
+            $assets = Asset::where('status', 'active')->where('life_months', '>', 0)->whereDate('purchase_date', '<=', $date)
+                ->when($kind, fn ($q) => $q->where('kind', $kind))->lockForUpdate()->get();
             foreach ($assets as $asset) {
                 if ($asset->depreciations()->where('period', $period)->exists()) {
                     continue;
@@ -113,7 +115,8 @@ class AssetService
                 return ['count' => 0, 'total' => '0.00'];
             }
 
-            $entry = Ledger::post('depreciation', $date, __('Depreciation and amortization for :period', ['period' => $period]), [
+            $name = ['tangible' => __('Depreciation'), 'intangible' => __('Amortization')][$kind] ?? __('Depreciation and amortization');
+            $entry = Ledger::post('depreciation', $date, $name.' '.$period, [
                 ['account' => Account::system('depreciation'), 'debit' => $total],
                 ['account' => Account::system('accumulated_depreciation'), 'credit' => $total],
             ]);
@@ -126,12 +129,14 @@ class AssetService
     }
 
     /** Take back the write-off of one month. */
-    public static function undoMonth(string $period): void
+    public static function undoMonth(string $period, ?string $kind = null): void
     {
-        DB::transaction(function () use ($period) {
-            $rows = AssetDepreciation::where('period', $period)->get();
-            JournalEntry::whereIn('id', $rows->pluck('journal_entry_id')->filter()->unique())->get()->each(fn ($entry) => Ledger::void($entry));
-            AssetDepreciation::where('period', $period)->delete();
+        DB::transaction(function () use ($period, $kind) {
+            $rows = AssetDepreciation::where('period', $period)->when($kind, fn ($q) => $q->whereHas('asset', fn ($a) => $a->where('kind', $kind)))->get();
+            // a run made for both kinds at once has one entry: it is taken back as a whole
+            $entries = $rows->pluck('journal_entry_id')->filter()->unique();
+            JournalEntry::whereIn('id', $entries)->get()->each(fn ($entry) => Ledger::void($entry));
+            AssetDepreciation::where('period', $period)->where(fn ($q) => $q->whereIn('id', $rows->pluck('id'))->orWhereIn('journal_entry_id', $entries))->delete();
         });
     }
 

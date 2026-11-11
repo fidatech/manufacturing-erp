@@ -450,6 +450,10 @@
         var party = $('select[data-party]', form);
         var partyOption = party ? party.options[party.selectedIndex] : null;
         var inBase = !party || (partyOption && partyOption.getAttribute('data-cur') === form.getAttribute('data-base'));
+        // a customer's own price (Customer Price Lists) comes first, then the usual price
+        var own = null;
+        try { own = ((JSON.parse(form.getAttribute('data-prices') || '{}')[party ? party.value : ''] || {})[select.value]) || null; } catch (err) { own = null; }
+        if (price && !price.value && own) price.value = own;
         if (price && !price.value && inBase && option.getAttribute('data-price')) price.value = option.getAttribute('data-price');
         var unit = $('[data-unit]', row);
         if (unit) unit.textContent = option.getAttribute('data-unit') || '';

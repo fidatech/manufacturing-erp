@@ -3,7 +3,14 @@
 @endphp
 <aside class="app-sidebar" id="appSidebar" aria-label="{{ __('app.nav.menu') }}">
     <div class="sidebar-brand">
-        <a href="{{ route('dashboard') }}" class="brand-link"><x-brand-logo /><span class="brand-text">{{ config('app.name') }}</span></a>
+        <a href="{{ route('dashboard') }}" class="brand-link">
+            @if ($logo = \App\Http\Controllers\Setup\CompanyController::logoUrl())
+                <img src="{{ $logo }}" alt="" class="erp-brand-logo">
+            @else
+                <x-brand-logo />
+            @endif
+            <span class="brand-text">{{ setting('company_name') ?: config('app.name') }}</span>
+        </a>
     </div>
     <div class="sidebar-scroll" id="sidebarScroll">
         <div class="drawer-profile">

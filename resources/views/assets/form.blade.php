@@ -25,6 +25,15 @@
                     <option value="intangible" @selected(old('kind') === 'intangible')>{{ __('Intangible (licence, software)') }}</option>
                 </select>
             </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="f-category">{{ __('Category') }}</label>
+                <select class="form-select" id="f-category" name="category">
+                    <option value="">{{ __('Choose…') }}</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category }}" @selected(old('category') === $category)>{{ $category }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-6 col-md-3">
                 <label class="form-label" for="f-date">{{ __('Bought on') }} <span class="text-danger">*</span></label>
                 <x-date name="purchase_date" :value="old('purchase_date', today_iso())" id="f-date" required />

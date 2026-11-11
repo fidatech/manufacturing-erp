@@ -4,7 +4,10 @@
 <x-page-header :title="$title" icon="cart-flatbed" :crumbs="[[\App\Http\Controllers\Trade\PurchaseController::names()[$purchase->type], route('purchases.index', ['type' => $purchase->type])], [$purchase->number]]">
     <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
     @can('purchases.manage')
-        @if ($purchase->type === 'order' && $purchase->status === 'open')
+        @if ($purchase->type === 'quotation' && $purchase->status === 'open')
+            <a class="btn btn-outline-soft" href="{{ route('purchases.create', ['type' => 'order', 'from' => $purchase->id]) }}">{{ __('Turn into an order') }}</a>
+        @endif
+        @if (in_array($purchase->type, ['order', 'quotation'], true) && $purchase->status === 'open')
             <a class="btn btn-primary" href="{{ route('purchases.create', ['type' => 'invoice', 'from' => $purchase->id]) }}">{{ __('Turn into a purchase') }}</a>
         @endif
         @if ($purchase->type === 'invoice' && $purchase->status === 'posted')

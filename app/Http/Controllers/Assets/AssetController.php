@@ -49,12 +49,37 @@ class AssetController extends Controller
         ]);
     }
 
+    /** Depreciation (things you can touch) or amortization (licences, software): the monthly loss of value. */
+    public function writeOff(Request $request): View
+    {
+        Gate::authorize('assets.view');
+
+        $kind = $request->route('kind') === 'amortization' ? 'intangible' : 'tangible';
+        $writtenOff = AssetDepreciation::groupBy('asset_id')->selectRaw('asset_id, SUM(amount_base) as total')->toBase()->pluck('total', 'asset_id');
+
+        $rows = Asset::where('kind', $kind)->where('status', 'active')->where('life_months', '>', 0)->orderBy('name')->get()->map(function (Asset $asset) use ($writtenOff) {
+            $off = Num::money($writtenOff[$asset->id] ?? 0);
+
+            return ['asset' => $asset, 'off' => $off, 'monthly' => Num::money(Num::div(Num::sub($asset->cost_base, $asset->salvage_base), $asset->life_months)), 'value' => Num::money(Num::sub($asset->cost_base, $off))];
+        });
+
+        return view('assets.write-off', [
+            'kind' => $kind,
+            'title' => $kind === 'tangible' ? __('Depreciation') : __('Amortization'),
+            'rows' => $rows,
+            'base' => Rates::base()->code,
+            'periods' => AssetDepreciation::whereHas('asset', fn ($q) => $q->where('kind', $kind))->groupBy('period')
+                ->selectRaw('period, SUM(amount_base) as total, COUNT(*) as assets')->orderByDesc('period')->limit(12)->toBase()->get(),
+        ]);
+    }
+
     public function create(): View
     {
         Gate::authorize('assets.manage');
 
         return view('assets.form', [
             'currencies' => Currency::where('is_active', true)->orderByDesc('is_base')->orderBy('code')->get(),
+            'categories' => \App\Models\Lookup::options('asset_category'),
             'payers' => Account::active()->with(['currency', 'type'])->whereHas('type', fn ($q) => $q->where('is_money', true)->orWhere('key', 'supplier'))->orderBy('name')->get(),
             'base' => Rates::base()->code,
         ]);
@@ -68,6 +93,7 @@ class AssetController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'class' => ['required', 'in:fixed,current'],
             'kind' => ['required', 'in:tangible,intangible'],
+            'category' => ['nullable', 'string', 'max:150'],
             'purchase_date' => ['required', 'date'],
             'quantity' => ['nullable', 'numeric', 'gt:0'],
             'cost' => ['required', 'numeric', 'gt:0'],
@@ -88,8 +114,8 @@ class AssetController extends Controller
     {
         Gate::authorize('assets.manage');
 
-        $data = $request->validate(['period' => ['required', 'date_format:Y-m']]);
-        $result = AssetService::runMonth($data['period']);
+        $data = $request->validate(['period' => ['required', 'date_format:Y-m'], 'kind' => ['nullable', 'in:tangible,intangible']]);
+        $result = AssetService::runMonth($data['period'], $data['kind'] ?? null);
 
         return back()->with($result['count'] ? 'success' : 'info', $result['count']
             ? __(':count assets written off for :period: :total.', ['count' => $result['count'], 'period' => $data['period'], 'total' => money($result['total'], Rates::base()->code)])
@@ -100,8 +126,8 @@ class AssetController extends Controller
     {
         Gate::authorize('assets.manage');
 
-        $data = $request->validate(['period' => ['required', 'date_format:Y-m']]);
-        AssetService::undoMonth($data['period']);
+        $data = $request->validate(['period' => ['required', 'date_format:Y-m'], 'kind' => ['nullable', 'in:tangible,intangible']]);
+        AssetService::undoMonth($data['period'], $data['kind'] ?? null);
 
         return back()->with('success', __('The write-off of :period was taken back.', ['period' => $data['period']]));
     }

@@ -17,16 +17,16 @@ use Illuminate\View\View;
 
 class PurchaseController extends Controller
 {
-    public const TYPES = ['invoice', 'order', 'return'];
+    public const TYPES = ['invoice', 'order', 'quotation', 'return'];
 
     public static function names(): array
     {
-        return ['invoice' => __('Purchases'), 'order' => __('Purchase orders'), 'return' => __('Purchase returns')];
+        return ['invoice' => __('Purchases'), 'order' => __('Purchase orders'), 'quotation' => __('Supplier quotations'), 'return' => __('Purchase returns')];
     }
 
     public static function singular(string $type): string
     {
-        return ['invoice' => __('Purchase'), 'order' => __('Purchase order'), 'return' => __('Purchase return')][$type];
+        return ['invoice' => __('Purchase'), 'order' => __('Purchase order'), 'quotation' => __('Supplier quotation'), 'return' => __('Purchase return')][$type];
     }
 
     public function index(Request $request): View
@@ -45,7 +45,7 @@ class PurchaseController extends Controller
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(25)->withQueryString();
 
-        return view('purchases.index', ['purchases' => $purchases, 'type' => $type, 'names' => self::names(), 'filters' => $filters]);
+        return view('purchases.index', ['purchases' => $purchases, 'type' => $type, 'names' => self::names(), 'filters' => $filters, 'grn' => $request->query('view') === 'grn']);
     }
 
     public function create(Request $request): View
@@ -100,8 +100,9 @@ class PurchaseController extends Controller
 
         $purchase = PurchaseService::create($data);
 
-        if (! empty($data['parent_id']) && $data['type'] === 'invoice') {
-            Purchase::where('id', $data['parent_id'])->where('type', 'order')->update(['status' => 'converted']);
+        // the quotation or order this paper was made from is now done
+        if (! empty($data['parent_id']) && in_array($data['type'], ['order', 'invoice'], true)) {
+            Purchase::where('id', $data['parent_id'])->whereIn('type', PurchaseService::OPEN_TYPES)->where('status', 'open')->update(['status' => 'converted']);
         }
 
         return redirect()->route('purchases.show', ['id' => $purchase->id])->with('success', __('Saved as :number.', ['number' => $purchase->number]));

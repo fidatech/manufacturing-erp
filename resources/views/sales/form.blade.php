@@ -7,7 +7,7 @@
 @section('content')
 <x-page-header :title="__('Add :name', ['name' => $title])" icon="file-invoice-dollar" :crumbs="[[\App\Http\Controllers\Trade\SaleController::names()[$type], route('sales.index', ['type' => $type])], [__('Add')]]" />
 
-<form method="POST" action="{{ route('sales.store') }}" data-totals data-base="{{ $base }}">
+<form method="POST" action="{{ route('sales.store') }}" data-totals data-base="{{ $base }}" data-prices="{{ json_encode($prices) }}">
     @csrf
     <input type="hidden" name="type" value="{{ $type }}">
     @if ($from)
