@@ -389,9 +389,12 @@
     document.addEventListener('click', function (e) {
         var add = e.target.closest('[data-add-row]');
         if (add) {
+            // a form can have several groups of rows: data-add-row="costs" works on data-rows-body="costs"
             var form = add.closest('form');
-            var body = $('[data-rows-body]', form);
-            var template = $('[data-row-template]', form);
+            var group = add.getAttribute('data-add-row');
+            var pick = group ? '="' + group + '"' : '';
+            var body = $('[data-rows-body' + pick + ']', form);
+            var template = $('[data-row-template' + pick + ']', form);
             if (!body || !template) return;
             var holder = document.createElement('tbody');
             holder.innerHTML = template.innerHTML.replace(/__i__/g, String(rowCounter++));
@@ -443,12 +446,26 @@
         var row = select.closest('[data-row]');
         if (!option || !row) return;
         var price = $('[data-price]', row);
-        if (price && !price.value && option.getAttribute('data-price')) price.value = option.getAttribute('data-price');
+        var form = select.closest('form');
+        var party = $('select[data-party]', form);
+        var partyOption = party ? party.options[party.selectedIndex] : null;
+        var inBase = !party || (partyOption && partyOption.getAttribute('data-cur') === form.getAttribute('data-base'));
+        if (price && !price.value && inBase && option.getAttribute('data-price')) price.value = option.getAttribute('data-price');
         var unit = $('[data-unit]', row);
         if (unit) unit.textContent = option.getAttribute('data-unit') || '';
         recalc(select.closest('form'));
     });
-    $$('form[data-totals]').forEach(recalc);
+    // the currency of the chosen customer or supplier is shown next to the totals
+    var showCurrency = function (form) {
+        var party = $('select[data-party]', form);
+        var option = party ? party.options[party.selectedIndex] : null;
+        var code = option && option.value ? option.getAttribute('data-cur') : '';
+        $$('[data-party-cur]', form).forEach(function (el) { el.textContent = code; });
+    };
+    document.addEventListener('change', function (e) {
+        if (e.target.matches && e.target.matches('select[data-party]')) showCurrency(e.target.closest('form'));
+    });
+    $$('form[data-totals]').forEach(function (form) { recalc(form); showCurrency(form); });
 
     // Money form: show the second amount only when the two accounts use different currencies.
     $$('form[data-money-form]').forEach(function (form) {

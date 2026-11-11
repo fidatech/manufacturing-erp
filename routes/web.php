@@ -8,10 +8,14 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\StockController;
+use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\PreferenceController;
+use App\Http\Controllers\Trade\PurchaseController;
+use App\Http\Controllers\Trade\SaleController;
 use App\Http\Controllers\Setup\AccountTypeController;
 use App\Http\Controllers\Setup\CompanyController;
 use App\Http\Controllers\Setup\CurrencyController;
@@ -68,6 +72,33 @@ Route::middleware('auth')->group(function () use ($crud) {
 
     // Products and raw materials
     $crud('items/{type}', ItemController::class, 'items');
+
+    // Purchases: orders, bills, goods received, returns
+    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+    Route::get('purchases/create', [PurchaseController::class, 'create'])->name('purchases.create');
+    Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
+    Route::get('purchases/{id}', [PurchaseController::class, 'show'])->name('purchases.show')->whereNumber('id');
+    Route::post('purchases/{id}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive')->whereNumber('id');
+    Route::post('purchases/{id}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel')->whereNumber('id');
+
+    // Sales: quotations, bills, delivery, returns
+    Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
+    Route::get('sales/create', [SaleController::class, 'create'])->name('sales.create');
+    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::get('sales/{id}', [SaleController::class, 'show'])->name('sales.show')->whereNumber('id');
+    Route::get('sales/{id}/print', [SaleController::class, 'print'])->name('sales.print')->whereNumber('id');
+    Route::post('sales/{id}/delivery', [SaleController::class, 'delivery'])->name('sales.delivery')->whereNumber('id');
+    Route::post('sales/{id}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel')->whereNumber('id');
+
+    // Stock
+    Route::get('stock', [StockController::class, 'index'])->name('stock.index');
+    Route::get('stock/batches', [StockController::class, 'batches'])->name('stock.batches');
+    Route::get('stock/card/{id}', [StockController::class, 'card'])->name('stock.card')->whereNumber('id');
+    Route::get('stock/{type}', [StockDocController::class, 'index'])->name('stock-docs.index')->whereIn('type', StockDocController::TYPES);
+    Route::get('stock/{type}/create', [StockDocController::class, 'create'])->name('stock-docs.create')->whereIn('type', StockDocController::TYPES);
+    Route::post('stock/{type}', [StockDocController::class, 'store'])->name('stock-docs.store')->whereIn('type', StockDocController::TYPES);
+    Route::get('stock/{type}/{id}', [StockDocController::class, 'show'])->name('stock-docs.show')->whereIn('type', StockDocController::TYPES)->whereNumber('id');
+    Route::post('stock/{type}/{id}/cancel', [StockDocController::class, 'cancel'])->name('stock-docs.cancel')->whereIn('type', StockDocController::TYPES)->whereNumber('id');
 
     // Money and day book
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');

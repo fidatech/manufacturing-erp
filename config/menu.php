@@ -22,6 +22,20 @@ return [
     ['label' => 'Dashboard', 'icon' => 'gauge-high', 'route' => 'dashboard'],
 
     ['heading' => 'Daily work'],
+    ['label' => 'Sales', 'icon' => 'file-invoice-dollar', 'children' => [
+        ['label' => 'New sale', 'route' => 'sales.create', 'params' => ['type' => 'invoice'], 'can' => 'sales.manage'],
+        ['label' => 'Sales', 'route' => 'sales.index', 'params' => ['type' => 'invoice'], 'active' => 'sales.*', 'can' => 'sales.view'],
+        ['label' => 'Quotations', 'route' => 'sales.index', 'params' => ['type' => 'quotation'], 'can' => 'sales.view'],
+        ['label' => 'Deliveries to send', 'route' => 'sales.index', 'params' => ['type' => 'invoice', 'delivery' => 'pending'], 'can' => 'sales.view'],
+        ['label' => 'Sale returns', 'route' => 'sales.index', 'params' => ['type' => 'return'], 'can' => 'sales.view'],
+    ]],
+    ['label' => 'Purchases', 'icon' => 'cart-flatbed', 'children' => [
+        ['label' => 'New purchase', 'route' => 'purchases.create', 'params' => ['type' => 'invoice'], 'can' => 'purchases.manage'],
+        ['label' => 'Purchases', 'route' => 'purchases.index', 'params' => ['type' => 'invoice'], 'active' => 'purchases.*', 'can' => 'purchases.view'],
+        ['label' => 'Purchase orders', 'route' => 'purchases.index', 'params' => ['type' => 'order'], 'can' => 'purchases.view'],
+        ['label' => 'Goods on the way', 'route' => 'purchases.index', 'params' => ['type' => 'invoice', 'waiting' => 1], 'can' => 'purchases.view'],
+        ['label' => 'Purchase returns', 'route' => 'purchases.index', 'params' => ['type' => 'return'], 'can' => 'purchases.view'],
+    ]],
     ['label' => 'Money', 'icon' => 'money-bill-wave', 'children' => [
         ['label' => 'All money entries', 'route' => 'money.index', 'can' => 'money.view'],
         ['label' => 'Money in', 'route' => 'money.create', 'params' => ['kind' => 'in'], 'can' => 'money.manage'],
@@ -31,6 +45,11 @@ return [
         ['label' => 'Day book (roznamcha)', 'route' => 'journal.index', 'active' => 'journal.*', 'can' => 'journal.view'],
     ]],
     ['label' => 'Stock', 'icon' => 'boxes-stacked', 'children' => [
+        ['label' => 'Stock on hand', 'route' => 'stock.index', 'can' => 'inventory.view'],
+        ['label' => 'Batches and expiry', 'route' => 'stock.batches', 'can' => 'inventory.view'],
+        ['label' => 'Move between warehouses', 'route' => 'stock-docs.index', 'params' => ['type' => 'transfer'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
+        ['label' => 'Physical count', 'route' => 'stock-docs.index', 'params' => ['type' => 'count'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
+        ['label' => 'Opening stock', 'route' => 'stock-docs.index', 'params' => ['type' => 'opening'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
         ['label' => 'Products', 'route' => 'items.index', 'params' => ['type' => 'product'], 'active' => 'items.*', 'can' => 'items.view'],
         ['label' => 'Raw materials', 'route' => 'items.index', 'params' => ['type' => 'raw'], 'active' => 'items.*', 'can' => 'items.view'],
         ['label' => 'Item groups', 'route' => 'item-categories.index', 'active' => 'item-categories.*', 'can' => 'items.view'],
