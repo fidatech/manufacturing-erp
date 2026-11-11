@@ -238,6 +238,11 @@ preg_match_all('/(?:[\'"]icon[\'"]\s*=>\s*[\'"]|\bicon=")([a-z0-9-]+)[\'"]/', $s
 foreach ($m[1] as $name) {
     $wanted['s-'.$name] = true;
 }
+// protected string $icon = 'box'; in a controller
+preg_match_all('/\$icon\s*=\s*\'([a-z0-9-]+)\'/', $sources, $m);
+foreach ($m[1] as $name) {
+    $wanted['s-'.$name] = true;
+}
 // #s-sun / #r-eye referenced from JavaScript, or listed in the safelist
 preg_match_all('/#([sr]-[a-z0-9-]+)\b/', $sources, $m);
 foreach ($m[1] as $id) {

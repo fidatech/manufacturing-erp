@@ -1,0 +1,220 @@
+<?php
+
+namespace App\Http\Controllers\Accounts;
+
+use App\Http\Controllers\CrudController;
+use App\Models\Account;
+use App\Models\AccountType;
+use App\Models\Currency;
+use App\Services\Ledger;
+use App\Support\Num;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+
+/**
+ * Customers, suppliers, banks, sarafis, shareholders, employees, warehouse managers,
+ * cash boxes, loans, income and expense names: all are accounts of a kind.
+ * The address /accounts/{type} decides which kind this screen shows.
+ */
+class AccountController extends CrudController
+{
+    protected string $model = Account::class;
+
+    protected string $route = 'accounts';
+
+    protected string $permission = 'accounts';
+
+    protected string $title = 'Accounts';
+
+    protected string $singular = 'Account';
+
+    protected array $search = ['name', 'phone', 'company'];
+
+    protected array $with = ['currency', 'type'];
+
+    private ?AccountType $type = null;
+
+    private ?array $balances = null;
+
+    /** Screen titles and icons of the kinds that come with the system. */
+    private const SCREENS = [
+        'customer' => ['Customers', 'Customer', 'user-group'],
+        'supplier' => ['Suppliers', 'Supplier', 'truck-field'],
+        'bank' => ['Banks', 'Bank Account', 'building-columns'],
+        'sarafi' => ['Sarafi', 'Sarafi', 'money-bill-transfer'],
+        'cash' => ['Cash Boxes', 'Cash Box', 'vault'],
+        'shareholder' => ['Shareholders', 'Shareholder', 'handshake'],
+        'employee' => ['Employees', 'Employee', 'id-badge'],
+        'warehouse_manager' => ['Warehouse Managers', 'Warehouse Manager', 'user-tie'],
+        'liability' => ['Loans & Liabilities', 'Loan / Liability', 'hand-holding-dollar'],
+        'expense' => ['Expense Categories', 'Expense Category', 'receipt'],
+        'income' => ['Income Categories', 'Income Category', 'sack-dollar'],
+    ];
+
+    protected function type(): AccountType
+    {
+        if ($this->type === null) {
+            $this->type = AccountType::where('key', request()->route('type'))->where('is_system', false)->firstOrFail();
+            [$this->title, $this->singular, $this->icon] = self::SCREENS[$this->type->key] ?? [$this->type->name, $this->type->name, 'folder'];
+            if ($this->type->key === 'employee') {
+                $this->permission = 'hr';
+            }
+        }
+
+        return $this->type;
+    }
+
+    public function callAction($method, $parameters)
+    {
+        $this->type();
+
+        return parent::callAction($method, $parameters);
+    }
+
+    protected function routeParams(): array
+    {
+        return ['type' => $this->type()->key];
+    }
+
+    protected function query(Request $request): Builder
+    {
+        return Account::query()->where('account_type_id', $this->type()->id)->whereNull('system_key');
+    }
+
+    protected function fields(?Model $record): array
+    {
+        $type = $this->type();
+        $used = $record && $record->lines()->exists();
+        $nameLabel = in_array($type->key, ['expense', 'income', 'cash', 'bank'], true) ? 'Name' : 'Full name';
+
+        $fields = [
+            ['name' => 'name', 'label' => $nameLabel, 'rules' => ['required', 'string', 'max:255']],
+            ['name' => 'currency_id', 'label' => 'Currency of this account', 'type' => 'select', 'readonly' => $used,
+                'options' => Currency::where('is_active', true)->orderByDesc('is_base')->orderBy('code')->pluck('code', 'id')->all(),
+                'rules' => ['required', 'exists:currencies,id'], 'default' => Currency::where('is_base', true)->value('id'),
+                'help' => $used ? 'The currency cannot change after the first transaction.' : 'All money of this account is counted in this currency.'],
+        ];
+
+        if ($type->is_party) {
+            $fields[] = ['name' => 'phone', 'label' => 'Phone', 'rules' => ['nullable', 'string', 'max:50']];
+            if (! in_array($type->key, ['employee', 'warehouse_manager'], true)) {
+                $fields[] = ['name' => 'company', 'label' => 'Company name', 'rules' => ['nullable', 'string', 'max:255']];
+            }
+            $fields[] = ['name' => 'address', 'label' => 'Address', 'rules' => ['nullable', 'string', 'max:255'], 'col' => 12];
+        }
+
+        foreach (self::extraFields($type->key) as $field) {
+            $fields[] = $field + ['meta' => true];
+        }
+
+        $fields[] = ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000'], 'col' => 12];
+        $fields[] = ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true];
+
+        if (! $record && ! in_array($type->nature, ['income', 'expense'], true)) {
+            $fields[] = ['name' => 'opening_amount', 'label' => 'Balance today (if any)', 'type' => 'decimal', 'virtual' => true, 'rules' => ['nullable', 'numeric', 'min:0'],
+                'help' => 'Leave empty when the account starts from zero.'];
+            $fields[] = ['name' => 'opening_side', 'label' => 'That balance means', 'type' => 'select', 'virtual' => true, 'rules' => ['required', 'in:debit,credit'],
+                'options' => self::sides($type), 'default' => in_array($type->nature, ['liability', 'equity'], true) ? 'credit' : 'debit'];
+        }
+
+        return $fields;
+    }
+
+    /** Plain-language meaning of the two sides of an account, by kind. */
+    public static function sides(AccountType $type): array
+    {
+        if ($type->is_money) {
+            return ['debit' => __('We have this money'), 'credit' => __('We owe this money')];
+        }
+        if ($type->key === 'shareholder') {
+            return ['credit' => __('Capital they put in'), 'debit' => __('They owe the company')];
+        }
+
+        return ['debit' => __('They owe us'), 'credit' => __('We owe them')];
+    }
+
+    /** Extra boxes a kind of account needs. They are kept in the "meta" column. */
+    private static function extraFields(string $key): array
+    {
+        return match ($key) {
+            'bank' => [
+                ['name' => 'bank_name', 'label' => 'Bank', 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'account_number', 'label' => 'Account number', 'rules' => ['nullable', 'string', 'max:100']],
+            ],
+            'employee' => [
+                ['name' => 'father_name', 'label' => 'Father name', 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'job_title', 'label' => 'Job', 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'gender', 'label' => 'Gender', 'type' => 'select', 'options' => ['male' => __('Male'), 'female' => __('Female')], 'rules' => ['nullable', 'in:male,female']],
+                ['name' => 'id_number', 'label' => 'Tazkira number', 'rules' => ['nullable', 'string', 'max:100']],
+                ['name' => 'tax_number', 'label' => 'Tax number (TIN)', 'rules' => ['nullable', 'string', 'max:100']],
+                ['name' => 'join_date', 'label' => 'Started work on', 'type' => 'date', 'rules' => ['nullable', 'date']],
+                ['name' => 'salary', 'label' => 'Monthly salary', 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0'], 'help' => 'In the currency of this account.'],
+                ['name' => 'salary_tax', 'label' => 'Monthly salary tax', 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0']],
+            ],
+            'shareholder' => [
+                ['name' => 'share_percent', 'label' => 'Share of the company (%)', 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0', 'max:100']],
+            ],
+            default => [],
+        };
+    }
+
+    protected function columns(): array
+    {
+        $type = $this->type();
+        $columns = ['Name' => fn (Account $a) => $a->name.($a->company ? ' · '.$a->company : '')];
+
+        if ($type->is_party) {
+            $columns['Phone'] = fn (Account $a) => $a->phone;
+        }
+        if ($type->key === 'employee') {
+            $columns['Job'] = fn (Account $a) => $a->metaValue('job_title');
+            $columns['Monthly salary'] = fn (Account $a) => $a->metaValue('salary') ? money($a->metaValue('salary'), $a->currency->code) : '';
+        }
+        $columns['Balance'] = fn (Account $a) => $a->describeBalance($this->balanceOf($a));
+        $columns['In use'] = fn (Account $a) => $a->is_active ? __('Yes') : __('No');
+
+        return $columns;
+    }
+
+    private function balanceOf(Account $account): string
+    {
+        $this->balances ??= Ledger::balances();
+
+        return $this->balances[$account->id]['own'] ?? '0.00';
+    }
+
+    protected function rowLinks(Model $record): array
+    {
+        return [['label' => __('Statement'), 'url' => route('statement', ['id' => $record->id])]];
+    }
+
+    protected function beforeSave(array $data, ?Model $record, Request $request): array
+    {
+        if (! $record) {
+            $data['account_type_id'] = $this->type()->id;
+        }
+
+        return $data;
+    }
+
+    protected function afterSave(Model $record, array $virtual, Request $request, bool $created): void
+    {
+        $amount = Num::money($virtual['opening_amount'] ?? 0);
+        if (! $created || ! Num::isPositive($amount)) {
+            return;
+        }
+
+        $side = $virtual['opening_side'] ?? 'debit';
+        $base = \App\Services\Rates::toBase($amount, $record->currency_id, today_iso());
+        Ledger::post('opening', today_iso(), __('Opening balance').': '.$record->name, [
+            ['account' => $record, $side => $amount, 'base' => $base],
+            ['account' => Account::system('opening'), ($side === 'debit' ? 'credit' : 'debit') => $base],
+        ], $record);
+    }
+
+    protected function deleteProblem(Model $record): ?string
+    {
+        return $record->lines()->exists() ? __('This account already has transactions. Switch it off instead of deleting it.') : null;
+    }
+}

@@ -8,3 +8,7 @@
 
 # toast colours are built in JavaScript as "is-" + type
 is-success is-danger is-warning is-info
+
+# screen icons chosen in PHP lists (AccountController::SCREENS, ItemController)
+#s-user-group #s-truck-field #s-building-columns #s-money-bill-transfer #s-vault #s-handshake
+#s-id-badge #s-user-tie #s-hand-holding-dollar #s-receipt #s-sack-dollar #s-folder #s-flask #s-box

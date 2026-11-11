@@ -19,6 +19,18 @@
 .sidebar-brand .brand-link { min-width: 0; }
 .sidebar-brand .brand-text { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Select with a search box (replaces Select2). */
+.ss { position: relative; }
+.ss-list { display: none; position: absolute; z-index: 1060; top: calc(100% + 4px); inset-inline: 0; max-height: 260px; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 4px; }
+.ss.open .ss-list { display: block; }
+.ss-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--heading); }
+.ss-item.focus, .ss-item:hover { background: rgba(var(--primary-rgb), .1); color: var(--primary); }
+.ss-empty { padding: 10px; color: var(--muted); font-size: 14px; }
+
+/* Rows of a sale, purchase or journal entry. */
+[data-rows] td { vertical-align: middle; }
+[data-rows] .form-control, [data-rows] .form-select { min-width: 90px; }
+
 /* Buttons of a form that is being sent. */
 .is-busy { opacity: .65; pointer-events: none; }
 

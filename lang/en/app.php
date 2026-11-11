@@ -43,6 +43,16 @@ return [
         'hero_text' => 'Record purchases, production batches and sales, and always know your stock.',
     ],
 
+    'errors' => [
+        'no_rate' => 'There is no exchange rate for :currency yet. Open Setup > Exchange rates and write how many :currency equal 1 :base.',
+        'negative_amount' => 'An amount cannot be below zero.',
+        'empty_entry' => 'Nothing to save: fill in at least two lines with amounts.',
+        'unbalanced' => 'The debit and credit amounts are not equal.',
+        'qty_positive' => 'The quantity of :item must be more than zero.',
+        'not_enough_stock' => 'Not enough :item in :warehouse. In stock: :have, needed: :need.',
+        'cancel_would_go_negative' => 'This cannot be cancelled: some of :item has already been sold or used.',
+    ],
+
     'dashboard' => [
         'title' => 'Dashboard',
         'empty_title' => 'Welcome, :name',

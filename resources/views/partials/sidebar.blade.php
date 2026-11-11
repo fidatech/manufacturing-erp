@@ -16,24 +16,24 @@
             <button type="submit" form="logoutForm"><x-icon name="right-from-bracket" /><span>{{ __('app.nav.sign_out') }}</span></button>
         </div>
         <ul class="sidebar-menu" id="sidebarMenu">
-            @foreach (config('menu') as $item)
+            @foreach (\App\Support\Menu::for($user) as $item)
                 @if (isset($item['heading']))
                     <li class="menu-heading"><span>{{ __($item['heading']) }}</span></li>
                 @elseif (isset($item['children']))
                     @php
-                        $open = collect($item['children'])->contains(fn ($child) => request()->routeIs($child['active'] ?? $child['route']));
+                        $open = collect($item['children'])->contains(fn ($child) => \App\Support\Menu::isActive($child));
                     @endphp
                     <li class="menu-item has-sub {{ $open ? 'open' : '' }}">
                         <a class="menu-link" href="#menu-{{ $loop->index }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ $open ? 'true' : 'false' }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span><x-icon name="chevron-right" class="menu-arrow" /></a>
                         <ul class="menu-sub collapse {{ $open ? 'show' : '' }}" id="menu-{{ $loop->index }}">
                             @foreach ($item['children'] as $child)
-                                <li><a class="menu-sublink {{ request()->routeIs($child['active'] ?? $child['route']) ? 'active' : '' }}" href="{{ route($child['route']) }}">{{ __($child['label']) }}</a></li>
+                                <li><a class="menu-sublink {{ \App\Support\Menu::isActive($child) ? 'active' : '' }}" href="{{ \App\Support\Menu::url($child) }}">{{ __($child['label']) }}</a></li>
                             @endforeach
                         </ul>
                     </li>
                 @else
-                    <li class="menu-item {{ request()->routeIs($item['active'] ?? $item['route']) ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route($item['route']) }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span></a>
+                    <li class="menu-item {{ \App\Support\Menu::isActive($item) ? 'active' : '' }}">
+                        <a class="menu-link" href="{{ \App\Support\Menu::url($item) }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span></a>
                     </li>
                 @endif
             @endforeach

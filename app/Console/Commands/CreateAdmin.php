@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\Permissions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -36,11 +37,14 @@ class CreateAdmin extends Command
             return self::FAILURE;
         }
 
-        User::create([
+        Permissions::sync();
+
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
+        $user->assignRole(User::ADMIN_ROLE);
 
         $this->info("Administrator {$data['email']} created. You can sign in now.");
 

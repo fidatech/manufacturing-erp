@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\Audited;
 use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Audited, HasFactory, HasRoles, Notifiable;
+
+    /** The role that may do everything. It cannot be edited or removed. */
+    public const ADMIN_ROLE = 'Administrator';
+
+    protected $fillable = ['name', 'email', 'password', 'is_active', 'calendar'];
+
+    protected $hidden = ['password', 'remember_token'];
 
     /** One or two capital letters for the avatar, e.g. "Ahmad Karimi" gives "AK". */
     public function initials(): string
@@ -26,16 +30,17 @@ class User extends Authenticatable
         return mb_strtoupper(implode('', $letters)) ?: '?';
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(self::ADMIN_ROLE);
+    }
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 }

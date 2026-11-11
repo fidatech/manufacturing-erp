@@ -307,6 +307,169 @@
         });
     }
 
+    // ------------------------------------------------ select with search box
+    // <select data-search> becomes a box you can type in. No library needed.
+    ERP.searchSelect = function (select) {
+        if (select._ss || select.disabled) return;
+        select._ss = true;
+        var wrap = document.createElement('div');
+        wrap.className = 'ss';
+        var box = document.createElement('input');
+        box.type = 'text';
+        box.className = 'form-control ' + (select.classList.contains('is-invalid') ? 'is-invalid' : '');
+        box.autocomplete = 'off';
+        box.placeholder = select.options.length && !select.options[0].value ? select.options[0].text : '';
+        if (select.required) { box.required = true; select.required = false; }
+        if (select.id) { box.id = select.id; select.removeAttribute('id'); }
+        var list = document.createElement('div');
+        list.className = 'ss-list';
+        select.parentNode.insertBefore(wrap, select);
+        wrap.appendChild(box);
+        wrap.appendChild(list);
+        wrap.appendChild(select);
+        select.hidden = true;
+        var focus = 0;
+        var current = function () { var o = select.options[select.selectedIndex]; return o && o.value ? o.text : ''; };
+        var close = function () { wrap.classList.remove('open'); };
+        var show = function (all) {
+            var q = all ? '' : box.value.trim().toLowerCase();
+            var html = '';
+            var n = 0;
+            for (var i = 0; i < select.options.length && n < 60; i++) {
+                var o = select.options[i];
+                if (!o.value || (q && o.text.toLowerCase().indexOf(q) < 0)) continue;
+                html += '<div class="ss-item' + (n === 0 ? ' focus' : '') + '" data-value="' + ERP.escape(o.value) + '">' + ERP.escape(o.text) + '</div>';
+                n++;
+            }
+            list.innerHTML = html || '<div class="ss-empty">' + ERP.escape(T.noResults || 'No results') + '</div>';
+            focus = 0;
+            wrap.classList.add('open');
+        };
+        var pick = function (value) {
+            select.value = value;
+            box.value = current();
+            close();
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        box.value = current();
+        box.addEventListener('focus', function () { box.select(); show(true); });
+        box.addEventListener('input', function () { show(false); });
+        box.addEventListener('keydown', function (e) {
+            var items = $$('.ss-item', list);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!items.length) return;
+                focus = (focus + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+                items.forEach(function (it, n) { it.classList.toggle('focus', n === focus); });
+                items[focus].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter' && wrap.classList.contains('open')) {
+                e.preventDefault();
+                if (items[focus]) pick(items[focus].getAttribute('data-value'));
+            } else if (e.key === 'Escape') {
+                close();
+            }
+        });
+        // mousedown comes before blur, so the choice is not lost
+        list.addEventListener('mousedown', function (e) {
+            var item = e.target.closest('.ss-item');
+            if (item) { e.preventDefault(); pick(item.getAttribute('data-value')); }
+        });
+        box.addEventListener('blur', function () {
+            if (box.value.trim() === '' && select.value !== '') pick('');
+            else box.value = current();
+            close();
+        });
+    };
+    var enhance = function (scope) { $$('select[data-search]', scope).forEach(ERP.searchSelect); };
+
+    // ------------------------------------------------------- rows of a paper
+    // <table data-rows> with <tbody data-rows-body>, <template data-row-template> (uses __i__ as
+    // the row number), a [data-add-row] button and a [data-remove-row] button in every row.
+    var rowCounter = 1000;
+    document.addEventListener('click', function (e) {
+        var add = e.target.closest('[data-add-row]');
+        if (add) {
+            var form = add.closest('form');
+            var body = $('[data-rows-body]', form);
+            var template = $('[data-row-template]', form);
+            if (!body || !template) return;
+            var holder = document.createElement('tbody');
+            holder.innerHTML = template.innerHTML.replace(/__i__/g, String(rowCounter++));
+            var row = holder.firstElementChild;
+            body.appendChild(row);
+            enhance(row);
+            var first = $('input:not([type="hidden"]), select', row);
+            if (first) first.focus();
+            return;
+        }
+        var remove = e.target.closest('[data-remove-row]');
+        if (remove) {
+            var tr = remove.closest('[data-row]');
+            var tbody = tr.parentNode;
+            if ($$('[data-row]', tbody).length > 1) tr.remove();
+            else $$('input:not([type="hidden"])', tr).forEach(function (i) { i.value = ''; });
+            recalc(tbody.closest('form'));
+        }
+    });
+
+    // Totals of a sale or purchase. Only for showing: the server calculates again when saving.
+    var num = function (v) { var n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isFinite(n) ? n : 0; };
+    var show2 = function (n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    function recalc(form) {
+        if (!form || !form.hasAttribute('data-totals')) return;
+        var subtotal = 0;
+        $$('[data-row]', form).forEach(function (row) {
+            var qty = $('[data-qty]', row);
+            var price = $('[data-price]', row);
+            var out = $('[data-line-total]', row);
+            if (!qty || !price) return;
+            var total = Math.round(num(qty.value) * num(price.value) * 100) / 100;
+            subtotal += total;
+            if (out) out.textContent = show2(total);
+        });
+        var discount = num(($('[data-discount]', form) || {}).value);
+        var set = function (sel, value) { var el = $(sel, form); if (el) el.textContent = show2(value); };
+        set('[data-subtotal]', subtotal);
+        set('[data-grand]', subtotal - discount);
+        var paid = num(($('[data-paid]', form) || {}).value);
+        set('[data-remaining]', subtotal - discount - paid);
+    }
+    document.addEventListener('input', function (e) { recalc(e.target.closest('form')); });
+    // choosing an item fills its usual price and unit
+    document.addEventListener('change', function (e) {
+        var select = e.target;
+        if (!select.matches || !select.matches('select[data-item]')) return;
+        var option = select.options[select.selectedIndex];
+        var row = select.closest('[data-row]');
+        if (!option || !row) return;
+        var price = $('[data-price]', row);
+        if (price && !price.value && option.getAttribute('data-price')) price.value = option.getAttribute('data-price');
+        var unit = $('[data-unit]', row);
+        if (unit) unit.textContent = option.getAttribute('data-unit') || '';
+        recalc(select.closest('form'));
+    });
+    $$('form[data-totals]').forEach(recalc);
+
+    // Money form: show the second amount only when the two accounts use different currencies.
+    $$('form[data-money-form]').forEach(function (form) {
+        var sync = function () {
+            var cur = {};
+            $$('select[data-currency-of]', form).forEach(function (s) {
+                var o = s.options[s.selectedIndex];
+                cur[s.getAttribute('data-currency-of')] = o && o.value ? o.getAttribute('data-cur') : '';
+            });
+            $$('[data-cur-label]', form).forEach(function (el) { var c = cur[el.getAttribute('data-cur-label')]; el.textContent = c ? '(' + c + ')' : ''; });
+            var box = $('[data-other-amount]', form);
+            if (box) {
+                var differ = !!cur.money && !!cur.other && cur.money !== cur.other;
+                box.hidden = !differ;
+                if (!differ) $('input', box).value = '';
+            }
+        };
+        form.addEventListener('change', sync);
+        sync();
+    });
+
     // ------------------------------------------- tables become cards on phones
     var SKIP = '.keep-table, .table-sm';
     ERP.cardify = function (table) {
@@ -334,6 +497,7 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     syncTheme();
+    enhance(document);
     cardifyAll();
     var active = $('#sidebarMenu .menu-sublink.active, #sidebarMenu .menu-item.active > .menu-link');
     var scroller = $('#sidebarScroll');

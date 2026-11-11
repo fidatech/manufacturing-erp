@@ -36,7 +36,7 @@ class LoginController extends Controller
             ]);
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
             RateLimiter::hit($key);
 
             throw ValidationException::withMessages(['email' => __('auth.failed')]);
@@ -44,6 +44,7 @@ class LoginController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        audit('signed in', null, $request->user()->name);
 
         return redirect()->intended(route('dashboard'));
     }
