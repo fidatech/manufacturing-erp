@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Trade;
 
+use App\Exceptions\UserError;
 use App\Http\Controllers\CrudController;
 use App\Models\Account;
 use App\Models\Item;
@@ -9,8 +10,13 @@ use App\Models\PriceList;
 use App\Support\Num;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 /** A customer's own price for an item. The sale form fills it in by itself. */
 class PriceListController extends CrudController
@@ -40,6 +46,58 @@ class PriceListController extends CrudController
         return PriceList::query()->when($term !== '', fn ($q) => $q->where(fn ($i) => $i
             ->whereHas('customer', fn ($c) => $c->where('name', 'like', "%$term%"))
             ->orWhereHas('item', fn ($c) => $c->where('name', 'like', "%$term%")->orWhere('code', 'like', "%$term%"))));
+    }
+
+    /** New prices are written like the items of a sale: one customer, then a row for every item. */
+    public function create(Request $request): View
+    {
+        Gate::authorize($this->permission.'.manage');
+
+        return view('sales.price-list-form', $this->shared() + [
+            'customers' => Account::ofType('customer')->active()->with('currency')->orderBy('name')->get(),
+            'items' => Item::where('is_active', true)->with('unit')->orderBy('type')->orderBy('name')->get(),
+            'startLines' => old('lines', [[]]),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse|JsonResponse
+    {
+        // the single form (one item) is still used when a price is changed
+        if (! $request->has('lines')) {
+            return parent::store($request);
+        }
+        Gate::authorize($this->permission.'.manage');
+
+        $data = $request->validate([
+            'customer_id' => ['required', Rule::exists('accounts', 'id')],
+            'lines' => ['required', 'array'],
+            'lines.*.item_id' => ['nullable', 'exists:items,id'],
+            'lines.*.price' => ['nullable', 'numeric', 'min:0'],
+        ], [], ['customer_id' => __('customer')]);
+
+        $customer = Account::ofType('customer')->findOrFail($data['customer_id']);
+        $prices = [];
+        foreach ($data['lines'] as $line) {
+            if (empty($line['item_id']) || ! isset($line['price']) || $line['price'] === '') {
+                continue;
+            }
+            if (isset($prices[$line['item_id']])) {
+                throw new UserError(__('The same item is written twice.'));
+            }
+            $prices[$line['item_id']] = Num::round($line['price'], 6);
+        }
+        if (! $prices) {
+            throw new UserError(__('Add at least one item with a price.'));
+        }
+
+        // an item that already has a price for this customer gets the new price
+        DB::transaction(function () use ($customer, $prices) {
+            foreach ($prices as $itemId => $price) {
+                PriceList::updateOrCreate(['customer_id' => $customer->id, 'item_id' => $itemId], ['price' => $price]);
+            }
+        });
+
+        return redirect()->route('price-lists.index')->with('success', __(':count prices saved for :name.', ['count' => count($prices), 'name' => $customer->name]));
     }
 
     protected function fields(?Model $record): array
