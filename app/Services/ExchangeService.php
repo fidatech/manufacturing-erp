@@ -81,6 +81,52 @@ class ExchangeService
      */
     public static function create(Account $sell, Account $buy, array $data): CurrencyExchange
     {
+        $figures = self::figures($sell, $buy, $data);
+
+        return DB::transaction(function () use ($figures) {
+            $exchange = CurrencyExchange::create($figures['fields'] + ['number' => Sequence::next('EX'), 'created_by' => auth()->id()]);
+            self::post($exchange, $figures['base']);
+
+            return $exchange;
+        });
+    }
+
+    /** Change an exchange: the old money movement is cancelled and a new one is made under the same number. */
+    public static function update(CurrencyExchange $exchange, Account $sell, Account $buy, array $data): CurrencyExchange
+    {
+        if ($exchange->isCancelled()) {
+            throw new UserError(__('This exchange was deleted and cannot be changed.'));
+        }
+        $figures = self::figures($sell, $buy, $data);
+
+        return DB::transaction(function () use ($exchange, $figures) {
+            Ledger::voidSource($exchange);
+            $exchange->update($figures['fields']);
+            self::post($exchange, $figures['base']);
+
+            return $exchange;
+        });
+    }
+
+    /** Delete an exchange: the money goes back and the slip leaves the list. The audit log keeps the trace. */
+    public static function cancel(CurrencyExchange $exchange): void
+    {
+        if ($exchange->isCancelled()) {
+            return;
+        }
+        DB::transaction(function () use ($exchange) {
+            Ledger::voidSource($exchange);
+            $exchange->update(['cancelled_at' => now()]);
+        });
+    }
+
+    /**
+     * Check the numbers of an exchange and work out what is missing.
+     *
+     * @return array{fields: array<string, mixed>, base: string}
+     */
+    private static function figures(Account $sell, Account $buy, array $data): array
+    {
         if ($sell->id === $buy->id || $sell->currency_id === $buy->currency_id) {
             throw new UserError(__('Choose two different currencies.'));
         }
@@ -124,9 +170,8 @@ class ExchangeService
             default => Rates::toBase($sold, $sell->currency_id, $date),
         };
 
-        return DB::transaction(function () use ($sell, $buy, $data, $date, $sold, $bought, $rate, $operation, $base) {
-            $exchange = CurrencyExchange::create([
-                'number' => Sequence::next('EX'),
+        return [
+            'fields' => [
                 'date' => $date,
                 'sell_account_id' => $sell->id,
                 'buy_account_id' => $buy->id,
@@ -135,27 +180,36 @@ class ExchangeService
                 'operation' => $operation,
                 'buy_amount' => $bought,
                 'description' => ($data['description'] ?? null) ?: null,
-                'created_by' => auth()->id(),
-            ]);
-
-            $text = $exchange->description ?: __('Currency exchange').': '.money($sold, $sell->currency->code).' → '.money($bought, $buy->currency->code);
-            Ledger::post('exchange', $date, $exchange->number.' '.$text, [
-                ['account' => $buy, 'debit' => $bought, 'base' => $base],
-                ['account' => $sell, 'credit' => $sold, 'base' => $base],
-            ], $exchange);
-
-            return $exchange;
-        });
+            ],
+            'base' => $base,
+        ];
     }
 
-    public static function cancel(CurrencyExchange $exchange): void
+    /** Write the money movement of an exchange. */
+    private static function post(CurrencyExchange $exchange, string $base): void
     {
-        if ($exchange->isCancelled()) {
-            return;
+        $exchange->load(['sellAccount.currency', 'buyAccount.currency']);
+        $sell = $exchange->sellAccount;
+        $buy = $exchange->buyAccount;
+
+        $text = $exchange->description ?: __('Currency exchange').': '.money($exchange->sell_amount, $sell->currency->code).' → '.money($exchange->buy_amount, $buy->currency->code);
+        Ledger::post('exchange', substr((string) $exchange->getRawOriginal('date'), 0, 10), $exchange->number.' '.$text, [
+            ['account' => $buy, 'debit' => $exchange->buy_amount, 'base' => $base],
+            ['account' => $sell, 'credit' => $exchange->sell_amount, 'base' => $base],
+        ], $exchange);
+    }
+
+    /** The holder (one name, several currencies) an account belongs to, or null. */
+    public static function holderOf(int $accountId): ?string
+    {
+        foreach (self::holders() as $key => $holder) {
+            foreach ($holder['accounts'] as $account) {
+                if ($account->id === $accountId) {
+                    return $key;
+                }
+            }
         }
-        DB::transaction(function () use ($exchange) {
-            Ledger::voidSource($exchange);
-            $exchange->update(['cancelled_at' => now()]);
-        });
+
+        return null;
     }
 }

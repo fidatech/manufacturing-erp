@@ -173,6 +173,10 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('exchange', [ExchangeController::class, 'index'])->name('exchange.index');
     Route::get('exchange/rates', [ExchangeController::class, 'rates'])->name('exchange.rates');
     Route::post('exchange', [ExchangeController::class, 'store'])->name('exchange.store');
+    Route::get('exchange/create', [ExchangeController::class, 'create'])->name('exchange.create');
+    Route::get('exchange/{id}/edit', [ExchangeController::class, 'edit'])->name('exchange.edit')->whereNumber('id');
+    Route::put('exchange/{id}', [ExchangeController::class, 'update'])->name('exchange.update')->whereNumber('id');
+    Route::get('exchange/{id}/print', [ExchangeController::class, 'print'])->name('exchange.print')->whereNumber('id');
     Route::delete('exchange/{id}', [ExchangeController::class, 'destroy'])->name('exchange.destroy')->whereNumber('id');
     Route::get('money/profit', [MoneyController::class, 'profitForm'])->name('money.profit');
     Route::post('money/profit', [MoneyController::class, 'profitStore'])->name('money.profit.store');

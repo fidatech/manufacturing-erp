@@ -35,7 +35,8 @@ class ExchangeTest extends TestCase
         $this->admin();
         $this->rate('AFN', '70');
 
-        $this->get(route('exchange.index'))->assertOk()->assertSee('Seller currency')->assertSee('Operating type')->assertSee('Buyer currency')->assertSee('Cash');
+        $this->get(route('exchange.index'))->assertOk()->assertSee('Add new exchange')->assertDontSee('Seller currency');
+        $this->get(route('exchange.create'))->assertOk()->assertSee('Seller currency')->assertSee('Operating type')->assertSee('Buyer currency')->assertSee('Cash');
         $rates = $this->getJson(route('exchange.rates', ['date' => '2026-10-27']))->assertOk()->json();
         $this->assertSame('70.00', Num::money($rates[$this->currency('AFN')->id]));
         $this->assertNull($rates[$this->currency('PKR')->id]);
@@ -99,10 +100,32 @@ class ExchangeTest extends TestCase
         $this->assertSame('14100.00', Ledger::balance($afn->id));
 
         $exchange = CurrencyExchange::firstOrFail();
-        $this->delete(route('exchange.destroy', ['id' => $exchange->id]))->assertRedirect();
+        $this->get(route('exchange.edit', ['id' => $exchange->id]))->assertOk()->assertSee('Bazaar rate')->assertSee('70.5');
+
+        // the receipt carries the company name, phone and address
+        \App\Models\Setting::updateOrCreate(['key' => 'company_name'], ['value' => 'Test Foods']);
+        \App\Models\Setting::updateOrCreate(['key' => 'company_phone'], ['value' => '0799000000']);
+        \App\Models\Setting::updateOrCreate(['key' => 'company_address'], ['value' => 'Kabul Industrial Park']);
+        app()->forgetInstance('erp.settings');
+        $this->get(route('exchange.print', ['id' => $exchange->id]))->assertOk()
+            ->assertSee('Exchange receipt')->assertSee($exchange->number)->assertSee('Test Foods')->assertSee('0799000000')->assertSee('Kabul Industrial Park')
+            ->assertSee('200.00 USD')->assertSee('14,100.00 AFN')->assertSee('70.5');
+
+        // changing it: 300 USD at 71 instead, under the same number, with no trace of the old amounts in the balances
+        $this->put(route('exchange.update', ['id' => $exchange->id]), ['date' => '2026-10-28', 'holder' => $this->holder('Ahmad Sarafi'), 'sell_currency_id' => $this->currency('USD')->id, 'buy_currency_id' => $this->currency('AFN')->id, 'sell_amount' => '300', 'rate' => '71', 'operation' => 'multiply'])
+            ->assertRedirect(route('exchange.index'));
+        $this->assertSame(1, CurrencyExchange::count());
+        $this->assertSame($exchange->number, $exchange->fresh()->number);
+        $this->assertSame('-300.00', Ledger::balance($usd->id));
+        $this->assertSame('21300.00', Ledger::balance($afn->id));
+        $this->assertBooksBalance();
+
+        $this->delete(route('exchange.destroy', ['id' => $exchange->id]))->assertRedirect(route('exchange.index'));
         $this->assertTrue($exchange->fresh()->isCancelled());
         $this->assertSame('0.00', Ledger::balance($usd->id));
         $this->assertSame('0.00', Ledger::balance($afn->id));
+        $this->get(route('exchange.index'))->assertOk()->assertDontSee($exchange->number);
+        $this->get(route('exchange.edit', ['id' => $exchange->id]))->assertNotFound();
     }
 
     public function test_nothing_is_saved_when_the_numbers_do_not_agree_or_a_rate_is_missing(): void
@@ -127,7 +150,8 @@ class ExchangeTest extends TestCase
         $this->userWith(['money.view']);
         $this->rate('AFN', '70');
 
-        $this->get(route('exchange.index'))->assertOk()->assertDontSee('Save exchange');
+        $this->get(route('exchange.index'))->assertOk()->assertDontSee('Add new exchange');
+        $this->get(route('exchange.create'))->assertForbidden();
         $this->exchange(['sell_currency_id' => $this->currency('USD')->id, 'buy_currency_id' => $this->currency('AFN')->id, 'sell_amount' => '100'])->assertForbidden();
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Money;
 
 use App\Exceptions\UserError;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Setup\CompanyController;
 use App\Models\Currency;
 use App\Models\CurrencyExchange;
 use App\Services\ExchangeService;
@@ -24,18 +25,48 @@ class ExchangeController extends Controller
         $filters = $request->validate(['from' => ['nullable', 'date'], 'to' => ['nullable', 'date']]);
 
         $exchanges = CurrencyExchange::with(['sellAccount.currency', 'buyAccount.currency', 'creator'])
+            ->whereNull('cancelled_at')
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(25)->withQueryString();
 
-        return view('money.exchange', [
-            'exchanges' => $exchanges,
-            'filters' => $filters,
+        return view('money.exchange', ['exchanges' => $exchanges, 'filters' => $filters]);
+    }
+
+    public function create(): View
+    {
+        Gate::authorize('money.manage');
+
+        return $this->form(null);
+    }
+
+    public function edit(Request $request): View
+    {
+        Gate::authorize('money.manage');
+
+        return $this->form(CurrencyExchange::with(['sellAccount', 'buyAccount'])->whereNull('cancelled_at')->findOrFail($request->route('id')));
+    }
+
+    private function form(?CurrencyExchange $exchange): View
+    {
+        return view('money.exchange-form', [
+            'exchange' => $exchange,
+            'holderKey' => $exchange ? ExchangeService::holderOf($exchange->sell_account_id) : null,
             'holders' => ExchangeService::holders(),
             'currencies' => Currency::orderBy('code')->get(),
-            'rates' => $this->tableRates(old('date') ?: today_iso()),
-            'base' => Rates::base()->code,
+            'rates' => $this->tableRates(old('date') ?: ($exchange?->date?->toDateString() ?? today_iso())),
+        ]);
+    }
+
+    /** The receipt of one exchange, ready for the printer. */
+    public function print(Request $request): View
+    {
+        Gate::authorize('money.view');
+
+        return view('money.exchange-print', [
+            'exchange' => CurrencyExchange::with(['sellAccount.currency', 'buyAccount.currency', 'creator'])->findOrFail($request->route('id')),
+            'logo' => CompanyController::logoDataUri(),
         ]);
     }
 
@@ -67,6 +98,39 @@ class ExchangeController extends Controller
     {
         Gate::authorize('money.manage');
 
+        [$sell, $buy, $data] = $this->input($request);
+        $exchange = ExchangeService::create($sell, $buy, $data);
+        audit('created', $exchange, $this->words($exchange));
+
+        return redirect()->route('exchange.index')->with('success', __('Saved as :number.', ['number' => $exchange->number]));
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        Gate::authorize('money.manage');
+
+        $exchange = CurrencyExchange::whereNull('cancelled_at')->findOrFail($request->route('id'));
+        [$sell, $buy, $data] = $this->input($request);
+        ExchangeService::update($exchange, $sell, $buy, $data);
+        audit('updated', $exchange, $this->words($exchange));
+
+        return redirect()->route('exchange.index')->with('success', __(':number was changed.', ['number' => $exchange->number]));
+    }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        Gate::authorize('money.manage');
+
+        $exchange = CurrencyExchange::findOrFail($request->route('id'));
+        ExchangeService::cancel($exchange);
+        audit('deleted', $exchange, $this->words($exchange));
+
+        return redirect()->route('exchange.index')->with('success', __(':number was deleted.', ['number' => $exchange->number]));
+    }
+
+    /** @return array{0: \App\Models\Account, 1: \App\Models\Account, 2: array<string, mixed>} */
+    private function input(Request $request): array
+    {
         $data = $request->validate([
             'date' => ['required', 'date'],
             'holder' => ['required', 'string', 'max:300'],
@@ -92,20 +156,13 @@ class ExchangeController extends Controller
             throw new UserError(__(':name has no account in that currency. Add it first on the account screen.', ['name' => $holder['name']]));
         }
 
-        $exchange = ExchangeService::create($sell, $buy, $data);
-        audit('created', $exchange, $exchange->number.' '.money($exchange->sell_amount, $sell->currency->code).' → '.money($exchange->buy_amount, $buy->currency->code));
-
-        return redirect()->route('exchange.index')->with('success', __('Saved as :number.', ['number' => $exchange->number]));
+        return [$sell, $buy, $data];
     }
 
-    public function destroy(Request $request): RedirectResponse
+    private function words(CurrencyExchange $exchange): string
     {
-        Gate::authorize('money.manage');
+        $exchange->loadMissing(['sellAccount.currency', 'buyAccount.currency']);
 
-        $exchange = CurrencyExchange::findOrFail($request->route('id'));
-        ExchangeService::cancel($exchange);
-        audit('cancelled', $exchange, $exchange->number);
-
-        return back()->with('success', __(':number was cancelled.', ['number' => $exchange->number]));
+        return $exchange->number.' '.money($exchange->sell_amount, $exchange->sellAccount->currency->code).' → '.money($exchange->buy_amount, $exchange->buyAccount->currency->code);
     }
 }
