@@ -147,10 +147,10 @@ class ModulesTest extends TestCase
         // new prices are written as rows, like the items of a sale; a price that exists is replaced
         $this->get(route('price-lists.create'))->assertOk()->assertSee('data-add-row="lines"', false)->assertSee('name="lines[0][item_id]"', false);
         $cherry = \App\Models\Item::create(['type' => 'product', 'name' => 'Cherry KC6743', 'unit_id' => $mango->unit_id]);
-        $this->post(route('price-lists.store'), ['customer_id' => $customer->id, 'lines' => [['item_id' => $mango->id, 'price' => '70'], ['item_id' => $cherry->id, 'price' => '45.5'], ['item_id' => '', 'price' => '']]])
+        $this->post(route('price-lists.store'), ['customer_id' => $customer->id, 'lines' => [['item_id' => $mango->id, 'price' => '65'], ['item_id' => $cherry->id, 'price' => '45.5'], ['item_id' => '', 'price' => '']]])
             ->assertRedirect(route('price-lists.index'));
         $this->assertSame(2, \App\Models\PriceList::where('customer_id', $customer->id)->count());
-        $this->assertSame('70.00', \App\Support\Num::money(\App\Models\PriceList::where('customer_id', $customer->id)->where('item_id', $mango->id)->value('price')));
+        $this->assertSame('45.50', \App\Support\Num::money(\App\Models\PriceList::where('customer_id', $customer->id)->where('item_id', $cherry->id)->value('price')));
         $this->post(route('price-lists.store'), ['customer_id' => $customer->id, 'lines' => [['item_id' => $mango->id, 'price' => '1'], ['item_id' => $mango->id, 'price' => '2']]])->assertSessionHas('danger');
         $this->post(route('price-lists.store'), ['customer_id' => $customer->id, 'lines' => [['item_id' => '', 'price' => '']]])->assertSessionHas('danger');
         $this->get(route('sales.create', ['type' => 'invoice']))->assertOk()->assertSee('&quot;'.$mango->id.'&quot;:&quot;65&quot;', false);
