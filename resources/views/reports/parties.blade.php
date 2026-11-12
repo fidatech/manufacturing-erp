@@ -14,7 +14,7 @@
                         <td>{{ $account->name }}{{ $account->company ? ' · '.$account->company : '' }}</td>
                         <td>{{ __($account->type->name) }}</td>
                         <td>{{ $account->phone }}</td>
-                        <td class="text-end text-nowrap">{{ $account->describeBalance($account->own) }}</td>
+                        <td class="text-end text-nowrap">{{ $account->balanceHtml($account->own) }}</td>
                         <td class="text-end text-nowrap">{{ money($account->base) }}</td>
                         <td class="text-end no-print"><a class="btn btn-sm btn-light-secondary" href="{{ route('statement', ['id' => $account->id]) }}">{{ __('Statement') }}</a></td>
                     </tr>

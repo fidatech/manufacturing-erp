@@ -90,7 +90,7 @@
 .stmt-now-value small { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: 0; }
 .stmt-now-words { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--card); color: var(--muted); }
 .stmt-now.is-plus { border-inline-start-color: var(--success); }
-.stmt-now.is-plus .stmt-now-words { color: var(--success); }
+.stmt-now.is-plus .stmt-now-value, .stmt-now.is-plus .stmt-now-words { color: var(--bal-due); }
 .stmt-now.is-minus { border-inline-start-color: var(--danger); }
 .stmt-now.is-minus .stmt-now-value, .stmt-now.is-minus .stmt-now-words { color: var(--danger); }
 
@@ -122,13 +122,15 @@
 .stmt-in { color: var(--success); font-weight: 600; }
 .stmt-out { color: var(--danger); font-weight: 600; }
 .stmt-bal { font-weight: 700; color: var(--heading); }
-.stmt-bal.is-minus { color: var(--danger); }
+.stmt-bal.is-plus { color: var(--bal-due); }
+.stmt-bal.is-minus { color: var(--bal-owe); }
 .stmt-bal.is-zero { color: var(--muted); }
 .stmt-table tfoot td { font-weight: 800; color: var(--heading); background: var(--hover); border-top: 2px solid var(--border); border-bottom: 0; }
 .stmt-legend { padding: 10px 20px 0; font-size: 12px; color: var(--muted); }
 .stmt-legend .is-plus { color: var(--heading); }
 .stmt-close { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 16px 20px 20px; padding: 14px 18px; border-radius: var(--radius); background: var(--primary-soft); color: var(--heading); }
-.stmt-close strong { font-size: 18px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+.stmt-close .bal { font-size: 18px; }
+.stmt-close .bal-tag { font-size: 12px; }
 
 /* Paper only: company heading, signatures. */
 .letterhead, .stmt-foot { display: none; }
@@ -203,7 +205,8 @@
     .stmt-in, .stmt-out, .stmt-bal, .stmt-bal.is-minus { color: #000; }
     .stmt-legend { display: none; }
     .stmt-close { margin: 10px 0 0; border: 1px solid #111; background: none; border-radius: 6px; }
-    .stmt-close strong { color: #000; }
+    .bal, .bal-due, .bal-owe, .bal-capital, .stmt-bal.is-plus { color: #000 !important; }
+    .bal-tag { background: none !important; border: 1px solid #999; }
     .stmt-foot { display: block; margin-top: 46px; break-inside: avoid; }
     .stmt-sign { display: flex; justify-content: space-between; gap: 24px; }
     .stmt-sign div { flex: 1; max-width: 200px; border-top: 1px solid #111; padding-top: 4px; text-align: center; font-size: 11px; }
@@ -267,3 +270,19 @@
 
 /* Currency exchange: the sum in one line under the form (1,000 USD × 70 = 70,000 AFN). */
 .exchange-sum { padding: 12px 16px; border-radius: var(--radius); background: var(--primary-soft); color: var(--primary); font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; text-align: center; }
+
+/* ---------- Balances: green when they owe us, red when we owe them, blue for owners' capital ---------- */
+:root { --bal-due: #15803d; --bal-owe: #dc2626; --bal-capital: var(--primary); }
+[data-bs-theme="dark"] { --bal-due: #4ade80; --bal-owe: #f87171; }
+.bal { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--heading); }
+.bal-amount small { font-size: .8em; font-weight: 600; opacity: .75; }
+.bal-tag { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 1.5; background: var(--hover); color: var(--muted); }
+.bal-due { color: var(--bal-due); }
+.bal-due .bal-tag { background: rgba(var(--success-rgb), .13); color: var(--bal-due); }
+.bal-owe { color: var(--bal-owe); }
+.bal-owe .bal-tag { background: rgba(var(--danger-rgb), .12); color: var(--bal-owe); }
+.bal-capital { color: var(--bal-capital); }
+.bal-capital .bal-tag { background: var(--primary-soft); color: var(--bal-capital); }
+.bal-zero { color: var(--muted); font-weight: 600; }
+.stat-card .sc-value.bal-due { color: var(--bal-due); }
+.stat-card .sc-value.bal-owe { color: var(--bal-owe); }

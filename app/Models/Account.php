@@ -101,6 +101,43 @@ class Account extends Model
         return '';
     }
 
+    /**
+     * The colour of a balance: "due" (they owe us, green), "owe" (we owe them, red),
+     * "capital" (owners' money, blue), "zero" or "plain".
+     */
+    public function balanceTone(mixed $balance): string
+    {
+        if (\App\Support\Num::isZero($balance)) {
+            return 'zero';
+        }
+        $positive = \App\Support\Num::isPositive($balance);
+        $type = $this->type;
+
+        if ($type?->key === 'shareholder') {
+            return $positive ? 'due' : 'capital';
+        }
+        if ($type?->is_money || $type?->is_party) {
+            return $positive ? 'due' : 'owe';
+        }
+
+        return 'plain';
+    }
+
+    /** A balance ready for the page: the amount in its colour with a small label ("owes us", "we owe"). */
+    public function balanceHtml(mixed $balance): \Illuminate\Support\HtmlString
+    {
+        $tone = $this->balanceTone($balance);
+        $words = $this->balanceWords($balance);
+        $code = $this->currency?->code ?? '';
+        $plain = $tone === 'plain';
+        $amount = $plain ? \App\Support\Num::format($balance, 2) : \App\Support\Num::format(\App\Support\Num::abs($balance), 2);
+
+        return new \Illuminate\Support\HtmlString(
+            '<span class="bal bal-'.$tone.'"><span class="bal-amount">'.e($amount).' <small>'.e($code).'</small></span>'
+            .($words !== '' ? '<span class="bal-tag">'.e($words).'</span>' : '').'</span>'
+        );
+    }
+
     /** First letters of the name, for the round badge on a statement. */
     public function initials(): string
     {

@@ -30,7 +30,7 @@
                         <td class="text-end">{{ money($line->deduction) }}</td>
                         <td class="text-end">{{ money($line->tax) }}</td>
                         <td class="text-end fw-semibold text-nowrap">{{ money($line->net, $line->employee->currency->code) }}</td>
-                        <td class="text-end text-nowrap small">{{ $line->employee->describeBalance($own) }}</td>
+                        <td class="text-end text-nowrap small">{{ $line->employee->balanceHtml($own) }}</td>
                         <td class="text-end no-print">
                             @if (\App\Support\Num::isNegative($own))
                                 @can('money.manage')

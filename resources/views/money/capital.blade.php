@@ -119,7 +119,7 @@
                     <tr>
                         <td><a href="{{ route('statement', ['id' => $account->id]) }}">{{ $account->name }}</a></td>
                         <td class="text-end">{{ qty($account->metaValue('share_percent', 0)) }}%</td>
-                        <td class="text-end text-nowrap">{{ $account->describeBalance($balances[$account->id]['own'] ?? 0) }}</td>
+                        <td class="text-end text-nowrap">{{ $account->balanceHtml($balances[$account->id]['own'] ?? 0) }}</td>
                     </tr>
                 @endforeach
             </tbody>

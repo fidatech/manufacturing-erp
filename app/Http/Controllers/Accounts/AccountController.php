@@ -231,7 +231,7 @@ class AccountController extends CrudController
             $columns['Designation'] = fn (Account $a) => $a->metaValue('job_title');
             $columns['Monthly salary'] = fn (Account $a) => $a->metaValue('salary') ? money($a->metaValue('salary'), $a->currency->code) : '';
         }
-        $columns['Balance'] = fn (Account $a) => $a->describeBalance($this->balanceOf($a));
+        $columns['Balance'] = fn (Account $a) => $a->balanceHtml($this->balanceOf($a));
         $columns['Active'] = fn (Account $a) => $a->is_active ? __('Yes') : __('No');
 
         return $columns;

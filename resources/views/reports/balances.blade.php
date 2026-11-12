@@ -6,7 +6,7 @@
 <div class="card">
     <div class="card-body">
         @include('reports.filter', ['range' => false, 'heading' => __('Who owes us, whom we owe')])
-        @foreach ([[__('They owe us'), $owesUs, 'text-success'], [__('We owe them'), $weOwe, 'text-danger']] as [$heading, $list, $colour])
+        @foreach ([[__('They owe us'), $owesUs, 'bal-due'], [__('We owe them'), $weOwe, 'bal-owe']] as [$heading, $list, $colour])
             <h5 class="mt-3">{{ $heading }}</h5>
             <table class="table table-hover w-100 keep-table">
                 <thead><tr><th>{{ __('Name') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Phone') }}</th><th class="text-end">{{ __('Amount') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th></tr></thead>
@@ -22,7 +22,7 @@
                             <td><a href="{{ route('statement', ['id' => $account->id]) }}">{{ $account->name }}</a></td>
                             <td>{{ __($account->type->name) }}</td>
                             <td>{{ $account->phone }}</td>
-                            <td class="text-end text-nowrap {{ $colour }}">{{ money(\App\Support\Num::abs($account->own), $account->currency->code) }}</td>
+                            <td class="text-end text-nowrap fw-semibold {{ $colour }}">{{ money(\App\Support\Num::abs($account->own), $account->currency->code) }}</td>
                             <td class="text-end text-nowrap">{{ money(\App\Support\Num::abs($account->base)) }}</td>
                         </tr>
                     @empty

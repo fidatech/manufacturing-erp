@@ -50,7 +50,7 @@
                                 <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][deduction]" value="{{ old("lines.$i.deduction", ($d = $adjustments->get($employee->id)?->get('deduction')) ? \App\Support\Num::money($d) : '') }}" aria-label="{{ __('Cut') }}"></td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" class="form-control text-end" name="lines[{{ $i }}][tax]" value="{{ old("lines.$i.tax", $employee->metaValue('salary_tax')) }}" aria-label="{{ __('Tax') }}"></td>
                                 <td><input type="text" class="form-control" name="lines[{{ $i }}][note]" value="{{ old("lines.$i.note") }}" aria-label="{{ __('Note') }}"></td>
-                                <td class="text-end text-nowrap small">{{ $employee->describeBalance($balances[$employee->id]['own'] ?? '0') }}</td>
+                                <td class="text-end text-nowrap small">{{ $employee->balanceHtml($balances[$employee->id]['own'] ?? '0') }}</td>
                             </tr>
                         @endforeach
                     </tbody>

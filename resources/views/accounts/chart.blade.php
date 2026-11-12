@@ -25,7 +25,7 @@
                             <tr>
                                 <td>{{ $account->name }}@unless ($account->is_active) <span class="badge-soft warning">{{ __('Off') }}</span>@endunless</td>
                                 <td>{{ __($type->name) }}</td>
-                                <td class="text-end text-nowrap">{{ $account->describeBalance($own) }}</td>
+                                <td class="text-end text-nowrap">{{ $account->balanceHtml($own) }}</td>
                                 <td class="text-end text-nowrap">{{ money($shown) }}</td>
                                 <td class="text-end"><a class="btn btn-sm btn-light-secondary" href="{{ route('statement', ['id' => $account->id]) }}">{{ __('Statement') }}</a></td>
                             </tr>

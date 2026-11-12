@@ -171,7 +171,7 @@
         @endif
         <div class="stmt-close">
             <span>{{ __('Balance on :date', ['date' => fmt_date($to)]) }}</span>
-            <strong>{{ $account->describeBalance($closing) }}</strong>
+            {{ $account->balanceHtml($closing) }}
         </div>
     </div>
 

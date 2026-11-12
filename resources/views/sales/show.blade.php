@@ -61,7 +61,7 @@
                 <div class="d-flex justify-content-between py-1 fs-5"><span>{{ __('Total') }}</span><strong>{{ money($sale->total, $sale->currency->code) }}</strong></div>
                 @if ($sale->type === 'invoice')
                     <div class="d-flex justify-content-between py-1"><span>{{ __('Received') }}{{ $sale->receivedIn ? ' · '.$sale->receivedIn->name : '' }}</span><strong>{{ money($sale->received, $sale->currency->code) }}</strong></div>
-                    <div class="d-flex justify-content-between py-1 text-muted"><span>{{ __('Customer\'s balance today') }}</span><span>{{ $sale->customer->describeBalance($balance) }}</span></div>
+                    <div class="d-flex justify-content-between py-1 text-muted"><span>{{ __('Customer\'s balance today') }}</span><span>{{ $sale->customer->balanceHtml($balance) }}</span></div>
                 @endif
             </div>
         </div>
