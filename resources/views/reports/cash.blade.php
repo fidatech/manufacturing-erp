@@ -5,7 +5,7 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        @include('reports.filter')
+        @include('reports.filter', ['heading' => __('Cash flow')])
         <table class="table table-hover w-100 keep-table">
             <thead><tr><th>{{ __('Cash box, bank or sarafi') }}</th><th class="text-end">{{ __('At the start') }}</th><th class="text-end">{{ __('In') }}</th><th class="text-end">{{ __('Out') }}</th><th class="text-end">{{ __('At the end') }}</th></tr></thead>
             <tbody>

@@ -5,7 +5,7 @@
 
 <div class="card">
     <div class="card-body">
-        @include('reports.filter', ['range' => false])
+        @include('reports.filter', ['range' => false, 'heading' => $title])
         <table class="table table-hover w-100">
             <thead><tr><th>{{ __('Name') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Phone') }}</th><th class="text-end">{{ __('Balance') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>

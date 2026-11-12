@@ -67,25 +67,47 @@ class Account extends Model
     public function describeBalance(mixed $balance): string
     {
         $code = $this->currency?->code ?? '';
-        $amount = \App\Support\Num::format(\App\Support\Num::abs($balance), 2).' '.$code;
-
         if (\App\Support\Num::isZero($balance)) {
             return '0.00 '.$code;
+        }
+        $amount = \App\Support\Num::format(\App\Support\Num::abs($balance), 2).' '.$code;
+        $words = $this->balanceWords($balance);
+        if ($words !== '' || $this->type?->is_money || $this->type?->is_party || $this->type?->key === 'shareholder') {
+            return $amount.($words !== '' ? ' · '.$words : '');
+        }
+
+        return (\App\Support\Num::isPositive($balance) ? '' : '-').$amount;
+    }
+
+    /** What a balance means in plain words: "owes us", "we owe" ... Empty when there is nothing to say. */
+    public function balanceWords(mixed $balance): string
+    {
+        if (\App\Support\Num::isZero($balance)) {
+            return '';
         }
         $positive = \App\Support\Num::isPositive($balance);
         $type = $this->type;
 
         if ($type?->is_money) {
-            return $positive ? $amount : $amount.' · '.__('we owe');
+            return $positive ? '' : __('we owe');
         }
         if ($type?->key === 'shareholder') {
-            return $amount.' · '.($positive ? __('owes the company') : __('capital'));
+            return $positive ? __('owes the company') : __('capital');
         }
         if ($type?->is_party) {
-            return $amount.' · '.($positive ? __('owes us') : __('we owe'));
+            return $positive ? __('owes us') : __('we owe');
         }
 
-        return ($positive ? '' : '-').$amount;
+        return '';
+    }
+
+    /** First letters of the name, for the round badge on a statement. */
+    public function initials(): string
+    {
+        $words = preg_split('/\s+/u', trim($this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $letters = array_map(fn (string $word) => mb_substr($word, 0, 1), array_slice($words, 0, 2));
+
+        return mb_strtoupper(implode('', $letters)) ?: '?';
     }
 
     /** Name with currency, as shown in pick lists. */

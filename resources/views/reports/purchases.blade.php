@@ -5,7 +5,7 @@
 
 <div class="card">
     <div class="card-body">
-        @include('reports.filter')
+        @include('reports.filter', ['heading' => __('Purchases report')])
         @foreach ([[__('By item'), $byItem, true], [__('By supplier'), $bySupplier, false]] as [$heading, $list, $withQty])
             <h5 class="mt-3">{{ $heading }}</h5>
             <table class="table table-hover w-100 keep-table">

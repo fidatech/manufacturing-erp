@@ -8,7 +8,9 @@ use App\Models\AccountType;
 use App\Models\JournalLine;
 use App\Services\Ledger;
 use App\Services\Rates;
+use App\Support\EntryType;
 use App\Support\Num;
+use App\Support\Periods;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -62,6 +64,14 @@ class ChartController extends Controller
             ->orderBy('id')
             ->get();
 
+        $can = [
+            (new \App\Models\Sale)->getMorphClass() => ['sales.view', 'sales.show'],
+            (new \App\Models\Purchase)->getMorphClass() => ['purchases.view', 'purchases.show'],
+            (new \App\Models\Payroll)->getMorphClass() => ['hr.view', 'payroll.show'],
+            (new \App\Models\ProductionBatch)->getMorphClass() => ['production.view', 'production.show'],
+        ];
+        $user = $request->user();
+
         $running = $opening;
         $rows = [];
         $debit = '0';
@@ -70,8 +80,24 @@ class ChartController extends Controller
             $running = Num::money(Num::add($running, Num::sub($line->debit, $line->credit)));
             $debit = Num::add($debit, $line->debit);
             $credit = Num::add($credit, $line->credit);
-            $rows[] = ['line' => $line, 'balance' => $running];
+            $source = $can[$line->entry->source_type] ?? null;
+            $rows[] = [
+                'line' => $line,
+                'balance' => $running,
+                'kind' => EntryType::meta($line->entry->type),
+                'url' => $source && $line->entry->source_id && $user->can($source[0]) ? route($source[1], ['id' => $line->entry->source_id]) : null,
+            ];
         }
+
+        $key = $account->type->key;
+        $columns = match (true) {
+            (bool) $account->type->is_money => [__('In'), __('Out')],
+            $key === 'shareholder' => [__('Took out'), __('Put in')],
+            $key === 'employee' => [__('Paid to them'), __('Due to them')],
+            (bool) $account->type->is_party => [__('We gave'), __('We received')],
+            default => [__('Debit'), __('Credit')],
+        };
+        $first = JournalLine::where('account_id', $account->id)->where('is_void', false)->min('date');
 
         return view('accounts.statement', [
             'account' => $account,
@@ -83,6 +109,8 @@ class ChartController extends Controller
             'credit' => $credit,
             'closing' => $running,
             'money' => $account->type->is_money,
+            'columns' => $columns,
+            'periods' => Periods::quick($from, $to, $first ? substr((string) $first, 0, 10) : null),
         ]);
     }
 }

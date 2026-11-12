@@ -69,3 +69,144 @@
     .app-tabbar { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
     .drawer-quick { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
 }
+
+/* ---------- Statements (account statement, stock card) and printed reports ---------- */
+.stmt { display: grid; gap: 16px; }
+.stmt .card { margin-bottom: 0; }
+
+/* Who the statement is about + the balance today. */
+.stmt-id { overflow: hidden; border-top: 4px solid var(--primary); }
+.stmt-id > .card-body { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.stmt-who { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.stmt-who-text { min-width: 0; }
+.stmt-who h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; color: var(--heading); letter-spacing: -.3px; overflow-wrap: anywhere; }
+.stmt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.stmt-contact { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; padding: 0; font-size: 13px; color: var(--muted); }
+.stmt-contact:empty { display: none; }
+.stmt-contact .fi { margin-inline-end: 4px; opacity: .8; }
+.stmt-now { text-align: end; padding: 12px 18px; border-radius: var(--radius); background: var(--hover); border-inline-start: 4px solid var(--border); min-width: 200px; }
+.stmt-now-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.stmt-now-value { font-size: 28px; font-weight: 800; line-height: 1.2; color: var(--heading); letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.stmt-now-value small { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: 0; }
+.stmt-now-words { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--card); color: var(--muted); }
+.stmt-now.is-plus { border-inline-start-color: var(--success); }
+.stmt-now.is-plus .stmt-now-words { color: var(--success); }
+.stmt-now.is-minus { border-inline-start-color: var(--danger); }
+.stmt-now.is-minus .stmt-now-value, .stmt-now.is-minus .stmt-now-words { color: var(--danger); }
+
+/* Quick periods and the date boxes. */
+.stmt-period > .card-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.stmt-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.stmt-chip { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--heading); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.stmt-chip:hover { border-color: var(--primary); color: var(--primary); }
+.stmt-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.stmt-cards .sc-value { font-variant-numeric: tabular-nums; }
+
+/* The list of movements. */
+.stmt-ledger { overflow: hidden; }
+.stmt-ledger-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.stmt-ledger-head h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--heading); }
+.stmt-ledger-period { margin-inline-start: auto; font-size: 13px; color: var(--muted); }
+.stmt-table { margin: 0; font-variant-numeric: tabular-nums; }
+.stmt-table > :not(caption) > * > * { padding: 11px 14px; vertical-align: top; background: transparent; }
+.stmt-table > :not(caption) > * > :first-child { padding-inline-start: 20px; }
+.stmt-table > :not(caption) > * > :last-child { padding-inline-end: 20px; }
+.stmt-table thead th { position: sticky; top: 0; background: var(--hover); color: var(--muted); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.stmt-table tbody tr:nth-child(even) > * { background: rgba(var(--primary-rgb), .025); }
+.stmt-table tbody tr:hover > * { background: var(--primary-soft); }
+.stmt-row-open > * { color: var(--muted); font-style: italic; }
+.stmt-what { color: var(--heading); font-weight: 600; min-width: 160px; overflow-wrap: anywhere; }
+.stmt-ref { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px; font-size: 12px; color: var(--muted); }
+.stmt-ref .badge-soft { font-size: 11px; padding: 2px 8px; }
+.stmt-in { color: var(--success); font-weight: 600; }
+.stmt-out { color: var(--danger); font-weight: 600; }
+.stmt-bal { font-weight: 700; color: var(--heading); }
+.stmt-bal.is-minus { color: var(--danger); }
+.stmt-bal.is-zero { color: var(--muted); }
+.stmt-table tfoot td { font-weight: 800; color: var(--heading); background: var(--hover); border-top: 2px solid var(--border); border-bottom: 0; }
+.stmt-legend { padding: 10px 20px 0; font-size: 12px; color: var(--muted); }
+.stmt-legend .is-plus { color: var(--heading); }
+.stmt-close { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 16px 20px 20px; padding: 14px 18px; border-radius: var(--radius); background: var(--primary-soft); color: var(--heading); }
+.stmt-close strong { font-size: 18px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+
+/* Paper only: company heading, signatures. */
+.letterhead, .stmt-foot { display: none; }
+.report-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+@media (max-width: 575.98px) {
+    .stmt-id > .card-body { align-items: stretch; }
+    .stmt-now { width: 100%; text-align: start; }
+    .stmt-who h2 { font-size: 18px; }
+    .stmt-now-value { font-size: 24px; }
+    .stmt-period > .card-body { align-items: stretch; }
+    .stmt-chips { flex-wrap: nowrap; overflow-x: auto; margin-inline: -4px; padding: 0 4px 4px; }
+    .stmt-cards .sc-icon { display: none; }
+    .stmt-cards .sc-value { font-size: 19px; white-space: nowrap; }
+    /* On a phone every movement becomes a small card: what happened and the amount, then the date and the balance. */
+    .stmt-table, .stmt-table tbody, .stmt-table tfoot { display: block; }
+    .stmt-table thead { display: none; }
+    .stmt-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "what amount" "extra extra" "date bal"; gap: 4px 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .stmt-table > :not(caption) > * > * { padding: 0 !important; border: 0; font-size: 13.5px; text-align: start; }
+    .stmt-table td:empty { display: none; }
+    .stmt-table td:nth-child(1) { grid-area: date; font-size: 12px; color: var(--muted); align-self: end; }
+    .stmt-table td:nth-child(2) { grid-area: what; }
+    .stmt-table td.stmt-extra { grid-area: extra; font-size: 12px; color: var(--muted); }
+    .stmt-table td.stmt-in, .stmt-table td.stmt-out { grid-area: amount; font-size: 15px; font-weight: 700; text-align: end; }
+    .stmt-table td.stmt-in::before { content: "+ "; }
+    .stmt-table td.stmt-out::before { content: "\2212  "; }
+    .stmt-table td.stmt-bal { grid-area: bal; text-align: end; font-size: 12.5px; }
+    .stmt-table td[data-label]::before { content: attr(data-label) " "; font-weight: 600; color: var(--muted); }
+    .stmt-table tbody tr:nth-child(even) > * { background: transparent; }
+    .stmt-what { min-width: 0; }
+    .stmt-table tfoot tr { display: flex; flex-direction: column; gap: 6px; background: var(--hover); border-bottom: 0; }
+    .stmt-table tfoot td { display: flex; justify-content: space-between; gap: 12px; background: transparent; border: 0; }
+    .stmt-table tfoot td:first-child { font-size: 13.5px; color: var(--heading); }
+    .stmt-ledger-head { padding: 14px; }
+    .stmt-close { margin: 14px; }
+}
+
+@media print {
+    @page { size: A4; margin: 12mm; }
+    body { font-size: 12px; color: #000; }
+    /* the paper has its own heading, so the screen title bar is not printed */
+    .app-content:has(.letterhead) .page-header { display: none !important; }
+    .letterhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 2px solid #111; }
+    .letterhead-company { display: flex; align-items: center; gap: 12px; }
+    .letterhead-company img { max-height: 60px; max-width: 160px; }
+    .letterhead-name { font-size: 20px; font-weight: 800; color: #000; }
+    .letterhead-local { font-size: 15px; font-weight: 700; }
+    .letterhead-contact { font-size: 11px; color: #444; }
+    .letterhead-doc { text-align: end; font-size: 12px; color: #333; }
+    .letterhead-title { font-size: 17px; font-weight: 800; color: #000; text-transform: uppercase; letter-spacing: .5px; }
+    .app-tabbar, .erp-toasts { display: none !important; }
+    .stmt { gap: 10px; }
+    .stmt-ledger { overflow: visible; }
+    .stmt-id { border: 1px solid #999 !important; border-radius: 6px; }
+    .stmt-id > .card-body { padding: 10px 14px; }
+    .stmt-who .avatar { display: none; }
+    .stmt-who h2 { font-size: 17px; }
+    .stmt-now { background: none; border: 0; padding: 0; }
+    .stmt-now-value { font-size: 20px; }
+    .stmt-cards > * { width: 25%; }
+    .stmt-cards .stat-card { border: 1px solid #999 !important; border-radius: 6px; padding: 8px 10px; gap: 2px; }
+    .stmt-cards .sc-icon { display: none; }
+    .stmt-cards .sc-value { font-size: 15px; }
+    .stmt-ledger-head { padding: 6px 0; border: 0; }
+    .stmt-ledger .table-responsive { overflow: visible; }
+    .stmt-table > :not(caption) > * > * { padding: 5px 8px !important; border: 1px solid #999; background: none !important; color: #000; }
+    .stmt-table thead th { position: static; background: #eee !important; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .stmt-table thead { display: table-header-group; }
+    .stmt-table tr { break-inside: avoid; }
+    .stmt-ref .badge-soft { background: none; color: #333; padding: 0; }
+    .stmt-ref a { color: #333; text-decoration: none; }
+    .stmt-in, .stmt-out, .stmt-bal, .stmt-bal.is-minus { color: #000; }
+    .stmt-legend { display: none; }
+    .stmt-close { margin: 10px 0 0; border: 1px solid #111; background: none; border-radius: 6px; }
+    .stmt-close strong { color: #000; }
+    .stmt-foot { display: block; margin-top: 46px; break-inside: avoid; }
+    .stmt-sign { display: flex; justify-content: space-between; gap: 24px; }
+    .stmt-sign div { flex: 1; max-width: 200px; border-top: 1px solid #111; padding-top: 4px; text-align: center; font-size: 11px; }
+    .stmt-stamp { margin-top: 18px; text-align: center; font-size: 10px; color: #666; }
+    .table > :not(caption) > * > * { color: #000; }
+}

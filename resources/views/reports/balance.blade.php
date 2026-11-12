@@ -9,7 +9,7 @@
 
 <div class="card">
     <div class="card-body">
-        @include('reports.filter', ['range' => false])
+        @include('reports.filter', ['range' => false, 'heading' => __('Balance sheet')])
         <table class="table w-100 keep-table">
             <tbody>
                 @foreach ($sections as $nature => $groups)

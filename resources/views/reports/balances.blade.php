@@ -5,7 +5,7 @@
 
 <div class="card">
     <div class="card-body">
-        @include('reports.filter', ['range' => false])
+        @include('reports.filter', ['range' => false, 'heading' => __('Who owes us, whom we owe')])
         @foreach ([[__('They owe us'), $owesUs, 'text-success'], [__('We owe them'), $weOwe, 'text-danger']] as [$heading, $list, $colour])
             <h5 class="mt-3">{{ $heading }}</h5>
             <table class="table table-hover w-100 keep-table">

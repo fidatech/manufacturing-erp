@@ -5,7 +5,7 @@
 
 <div class="card">
     <div class="card-body">
-        @include('reports.filter')
+        @include('reports.filter', ['heading' => __('Profit and loss')])
         <table class="table w-100 keep-table">
             <tbody>
                 <tr class="table-light"><th colspan="2">{{ __('What we earned') }}</th></tr>

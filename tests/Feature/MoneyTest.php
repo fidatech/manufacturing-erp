@@ -36,6 +36,11 @@ class MoneyTest extends TestCase
 
         $this->get(route('accounts.index', ['type' => 'customer']))->assertOk()->assertSee('Haji Sharif')->assertSee('owes us');
         $this->get(route('statement', ['id' => $customer->id]))->assertOk()->assertSee('7,000.00');
+        // the statement offers quick periods and names the kind of each movement
+        $this->get(route('statement', ['id' => $customer->id, 'from' => '2000-01-01', 'to' => today_iso()]))
+            ->assertOk()->assertSee('This month')->assertSee('All time')->assertSee('Opening balance')->assertSee('Jalalabad')->assertSee('Prepared by');
+        $this->get(route('statement', ['id' => $customer->id, 'from' => '2000-01-01', 'to' => '2000-01-31']))
+            ->assertOk()->assertSee('Nothing happened in these dates');
         $this->get(route('chart'))->assertOk()->assertSee('Haji Sharif');
 
         // an account with transactions cannot be deleted

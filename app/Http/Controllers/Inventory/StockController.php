@@ -85,16 +85,24 @@ class StockController extends Controller
         $opening = $running;
 
         $rows = [];
+        $in = '0';
+        $out = '0';
         foreach ($base()->with('warehouse')->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->orderBy('date')->orderBy('id')->get() as $movement) {
             $running = Num::qty(Num::add($running, Num::sub($movement->qty_in, $movement->qty_out)));
+            $in = Num::add($in, $movement->qty_in);
+            $out = Num::add($out, $movement->qty_out);
             $rows[] = ['movement' => $movement, 'balance' => $running];
         }
+        $first = StockMovement::where('item_id', $item->id)->where('is_void', false)->min('date');
 
         return view('stock.card', [
             'item' => $item,
             'rows' => $rows,
             'opening' => $opening,
             'closing' => $running,
+            'in' => $in,
+            'out' => $out,
+            'periods' => \App\Support\Periods::quick($from, $to, $first ? substr((string) $first, 0, 10) : null),
             'from' => $from,
             'to' => $to,
             'filters' => $filters,
