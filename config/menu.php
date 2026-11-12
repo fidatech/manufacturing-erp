@@ -23,6 +23,15 @@
 return [
     ['label' => 'Dashboard', 'icon' => 'gauge-high', 'route' => 'dashboard'],
 
+    ['label' => 'Finance', 'icon' => 'money-bill-wave', 'children' => [
+        ['label' => 'Transactions', 'route' => 'money.index', 'can' => 'money.view'],
+        ['label' => 'Money In', 'route' => 'money.create', 'params' => ['kind' => 'in'], 'can' => 'money.manage'],
+        ['label' => 'Money Out', 'route' => 'money.create', 'params' => ['kind' => 'out'], 'can' => 'money.manage'],
+        ['label' => 'Currency Exchange', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'exchange'], 'can' => 'money.manage'],
+        ['label' => 'Transfers', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'transfer'], 'can' => 'money.manage'],
+        ['label' => 'Petty Cash', 'route' => 'petty-cash', 'can' => 'money.view'],
+    ]],
+
     ['label' => 'Manufacturing', 'icon' => 'industry', 'children' => [
         ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
         ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
@@ -113,15 +122,6 @@ return [
         ['label' => 'Stock Transfers', 'route' => 'stock-docs.index', 'params' => ['type' => 'transfer'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
         ['label' => 'Physical Count', 'route' => 'stock-docs.index', 'params' => ['type' => 'count'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
         ['label' => 'Opening Stock', 'route' => 'stock-docs.index', 'params' => ['type' => 'opening'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
-    ]],
-
-    ['label' => 'Finance', 'icon' => 'money-bill-wave', 'children' => [
-        ['label' => 'Transactions', 'route' => 'money.index', 'can' => 'money.view'],
-        ['label' => 'Money In', 'route' => 'money.create', 'params' => ['kind' => 'in'], 'can' => 'money.manage'],
-        ['label' => 'Money Out', 'route' => 'money.create', 'params' => ['kind' => 'out'], 'can' => 'money.manage'],
-        ['label' => 'Currency Exchange', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'exchange'], 'can' => 'money.manage'],
-        ['label' => 'Transfers', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'transfer'], 'can' => 'money.manage'],
-        ['label' => 'Petty Cash', 'route' => 'petty-cash', 'can' => 'money.view'],
     ]],
 
     ['label' => 'Reports', 'icon' => 'chart-pie', 'children' => [
