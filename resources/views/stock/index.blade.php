@@ -1,8 +1,16 @@
-@extends('layouts.app', ['title' => __('Stock')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Stock')])
+
+@if (request()->boolean('print'))
+    @section('doc')
+        <h2>{{ __('Stock on hand') }}</h2>
+        <div>{{ fmt_date(today_iso()) }}</div>
+        <div>{{ optional($warehouses->firstWhere('id', (int) ($filters['warehouse'] ?? 0)))->name ?: __('All warehouses') }}{{ ($filters['type'] ?? '') === 'product' ? ' · '.__('Products') : (($filters['type'] ?? '') === 'raw' ? ' · '.__('Raw materials') : '') }}{{ request()->boolean('low') ? ' · '.__('Running low only') : '' }}</div>
+    @endsection
+@endif
 
 @section('content')
 <x-page-header :title="__('Stock on hand')" icon="boxes-stacked" :subtitle="__('What we have now and what it is worth.')">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     <a class="btn btn-outline-soft" href="{{ route('stock.batches') }}">{{ __('Batches and expiry') }}</a>
 </x-page-header>
 

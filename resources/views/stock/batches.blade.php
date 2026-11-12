@@ -1,11 +1,20 @@
-@extends('layouts.app', ['title' => __('Batches and expiry')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Batches and expiry')])
+
+@if (request()->boolean('print'))
+    @section('doc')
+        <h2>{{ __('Batches and expiry') }}</h2>
+        <div>{{ fmt_date(today_iso()) }}</div>
+    @endsection
+@endif
 
 @section('content')
-<x-page-header :title="__('Batches and expiry')" icon="hourglass-half" :crumbs="[[__('Stock on hand'), route('stock.index')], [__('Batches and expiry')]]" :subtitle="__('The earliest expiry is at the top. Sales and transfers take these first by themselves.')" />
+<x-page-header :title="__('Batches and expiry')" icon="hourglass-half" :crumbs="[[__('Stock on hand'), route('stock.index')], [__('Batches and expiry')]]" :subtitle="__('The earliest expiry is at the top. Sales and transfers take these first by themselves.')">
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
+</x-page-header>
 
 <div class="card">
     <div class="card-body">
-        <form method="GET" class="row g-2 align-items-end mb-3">
+        <form method="GET" class="row g-2 align-items-end mb-3 no-print">
             <div class="col-6 col-md-auto">
                 <label class="form-label small mb-1">{{ __('Warehouse') }}</label>
                 <select class="form-select" name="warehouse">

@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => __('Lab test').' '.$test->number])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Lab test').' '.$test->number])
 
 @section('content')
 <x-page-header :title="__('Lab test').' '.$test->number" icon="vial" :crumbs="[[__('Lab Tests'), route('lab.index')], [$test->number]]">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('lab.manage')
         <form method="POST" action="{{ route('lab.destroy', ['id' => $test->id]) }}" class="d-inline" data-confirm="{{ __('Delete this?') }}" data-confirm-ok="{{ __('Delete') }}">
             @csrf

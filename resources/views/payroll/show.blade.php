@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => __('Salaries of :period', ['period' => $payroll->period])])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Salaries of :period', ['period' => $payroll->period])])
 
 @section('content')
 <x-page-header :title="__('Salaries of :period', ['period' => $payroll->period])" icon="money-check-dollar" :crumbs="[[__('Payroll'), route('payroll.index')], [$payroll->period]]">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('hr.manage')
         <form method="POST" action="{{ route('payroll.destroy', ['id' => $payroll->id]) }}" class="d-inline" data-confirm="{{ __('Take back the salaries of :period?', ['period' => $payroll->period]) }}" data-confirm-text="{{ __('The month can then be done again. Payments already made stay on the employees\' accounts.') }}" data-confirm-ok="{{ __('Take it back') }}">
             @csrf

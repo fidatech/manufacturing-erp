@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => __('Batch').' '.$batch->batch_no])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Batch').' '.$batch->batch_no])
 
 @section('content')
 <x-page-header :title="__('Batch').' '.$batch->batch_no" icon="industry" :crumbs="[[__('Production Batches'), route('production.index')], [$batch->number]]">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @if ($batch->status === 'posted')
         @can('lab.manage')
             <a class="btn btn-primary" href="{{ route('lab.create', ['batch' => $batch->id]) }}"><x-icon name="vial" class="me-1" /> {{ __('Lab test') }}</a>

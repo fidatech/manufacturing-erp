@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => $title])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => $title])
 
 @section('content')
 <x-page-header :title="$title" icon="right-left" :crumbs="[[\App\Http\Controllers\Inventory\StockDocController::names()[$type], route('stock-docs.index', ['type' => $type])], [$doc->number]]">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('inventory.manage')
         @if ($doc->status !== 'cancelled')
             <form method="POST" action="{{ route('stock-docs.cancel', ['type' => $type, 'id' => $doc->id]) }}" class="d-inline" data-confirm="{{ __('Cancel :number?', ['number' => $doc->number]) }}" data-confirm-ok="{{ __('Cancel it') }}">

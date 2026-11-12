@@ -146,6 +146,16 @@ class FinanceTest extends TestCase
         }
         $this->get(route('reports.parties', ['group' => 'customers', 'print' => 1]))->assertOk()->assertSee('paper-head', false)->assertSee('Haji Sharif');
 
+        // stock on hand, batches, the stock card, the day book and the production list print the same way
+        $this->get(route('stock.index', ['from' => 'reports']))->assertOk()->assertSee('print=1', false);
+        $this->get(route('stock.index', ['from' => 'reports', 'print' => 1]))->assertOk()
+            ->assertSee('paper-head', false)->assertSee('Stock on hand')->assertSee('Mango KC9012')->assertSee('All warehouses')->assertDontSee('app-sidebar', false);
+        $this->get(route('stock.batches', ['print' => 1]))->assertOk()->assertSee('paper-head', false);
+        $this->get(route('stock.card', ['id' => $mango->id, 'from' => '2026-10-01', 'to' => '2026-10-31', 'print' => 1]))->assertOk()->assertSee('paper-head', false)->assertSee('Stock card');
+        $this->get(route('journal.index', ['print' => 1]))->assertOk()->assertSee('paper-head', false);
+        $this->get(route('production.index', ['print' => 1]))->assertOk()->assertSee('paper-head', false);
+        $this->get(route('purchases.show', ['id' => \App\Models\Purchase::firstOrFail()->id, 'print' => 1]))->assertOk()->assertSee('paper-head', false);
+
         // the dashboard shows the same numbers
         $this->get(route('dashboard'))->assertOk()->assertSee('3,900.00 USD')->assertSee('1,600.00');
         $this->get(route('dashboard'))->assertOk()->assertSee('Sales in the last 30 days')->assertSee('Sales and purchases, last 6 months')->assertSee('Best sellers this month')->assertSee('chart-bar s2', false);

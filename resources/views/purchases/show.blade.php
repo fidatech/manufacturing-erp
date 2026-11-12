@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => $title])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => $title])
 
 @section('content')
 <x-page-header :title="$title" icon="cart-flatbed" :crumbs="[[\App\Http\Controllers\Trade\PurchaseController::names()[$purchase->type], route('purchases.index', ['type' => $purchase->type])], [$purchase->number]]">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('purchases.manage')
         @if ($purchase->type === 'quotation' && $purchase->status === 'open')
             <a class="btn btn-outline-soft" href="{{ route('purchases.create', ['type' => 'order', 'from' => $purchase->id]) }}">{{ __('Turn into an order') }}</a>

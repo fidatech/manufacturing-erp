@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => __('Production Batches')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Production Batches')])
 
 @section('content')
 <x-page-header :title="__('Production Batches')" icon="industry" :subtitle="__('The daily production record: every batch that was made.')">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('production.manage')
         <a class="btn btn-primary" href="{{ route('production.create') }}"><x-icon name="plus" class="me-1" /> {{ __('Record production') }}</a>
     @endcan

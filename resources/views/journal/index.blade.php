@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => __('Day Book')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Day Book')])
 
 @section('content')
 <x-page-header :title="__('Day Book (Roznamcha)')" icon="book" :subtitle="__('Everything that was recorded, day by day.')">
-    <button type="button" class="btn btn-outline-soft" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('journal.manage')
         <a class="btn btn-primary" href="{{ route('journal.create') }}"><x-icon name="plus" class="me-1" /> {{ __('Journal entry') }}</a>
     @endcan

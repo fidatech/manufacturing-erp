@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => __('Stock card').': '.$item->name])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Stock card').': '.$item->name])
 
 @php
     use App\Support\Num;
@@ -9,9 +9,17 @@
     $place = optional($warehouses->firstWhere('id', (int) ($filters['warehouse'] ?? 0)))->name ?: __('All warehouses');
 @endphp
 
+@if (request()->boolean('print'))
+    @section('doc')
+        <h2>{{ __('Stock card') }}</h2>
+        <div>{{ $periodText }}</div>
+        <div>{{ $place }}</div>
+    @endsection
+@endif
+
 @section('content')
 <x-page-header :title="__('Stock card')" icon="clipboard-list" :crumbs="[[__('Stock on hand'), route('stock.index')], [$item->name]]">
-    <button type="button" class="btn btn-primary" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-primary" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
 </x-page-header>
 
 <div class="stmt">

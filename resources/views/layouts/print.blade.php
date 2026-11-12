@@ -35,7 +35,9 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
 .paper-doc h2{margin:0;font-size:19px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--paper-accent)}
 .paper-body{padding:22px 30px 26px}
 .paper-body .page-header,.paper-body .no-print,.paper-body .letterhead,.paper-body .report-strip{display:none!important}
+.paper-body form,.paper-body .btn,.paper-body .attachments{display:none!important}
 .paper-body .card{border:0;box-shadow:none;background:none;margin:0}
+.paper-body .card+.card{margin-top:16px}.paper-body .card-header{padding:0 0 6px;background:none;border:0}.paper-body .card-title{font-size:14px;font-weight:800;color:var(--paper-accent)}
 .paper-body .card-body{padding:0}
 .paper-body a{color:inherit;text-decoration:none}
 .paper-body h5{margin:18px 0 8px;font-size:14px;font-weight:800;color:var(--paper-accent)}
@@ -47,6 +49,8 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
 .paper-body .table thead{display:table-header-group}
 .paper-body .table tr{break-inside:avoid}
 .paper-body .form-text{font-size:11px;color:#6b7280}
+.paper-body .stmt{gap:14px}.paper-body .stmt-id{border:1px solid var(--paper-line);border-top:1px solid var(--paper-line);border-radius:10px}.paper-body .stmt-id>.card-body{padding:14px 16px}.paper-body .stmt-who .avatar{display:none}.paper-body .stmt-cards>*{width:25%}.paper-body .stat-card{border:1px solid var(--paper-line);border-radius:10px;padding:10px 14px;gap:2px}.paper-body .stat-card .sc-icon{display:none}.paper-body .stat-card .sc-value{font-size:16px}.paper-body .stmt-ledger-head{padding:6px 0;border:0}.paper-body .stmt-table thead th{position:static}.paper-body .stmt-close{margin:12px 0 0;border:2px solid var(--paper-accent);background:none}.paper-body .stmt-foot,.paper-body .stmt-legend{display:none}.paper-body .badge-soft{background:none;padding:0;color:#374151}
+.paper-body .table td,.paper-body .table th{display:table-cell}.paper-body .table tr{display:table-row}
 .paper-sign{display:flex;justify-content:space-between;gap:24px;margin-top:56px;break-inside:avoid}
 .paper-sign div{flex:1;max-width:210px;border-top:1px solid #111827;padding-top:5px;text-align:center;font-size:11.5px}
 .paper-foot{margin-top:22px;padding-top:10px;border-top:1px solid var(--paper-line);display:flex;justify-content:space-between;gap:12px;font-size:10.5px;color:#6b7280}
