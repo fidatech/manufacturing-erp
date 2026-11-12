@@ -40,15 +40,14 @@ class ItemController extends CrudController
         $kind = request()->route('type');
         abort_unless(in_array($kind, ['product', 'raw'], true), 404);
 
-        if ($kind === 'raw') {
-            [$this->title, $this->singular, $this->icon] = ['Raw Materials', 'Raw Material', 'flask'];
-        }
+        [$this->title, $this->singular, $this->icon] = $kind === 'raw' ? ['Raw Materials', 'Raw Material', 'flask'] : ['Products', 'Product', 'box'];
 
         return $kind;
     }
 
     public function callAction($method, $parameters)
     {
+        $this->stock = null;
         $this->kind();
 
         return parent::callAction($method, $parameters);

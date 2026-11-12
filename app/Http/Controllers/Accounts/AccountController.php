@@ -67,6 +67,10 @@ class AccountController extends CrudController
 
     public function callAction($method, $parameters)
     {
+        // nothing is remembered from an earlier request handled by this same object
+        $this->type = null;
+        $this->balances = null;
+        $this->permission = 'accounts';
         $this->type();
 
         return parent::callAction($method, $parameters);
