@@ -23,33 +23,6 @@
 return [
     ['label' => 'Dashboard', 'icon' => 'gauge-high', 'route' => 'dashboard'],
 
-    ['label' => 'Finance', 'icon' => 'money-bill-wave', 'children' => [
-        ['label' => 'Transactions', 'route' => 'money.index', 'can' => 'money.view'],
-        ['label' => 'Money In', 'route' => 'money.create', 'params' => ['kind' => 'in'], 'can' => 'money.manage'],
-        ['label' => 'Money Out', 'route' => 'money.create', 'params' => ['kind' => 'out'], 'can' => 'money.manage'],
-        ['label' => 'Currency Exchange', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'exchange'], 'can' => 'money.manage'],
-        ['label' => 'Transfers', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'transfer'], 'can' => 'money.manage'],
-        ['label' => 'Petty Cash', 'route' => 'petty-cash', 'can' => 'money.view'],
-    ]],
-
-    ['label' => 'Manufacturing', 'icon' => 'industry', 'children' => [
-        ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
-        ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
-        ['label' => 'Recipes & Formulas', 'route' => 'recipes.index', 'active' => 'recipes.*', 'can' => 'production.view'],
-        ['label' => 'Record Production', 'route' => 'production.create', 'can' => 'production.manage'],
-        ['label' => 'Production Batches', 'route' => 'production.index', 'active' => 'production.*', 'can' => 'production.view'],
-        ['label' => 'Production Report', 'route' => 'production.report', 'can' => 'production.view'],
-    ]],
-
-    ['label' => 'Laboratory & QC', 'icon' => 'vial', 'children' => [
-        ['label' => 'Lab Tests', 'route' => 'lab.index', 'active' => 'lab.*', 'can' => 'lab.view'],
-        ['label' => 'Test a Batch', 'route' => 'lab.create', 'params' => ['subject' => 'product'], 'can' => 'lab.manage'],
-        ['label' => 'Test a Raw Material', 'route' => 'lab.create', 'params' => ['subject' => 'raw'], 'can' => 'lab.manage'],
-        ['label' => 'Batches Not Tested', 'route' => 'production.index', 'params' => ['qc' => 'pending'], 'can' => 'production.view'],
-        ['label' => 'Failed Batches', 'route' => 'production.index', 'params' => ['qc' => 'failed'], 'can' => 'production.view'],
-        ['label' => 'Test Parameters', 'route' => 'lookups.index', 'params' => ['type' => 'qc_parameter'], 'active' => 'lookups.*', 'can' => 'lab.view'],
-    ]],
-
     ['label' => 'Accounts', 'icon' => 'address-book', 'children' => [
         ['label' => 'Cash', 'route' => 'accounts.index', 'params' => ['type' => 'cash'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Customers', 'route' => 'accounts.index', 'params' => ['type' => 'customer'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
@@ -59,19 +32,13 @@ return [
         ['label' => 'Warehouse Managers', 'route' => 'accounts.index', 'params' => ['type' => 'warehouse_manager'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
     ]],
 
-    ['label' => 'Human Resource', 'icon' => 'id-badge', 'children' => [
-        ['label' => 'Departments', 'route' => 'lookups.index', 'params' => ['type' => 'department'], 'active' => 'lookups.*', 'can' => 'hr.view'],
-        ['label' => 'Designations', 'route' => 'lookups.index', 'params' => ['type' => 'designation'], 'active' => 'lookups.*', 'can' => 'hr.view'],
-        ['label' => 'Employees', 'route' => 'accounts.index', 'params' => ['type' => 'employee'], 'active' => 'accounts.*', 'can' => 'hr.view'],
-        ['label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance.*', 'can' => 'hr.view'],
-        ['label' => 'Payroll', 'route' => 'payroll.index', 'active' => 'payroll.*', 'can' => 'hr.view'],
-        ['label' => 'Leave Management', 'route' => 'hr.index', 'params' => ['screen' => 'leave'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Performance Appraisal', 'route' => 'hr.index', 'params' => ['screen' => 'appraisals'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Employee Contracts', 'route' => 'hr.index', 'params' => ['screen' => 'contracts'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Shift Scheduling', 'route' => 'hr.index', 'params' => ['screen' => 'shifts'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Overtime Requests', 'route' => 'hr.index', 'params' => ['screen' => 'overtime'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Allowances & Deductions', 'route' => 'hr.index', 'params' => ['screen' => 'adjustments'], 'active' => 'hr.*', 'can' => 'hr.view'],
-        ['label' => 'Employee Advances', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'employee'], 'can' => 'money.manage'],
+    ['label' => 'Finance', 'icon' => 'money-bill-wave', 'children' => [
+        ['label' => 'Transactions', 'route' => 'money.index', 'can' => 'money.view'],
+        ['label' => 'Money In', 'route' => 'money.create', 'params' => ['kind' => 'in'], 'can' => 'money.manage'],
+        ['label' => 'Money Out', 'route' => 'money.create', 'params' => ['kind' => 'out'], 'can' => 'money.manage'],
+        ['label' => 'Currency Exchange', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'exchange'], 'can' => 'money.manage'],
+        ['label' => 'Transfers', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'transfer'], 'can' => 'money.manage'],
+        ['label' => 'Petty Cash', 'route' => 'petty-cash', 'can' => 'money.view'],
     ]],
 
     ['label' => 'Accounting', 'icon' => 'calculator', 'children' => [
@@ -84,14 +51,6 @@ return [
         ['label' => 'Amortization', 'route' => 'assets.write-off', 'params' => ['kind' => 'amortization'], 'can' => 'assets.view'],
         ['label' => 'Expenses', 'route' => 'money.index', 'params' => ['type' => 'expense'], 'can' => 'money.view'],
         ['label' => 'Day Book (Roznamcha)', 'route' => 'journal.index', 'active' => 'journal.*', 'can' => 'journal.view'],
-    ]],
-
-    ['label' => 'Shareholders', 'icon' => 'handshake', 'children' => [
-        ['label' => 'Shareholder Management', 'route' => 'accounts.index', 'params' => ['type' => 'shareholder'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
-        ['label' => 'Capital Contribution', 'route' => 'capital', 'params' => ['from' => 'shareholders'], 'can' => 'money.view'],
-        ['label' => 'Withdrawals', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'shareholder'], 'can' => 'money.manage'],
-        ['label' => 'Profit Distribution', 'route' => 'money.profit', 'can' => 'money.manage'],
-        ['label' => 'Shareholder Statements', 'route' => 'reports.parties', 'params' => ['group' => 'shareholders'], 'can' => 'reports.view'],
     ]],
 
     ['label' => 'Purchases', 'icon' => 'cart-flatbed', 'children' => [
@@ -124,6 +83,52 @@ return [
         ['label' => 'Opening Stock', 'route' => 'stock-docs.index', 'params' => ['type' => 'opening'], 'active' => 'stock-docs.*', 'can' => 'inventory.view'],
     ]],
 
+    ['label' => 'Manufacturing', 'icon' => 'industry', 'children' => [
+        ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Recipes & Formulas', 'route' => 'recipes.index', 'active' => 'recipes.*', 'can' => 'production.view'],
+        ['label' => 'Record Production', 'route' => 'production.create', 'can' => 'production.manage'],
+        ['label' => 'Production Batches', 'route' => 'production.index', 'active' => 'production.*', 'can' => 'production.view'],
+        ['label' => 'Production Report', 'route' => 'production.report', 'can' => 'production.view'],
+    ]],
+
+    ['label' => 'Laboratory & QC', 'icon' => 'vial', 'children' => [
+        ['label' => 'Lab Tests', 'route' => 'lab.index', 'active' => 'lab.*', 'can' => 'lab.view'],
+        ['label' => 'Test a Batch', 'route' => 'lab.create', 'params' => ['subject' => 'product'], 'can' => 'lab.manage'],
+        ['label' => 'Test a Raw Material', 'route' => 'lab.create', 'params' => ['subject' => 'raw'], 'can' => 'lab.manage'],
+        ['label' => 'Batches Not Tested', 'route' => 'production.index', 'params' => ['qc' => 'pending'], 'can' => 'production.view'],
+        ['label' => 'Failed Batches', 'route' => 'production.index', 'params' => ['qc' => 'failed'], 'can' => 'production.view'],
+        ['label' => 'Test Parameters', 'route' => 'lookups.index', 'params' => ['type' => 'qc_parameter'], 'active' => 'lookups.*', 'can' => 'lab.view'],
+    ]],
+
+    ['label' => 'Human Resources', 'icon' => 'id-badge', 'children' => [
+        ['label' => 'Departments', 'route' => 'lookups.index', 'params' => ['type' => 'department'], 'active' => 'lookups.*', 'can' => 'hr.view'],
+        ['label' => 'Designations', 'route' => 'lookups.index', 'params' => ['type' => 'designation'], 'active' => 'lookups.*', 'can' => 'hr.view'],
+        ['label' => 'Employees', 'route' => 'accounts.index', 'params' => ['type' => 'employee'], 'active' => 'accounts.*', 'can' => 'hr.view'],
+        ['label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance.*', 'can' => 'hr.view'],
+        ['label' => 'Payroll', 'route' => 'payroll.index', 'active' => 'payroll.*', 'can' => 'hr.view'],
+        ['label' => 'Leave Management', 'route' => 'hr.index', 'params' => ['screen' => 'leave'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Performance Appraisal', 'route' => 'hr.index', 'params' => ['screen' => 'appraisals'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Employee Contracts', 'route' => 'hr.index', 'params' => ['screen' => 'contracts'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Shift Scheduling', 'route' => 'hr.index', 'params' => ['screen' => 'shifts'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Overtime Requests', 'route' => 'hr.index', 'params' => ['screen' => 'overtime'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Allowances & Deductions', 'route' => 'hr.index', 'params' => ['screen' => 'adjustments'], 'active' => 'hr.*', 'can' => 'hr.view'],
+        ['label' => 'Employee Advances', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'employee'], 'can' => 'money.manage'],
+    ]],
+
+    ['label' => 'Shareholders', 'icon' => 'handshake', 'children' => [
+        ['label' => 'Shareholder Management', 'route' => 'accounts.index', 'params' => ['type' => 'shareholder'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
+        ['label' => 'Capital Contribution', 'route' => 'capital', 'params' => ['from' => 'shareholders'], 'can' => 'money.view'],
+        ['label' => 'Withdrawals', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'shareholder'], 'can' => 'money.manage'],
+        ['label' => 'Profit Distribution', 'route' => 'money.profit', 'can' => 'money.manage'],
+        ['label' => 'Shareholder Statements', 'route' => 'reports.parties', 'params' => ['group' => 'shareholders'], 'can' => 'reports.view'],
+    ]],
+
+    ['label' => 'File Manager', 'icon' => 'folder-open', 'children' => [
+        ['label' => 'Documents', 'route' => 'documents.index', 'can' => 'documents.view'],
+        ['label' => 'Document Types', 'route' => 'lookups.index', 'params' => ['type' => 'document_type'], 'active' => 'lookups.*', 'can' => 'documents.view'],
+    ]],
+
     ['label' => 'Reports', 'icon' => 'chart-pie', 'children' => [
         ['label' => 'Cash Flow', 'route' => 'reports.cash', 'can' => 'reports.view'],
         ['label' => 'Balance Sheet', 'route' => 'reports.balance', 'can' => 'reports.view'],
@@ -137,11 +142,6 @@ return [
         ['label' => 'Stock in Hands', 'route' => 'stock.index', 'params' => ['from' => 'reports'], 'can' => 'inventory.view'],
         ['label' => 'Creditors', 'route' => 'reports.parties', 'params' => ['group' => 'creditors'], 'can' => 'reports.view'],
         ['label' => 'Debtors', 'route' => 'reports.parties', 'params' => ['group' => 'debtors'], 'can' => 'reports.view'],
-    ]],
-
-    ['label' => 'File Manager', 'icon' => 'folder-open', 'children' => [
-        ['label' => 'Documents', 'route' => 'documents.index', 'can' => 'documents.view'],
-        ['label' => 'Document Types', 'route' => 'lookups.index', 'params' => ['type' => 'document_type'], 'active' => 'lookups.*', 'can' => 'documents.view'],
     ]],
 
     ['label' => 'Administration', 'icon' => 'users-gear', 'children' => [
