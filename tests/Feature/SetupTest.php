@@ -143,4 +143,33 @@ class SetupTest extends TestCase
         $this->assertSame('gregorian', $admin->fresh()->calendar);
         $this->get(route('rates.index'))->assertSee('27/10/2026');
     }
+
+    public function test_todays_rates_are_saved_from_the_pop_up_of_the_top_bar(): void
+    {
+        $this->admin();
+        $afn = $this->currency('AFN');
+        $pkr = $this->currency('PKR');
+
+        // the top bar carries the language switcher and the rates pop-up
+        $this->get(route('dashboard'))->assertOk()->assertSee('id="ratesModal"', false)->assertSee('data-bs-target="#ratesModal"', false)
+            ->assertSee('topbar-lang', false)->assertSee('name="rates['.$afn->id.']"', false);
+
+        $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '64.80', $pkr->id => '']])->assertRedirect()->assertSessionHas('success');
+        $this->assertSame('64.800000', \App\Support\Num::round(\App\Services\Rates::rate($afn->id, '2026-11-12'), 6));
+        $this->assertSame(0, \App\Models\ExchangeRate::where('currency_id', $pkr->id)->count());
+
+        // the same day again replaces the rate instead of adding a second one
+        $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '65', $pkr->id => '280.5']])->assertRedirect();
+        $this->assertSame(1, \App\Models\ExchangeRate::where('currency_id', $afn->id)->count());
+        $this->assertSame('65.000000', \App\Support\Num::round(\App\Services\Rates::rate($afn->id, '2026-11-12'), 6));
+        $this->get(route('dashboard'))->assertSee('280.5');
+
+        $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '']])->assertSessionHas('danger');
+        $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '-3']])->assertSessionHasErrors();
+
+        // someone who may not change the setup has no button and cannot save
+        $this->userWith(['sales.view']);
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('ratesModal', false)->assertSee('topbar-lang', false);
+        $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '70']])->assertForbidden();
+    }
 }

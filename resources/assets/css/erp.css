@@ -317,3 +317,7 @@
 /* amounts keep their own order inside right-to-left text: "9,400.00 USD", not "USD 9,400.00" */
 [dir="rtl"] .text-end, [dir="rtl"] .sc-value, [dir="rtl"] .sc-foot, [dir="rtl"] .hbar-head strong, [dir="rtl"] .bal-amount, [dir="rtl"] .dash-figure, [dir="rtl"] .stmt-now-value, [dir="rtl"] .chart-tip { unicode-bidi: plaintext; }
 [dir="rtl"] .sc-value, [dir="rtl"] .sc-foot { text-align: right; }
+
+/* Top bar: the language button shows the language in two letters beside the globe. */
+.topbar-lang { width: auto; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.topbar-lang span { font-size: 12px; font-weight: 800; letter-spacing: .3px; }

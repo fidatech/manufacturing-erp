@@ -42,6 +42,10 @@
 <form id="calendarForm" method="POST" action="{{ route('preferences.calendar') }}" hidden>@csrf</form>
 <form id="localeForm" method="POST" action="{{ route('preferences.locale') }}" hidden>@csrf</form>
 
+@can('setup.manage')
+    @include('partials.rates-modal')
+@endcan
+
 @include('partials.flash')
 @include('partials.scripts')
 </body>

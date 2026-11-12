@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     $crud('setup/units', UnitController::class, 'units');
     $crud('setup/warehouses', WarehouseController::class, 'warehouses');
     $crud('setup/currencies', CurrencyController::class, 'currencies');
+    Route::post('setup/rates/daily', [ExchangeRateController::class, 'daily'])->name('rates.daily');
     $crud('setup/rates', ExchangeRateController::class, 'rates');
     $crud('setup/account-types', AccountTypeController::class, 'account-types');
     $crud('setup/item-groups', ItemCategoryController::class, 'item-categories');
