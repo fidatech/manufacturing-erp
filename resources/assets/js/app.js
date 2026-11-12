@@ -408,6 +408,8 @@
             var item = e.target.closest('.ss-item');
             if (item) { e.preventDefault(); pick(item.getAttribute('data-value')); }
         });
+        // the options or the value were changed from outside: show the chosen text again
+        select._ssSync = function () { box.value = current(); };
         box.addEventListener('blur', function () {
             if (box.value.trim() === '' && select.value !== '') pick('');
             else box.value = current();
@@ -415,6 +417,141 @@
         });
     };
     var enhance = function (scope) { $$('select[data-search]', scope).forEach(ERP.searchSelect); };
+
+    // ------------------------------------------------------- quick add
+    // A pick list that can get a new record without leaving the page:
+    //   <select data-quick-add="/suppliers/create" data-quick-title="New supplier">   a "+ New" link appears in its label
+    //   <button data-quick-add="/items/raw/create" data-quick-target="select[data-item]">   for lists inside rows
+    // The form opens in a pop-up, is saved in the background, and the new record is chosen in the list.
+    var quickModal = null;
+    var quickFor = null;
+    var quickOpen = function (trigger) {
+        var url = trigger.getAttribute('data-quick-add');
+        if (!url || !window.fetch) return;
+        quickFor = trigger;
+        if (!quickModal) {
+            quickModal = document.createElement('div');
+            quickModal.className = 'modal fade erp-quick';
+            quickModal.setAttribute('tabindex', '-1');
+            quickModal.setAttribute('aria-hidden', 'true');
+            quickModal.innerHTML = '<div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"></h5>'
+                + '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="' + ERP.escape(T.cancel || 'Cancel') + '"></button></div><div class="modal-body"></div></div></div>';
+            body.appendChild(quickModal);
+        }
+        var box = $('.modal-body', quickModal);
+        $('.modal-title', quickModal).textContent = trigger.getAttribute('data-quick-title') || trigger.textContent.trim() || '';
+        box.innerHTML = '<div class="text-center text-muted py-5">…</div>';
+        ERP.showModal(quickModal);
+        fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'modal=1', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) { if (!response.ok) throw new Error(String(response.status)); return response.text(); })
+            .then(function (html) {
+                box.innerHTML = html;
+                // the pop-up must not reuse the ids of the page under it
+                $$('[id]', box).forEach(function (el) { el.id = 'q-' + el.id; });
+                $$('label[for]', box).forEach(function (el) { el.setAttribute('for', 'q-' + el.getAttribute('for')); });
+                enhance(box);
+                var form = $('form[data-quick-form]', box);
+                if (form) form.addEventListener('submit', quickSend);
+                var first = $('input:not([type="hidden"]):not([type="checkbox"]), select, textarea', box);
+                if (first) first.focus();
+            })
+            .catch(function () { ERP.hideModal(quickModal); ERP.toast(T.failed || 'Could not open the form.', 'danger'); });
+    };
+    var quickSend = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var form = e.currentTarget;
+        if (form._busy) return;
+        form._busy = true;
+        var button = $('button[type="submit"]', form);
+        if (button) button.classList.add('is-busy');
+        var errors = $('[data-quick-errors]', form);
+        var fail = function (messages) {
+            form._busy = false;
+            if (button) button.classList.remove('is-busy');
+            if (!errors) return;
+            errors.innerHTML = messages.map(function (m) { return '<div>' + ERP.escape(m) + '</div>'; }).join('');
+            errors.hidden = false;
+            errors.scrollIntoView({ block: 'nearest' });
+        };
+        fetch(form.getAttribute('action'), { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data || {} }; }); })
+            .then(function (result) {
+                if (!result.ok) {
+                    var list = [];
+                    var bag = result.data.errors || {};
+                    Object.keys(bag).forEach(function (key) { list = list.concat(bag[key]); });
+                    fail(list.length ? list : [result.data.message || T.failed || 'Could not save.']);
+                    return;
+                }
+                ERP.hideModal(quickModal);
+                if (result.data.message) ERP.toast(result.data.message, 'success');
+                quickRefresh(quickFor, (result.data.ids || []).concat(result.data.names || []).map(String));
+            })
+            .catch(function () { fail([T.failed || 'Could not save.']); });
+    };
+    // Read the page again in the background and copy the fresh choices into the lists, then pick the new record.
+    var quickRefresh = function (trigger, ids) {
+        var selector = trigger.getAttribute('data-quick-target');
+        var targets = selector ? $$(selector) : [trigger];
+        var templates = selector ? $$('template') : [];
+        fetch(window.location.href, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                var fresh = new DOMParser().parseFromString(html, 'text/html');
+                var find = function (query) {
+                    var found = fresh.querySelector(query);
+                    for (var i = 0, all = fresh.querySelectorAll('template'); !found && i < all.length; i++) found = all[i].content.querySelector(query);
+                    return found;
+                };
+                var copy = function (select, source) {
+                    var keep = select.value;
+                    select.innerHTML = source.innerHTML;
+                    select.value = keep;
+                    if (select.value !== keep) select.selectedIndex = 0;
+                };
+                var picked = false;
+                targets.forEach(function (select) {
+                    var source = (select.name && fresh.querySelector('select[name="' + select.name.replace(/"/g, '\\"') + '"]')) || (selector ? find(selector) : null);
+                    if (!source) return;
+                    copy(select, source);
+                    // the new record goes into the list that asked for it, or into the first empty row
+                    if (!picked && (!selector || !select.value)) {
+                        for (var i = 0; i < ids.length; i++) {
+                            select.value = ids[i];
+                            if (select.value === ids[i]) { picked = true; break; }
+                        }
+                        if (!picked) select.value = '';
+                    }
+                    if (select._ssSync) select._ssSync();
+                    if (select.value) select.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+                templates.forEach(function (template) {
+                    var inside = template.content.querySelector(selector);
+                    var source = inside ? find(selector) : null;
+                    if (source) inside.innerHTML = source.innerHTML;
+                });
+            })
+            .catch(function () { return null; });
+    };
+    // a small "+ New" link in the label of every pick list that allows it
+    $$('select[data-quick-add]').forEach(function (select) {
+        if (select.closest('.modal')) return;
+        var label = select.id ? $('label[for="' + select.id + '"]') : null;
+        if (!label) return;
+        var link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'quick-add';
+        link.innerHTML = ERP.icon('s-plus') + ' ' + ERP.escape(T.addNew || 'New');
+        link.title = select.getAttribute('data-quick-title') || '';
+        link.addEventListener('click', function () { quickOpen(select); });
+        label.classList.add('has-quick-add');
+        label.appendChild(link);
+    });
+    document.addEventListener('click', function (e) {
+        var button = e.target.closest('button[data-quick-add]');
+        if (button) { e.preventDefault(); quickOpen(button); }
+    });
 
     // ------------------------------------------------------- rows of a paper
     // <table data-rows> with <tbody data-rows-body>, <template data-row-template> (uses __i__ as

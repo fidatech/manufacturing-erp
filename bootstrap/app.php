@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // A problem the user can fix: go back to the form and show the message.
         $exceptions->render(function (UserError $e, Request $request) {
+            // a form sent from a pop-up (quick add) gets the message back as data
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->withInput()->with('danger', $e->getMessage());
         });
         $exceptions->dontReport(UserError::class);

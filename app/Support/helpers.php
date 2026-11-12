@@ -103,3 +103,19 @@ if (! function_exists('audit')) {
         AuditLog::record($action, $subject, $description);
     }
 }
+
+if (! function_exists('quick_add')) {
+    /**
+     * Attributes that let a pick list (or a button) add a new record in a pop-up without leaving the page:
+     *   <select name="supplier_id" {{ quick_add('accounts', __('New supplier'), 'accounts.create', ['type' => 'supplier']) }}>
+     * Nothing is written when the user may not add such records.
+     */
+    function quick_add(string $permission, string $title, string $route, array $params = []): \Illuminate\Support\HtmlString
+    {
+        if (! auth()->user()?->can($permission.'.manage')) {
+            return new \Illuminate\Support\HtmlString('');
+        }
+
+        return new \Illuminate\Support\HtmlString('data-quick-add="'.e(route($route, $params)).'" data-quick-title="'.e($title).'"');
+    }
+}

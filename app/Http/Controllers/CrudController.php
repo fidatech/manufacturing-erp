@@ -6,6 +6,7 @@ use App\Exceptions\UserError;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,6 +94,17 @@ abstract class CrudController extends Controller
         return true;
     }
 
+    /** @var list<Model> records saved by this request */
+    protected array $saved = [];
+
+    /** One controller object can serve several requests (in tests): each starts with a clean list. */
+    public function callAction($method, $parameters)
+    {
+        $this->saved = [];
+
+        return parent::callAction($method, $parameters);
+    }
+
     public function index(Request $request): View
     {
         Gate::authorize($this->permission.'.view');
@@ -136,20 +148,42 @@ abstract class CrudController extends Controller
     {
         Gate::authorize($this->permission.'.manage');
 
-        return view('crud.form', $this->shared() + [
+        // ?modal=1: only the form, for the "add new" pop-up beside a pick list on another screen
+        return view($request->boolean('modal') ? 'crud.modal' : 'crud.form', $this->shared() + [
             'record' => null,
             'fields' => $this->fields(null),
             'action' => route($this->route.'.store', $this->routeParams()),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         Gate::authorize($this->permission.'.manage');
 
         $this->save($request, null);
+        if ($answer = $this->quickAnswer($request)) {
+            return $answer;
+        }
 
         return redirect()->route($this->route.'.index', $this->routeParams())->with('success', __(':name saved.', ['name' => __($this->singular)]));
+    }
+
+    /**
+     * A record added from the "add new" pop-up of another screen: that screen stays open,
+     * so it is told which records were made and picks them in its list.
+     */
+    protected function quickAnswer(Request $request): ?JsonResponse
+    {
+        if (! $request->boolean('_quick')) {
+            return null;
+        }
+
+        return response()->json([
+            'ids' => array_map(fn (Model $record) => $record->getKey(), $this->saved),
+            // some lists keep the name, not the number, as their value
+            'names' => array_values(array_filter(array_map(fn (Model $record) => $record->getAttribute('name'), $this->saved))),
+            'message' => __(':name saved.', ['name' => __($this->singular)]),
+        ]);
     }
 
     public function edit(Request $request): View
@@ -244,6 +278,7 @@ abstract class CrudController extends Controller
             $record = $record ?? new $this->model;
             $record->fill($data)->save();
             $this->afterSave($record, $virtual, $request, $created);
+            $this->saved[] = $record;
 
             return $record;
         });

@@ -14,7 +14,7 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="f-category">{{ __('Document type') }}</label>
-                    <select class="form-select" id="f-category" name="category">
+                    <select class="form-select" id="f-category" name="category" {{ quick_add('documents', __('New document type'), 'lookups.create', ['type' => 'document_type']) }}>
                         <option value="">{{ __('Choose…') }}</option>
                         @foreach ($types as $type)
                             <option value="{{ $type }}" @selected(old('category') === $type)>{{ $type }}</option>

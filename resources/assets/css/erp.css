@@ -290,3 +290,17 @@
 .bal-zero { color: var(--muted); font-weight: 600; }
 .stat-card .sc-value.bal-due { color: var(--bal-due); }
 .stat-card .sc-value.bal-owe { color: var(--bal-owe); }
+
+/* ---------- Quick add: "+ New" beside a pick list opens the add form in a pop-up ---------- */
+.form-label.has-quick-add { display: flex; align-items: center; gap: 6px; }
+.quick-add { margin-inline-start: auto; padding: 1px 9px; border: 0; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; line-height: 1.6; white-space: nowrap; cursor: pointer; }
+.quick-add:hover, .quick-add:focus-visible { background: var(--primary); color: #fff; outline: 0; }
+.quick-add .fi { font-size: 10px; }
+.erp-quick .modal-content { border: 0; border-radius: 18px; background: var(--card); box-shadow: var(--shadow-lg); }
+.erp-quick .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.erp-quick .modal-title { font-size: 17px; font-weight: 800; color: var(--heading); }
+.erp-quick .modal-body { padding: 20px 22px 22px; }
+@media (max-width: 575.98px) {
+    .erp-quick .modal-dialog { margin: 0; min-height: 100%; align-items: flex-end; display: flex; }
+    .erp-quick .modal-content { border-radius: 18px 18px 0 0; max-height: 92vh; }
+}

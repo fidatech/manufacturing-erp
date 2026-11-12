@@ -70,6 +70,7 @@ class AccountController extends CrudController
         // nothing is remembered from an earlier request handled by this same object
         $this->type = null;
         $this->balances = null;
+        $this->saved = [];
         $this->permission = 'accounts';
         $this->type();
 
@@ -185,8 +186,10 @@ class AccountController extends CrudController
             ],
             'employee' => [
                 ['name' => 'father_name', 'label' => 'Father name', 'rules' => ['nullable', 'string', 'max:150']],
-                ['name' => 'department', 'label' => 'Department', 'type' => 'select', 'options' => \App\Models\Lookup::options('department'), 'rules' => ['nullable', 'string', 'max:150']],
+                ['name' => 'department', 'label' => 'Department', 'type' => 'select', 'options' => \App\Models\Lookup::options('department'), 'rules' => ['nullable', 'string', 'max:150'],
+                    'quick' => ['hr', 'New department', 'lookups.create', ['type' => 'department']]],
                 ['name' => 'job_title', 'label' => 'Designation', 'type' => 'select', 'options' => \App\Models\Lookup::designations(), 'rules' => ['nullable', 'string', 'max:150'],
+                    'quick' => ['hr', 'New designation', 'lookups.create', ['type' => 'designation']],
                     'help' => 'Add departments and designations under Human Resources first.'],
                 ['name' => 'gender', 'label' => 'Gender', 'type' => 'select', 'options' => ['male' => __('Male'), 'female' => __('Female')], 'rules' => ['nullable', 'in:male,female']],
                 ['name' => 'id_number', 'label' => 'Tazkira number', 'rules' => ['nullable', 'string', 'max:100']],
@@ -206,7 +209,7 @@ class AccountController extends CrudController
      * A new account is saved once for every ticked currency, each with its own
      * optional opening balance. All of them are saved together or not at all.
      */
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    public function store(Request $request): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
     {
         if (! $request->has('currencies')) {
             return parent::store($request);
@@ -230,6 +233,10 @@ class AccountController extends CrudController
                 $this->save($request, null);
             }
         });
+
+        if ($answer = $this->quickAnswer($request)) {
+            return $answer;
+        }
 
         return redirect()->route($this->route.'.index', $this->routeParams())->with('success', count($ticked) > 1
             ? __(':count accounts saved, one for each currency.', ['count' => count($ticked)])

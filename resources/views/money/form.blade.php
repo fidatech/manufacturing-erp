@@ -26,7 +26,7 @@
             </div>
             <div class="col-12 col-md-8">
                 <label class="form-label" for="f-other">{{ $labels[0] }} <span class="text-danger">*</span></label>
-                <select class="form-select @error('other_id') is-invalid @enderror" id="f-other" name="other_id" required data-search data-currency-of="other">
+                <select class="form-select @error('other_id') is-invalid @enderror" id="f-other" name="other_id" {{ $quickOther ?? '' }} required data-search data-currency-of="other">
                     <option value="">{{ __('Choose…') }}</option>
                     @foreach ($others as $account)
                         <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @selected((string) old('other_id', request('account')) === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }}) · {{ __($account->type->name) }}</option>

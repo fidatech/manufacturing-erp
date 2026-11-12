@@ -59,7 +59,7 @@
     @else
         <label class="form-label" for="f-{{ $name }}">{{ __($field['label']) }}@if ($required) <span class="text-danger">*</span>@endif</label>
         @if ($type === 'select')
-            <select class="form-select @error($name) is-invalid @enderror" id="f-{{ $name }}" name="{{ $name }}" @disabled($readonly) @required($required) @if (! empty($field['search'])) data-search @endif>
+            <select class="form-select @error($name) is-invalid @enderror" id="f-{{ $name }}" name="{{ $name }}" @disabled($readonly) @required($required) @if (! empty($field['search'])) data-search @endif @if (! empty($field['quick'])) {{ quick_add($field['quick'][0], __($field['quick'][1]), $field['quick'][2], $field['quick'][3] ?? []) }} @endif>
                 @unless ($required && $value !== null && $value !== '')
                     <option value="">{{ __('Choose…') }}</option>
                 @endunless

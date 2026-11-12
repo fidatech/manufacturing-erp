@@ -72,8 +72,10 @@ class ItemController extends CrudController
             ['name' => 'name', 'label' => 'Name', 'rules' => ['required', 'string', 'max:255']],
             ['name' => 'code', 'label' => 'Code', 'rules' => ['nullable', 'string', 'max:50', Rule::unique('items')->ignore($record?->id)], 'help' => 'For example: KC9012'],
             ['name' => 'item_category_id', 'label' => 'Group', 'type' => 'select', 'rules' => ['nullable', 'exists:item_categories,id'],
+                'quick' => ['items', 'New group', 'item-categories.create'],
                 'options' => ItemCategory::where('type', $kind)->orderBy('name')->pluck('name', 'id')->all()],
             ['name' => 'unit_id', 'label' => 'Counted in', 'type' => 'select', 'rules' => ['required', 'exists:units,id'],
+                'quick' => ['setup', 'New unit', 'units.create'],
                 'options' => Unit::orderBy('name')->pluck('name', 'id')->all(), 'help' => 'Stock, purchases and sales of this item use this unit.'],
             ['name' => 'packing', 'label' => 'Packing', 'rules' => ['nullable', 'string', 'max:100'], 'help' => 'For example: Can 20 kg'],
         ];

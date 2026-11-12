@@ -27,7 +27,7 @@
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label" for="f-category">{{ __('Category') }}</label>
-                <select class="form-select" id="f-category" name="category">
+                <select class="form-select" id="f-category" name="category" {{ quick_add('setup', __('New asset category'), 'lookups.create', ['type' => 'asset_category']) }}>
                     <option value="">{{ __('Choose…') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected(old('category') === $category)>{{ $category }}</option>

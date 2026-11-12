@@ -24,7 +24,7 @@
             </div>
             <div class="col-6 col-md-3">
                 <label class="form-label" for="f-wh">{{ __('Raw materials from') }}</label>
-                <select class="form-select" id="f-wh" name="warehouse" required>
+                <select class="form-select" id="f-wh" name="warehouse" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                     @if ($warehouses->count() !== 1)
                         <option value="">{{ __('Choose…') }}</option>
                     @endif
@@ -76,7 +76,7 @@
                 </div>
                 <div class="col-6 col-md-3">
                     <label class="form-label" for="f-to">{{ __('Put the product in') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-to" name="to_warehouse_id" required>
+                    <select class="form-select" id="f-to" name="to_warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         @foreach ($warehouses as $warehouse)
                             <option value="{{ $warehouse->id }}" @selected((string) old('to_warehouse_id', $warehouseId) === (string) $warehouse->id)>{{ $warehouse->name }}</option>
                         @endforeach

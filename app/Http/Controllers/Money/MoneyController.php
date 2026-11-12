@@ -79,6 +79,7 @@ class MoneyController extends Controller
         return view('money.form', [
             'kind' => $kind,
             'group' => $group,
+            'quickOther' => $this->quickOther($kind, $group),
             'heading' => $this->heading($kind, $group),
             'moneyAccounts' => Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get(),
             'others' => $this->others($kind, $group),
@@ -190,6 +191,20 @@ class MoneyController extends Controller
         DB::transaction(fn () => Ledger::void($entry));
 
         return back()->with('success', __(':number was cancelled.', ['number' => $entry->number]));
+    }
+
+    /** The "add new" pop-up beside the list of people, when the screen is about one kind of account. */
+    private function quickOther(string $kind, ?string $group): \Illuminate\Support\HtmlString|string
+    {
+        $titles = [
+            'customer' => __('New customer'), 'supplier' => __('New supplier'), 'shareholder' => __('New shareholder'),
+            'liability' => __('New loan account'), 'employee' => __('New employee'), 'warehouse_manager' => __('New warehouse manager'),
+        ];
+        if ($kind === 'expense') {
+            return quick_add('accounts', __('New expense category'), 'accounts.create', ['type' => 'expense']);
+        }
+
+        return isset($titles[$group]) ? quick_add('accounts', $titles[$group], 'accounts.create', ['type' => $group]) : '';
     }
 
     private function kind(Request $request): string

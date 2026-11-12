@@ -27,7 +27,7 @@
                     </div>
                     <div class="col-12 col-md-4">
                         <label class="form-label" for="f-other">{{ __('Shareholder') }} <span class="text-danger">*</span></label>
-                        <select class="form-select @error('other_id') is-invalid @enderror" id="f-other" name="other_id" required data-currency-of="other">
+                        <select class="form-select @error('other_id') is-invalid @enderror" id="f-other" name="other_id" {{ quick_add('accounts', __('New shareholder'), 'accounts.create', ['type' => 'shareholder']) }} required data-currency-of="other">
                             <option value="">{{ __('Choose…') }}</option>
                             @foreach ($shareholders as $account)
                                 <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @selected((string) old('other_id') === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }})</option>

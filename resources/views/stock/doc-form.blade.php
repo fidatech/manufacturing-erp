@@ -27,7 +27,7 @@
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-6">
                     <label class="form-label" for="f-pick">{{ __('Which warehouse are you counting?') }}</label>
-                    <select class="form-select" id="f-pick" name="warehouse" required>
+                    <select class="form-select" id="f-pick" name="warehouse" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         <option value="">{{ __('Choose…') }}</option>
                         @foreach ($warehouses as $warehouse)
                             <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
@@ -49,7 +49,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label" for="f-warehouse">{{ $type === 'transfer' ? __('From warehouse') : __('Warehouse') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-warehouse" name="warehouse_id" required>
+                    <select class="form-select" id="f-warehouse" name="warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         @if ($warehouses->count() !== 1)
                             <option value="">{{ __('Choose…') }}</option>
                         @endif
@@ -61,7 +61,7 @@
                 @if ($type === 'transfer')
                     <div class="col-12 col-md-4">
                         <label class="form-label" for="f-to">{{ __('To warehouse') }} <span class="text-danger">*</span></label>
-                        <select class="form-select" id="f-to" name="to_warehouse_id" required>
+                        <select class="form-select" id="f-to" name="to_warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                             <option value="">{{ __('Choose…') }}</option>
                             @foreach ($warehouses as $warehouse)
                                 <option value="{{ $warehouse->id }}" @selected((string) old('to_warehouse_id') === (string) $warehouse->id)>{{ $warehouse->name }}</option>
@@ -95,6 +95,10 @@
             </div>
             <template data-row-template>@include('stock.doc-row', ['i' => '__i__', 'line' => []])</template>
             <button type="button" class="btn btn-sm btn-outline-soft" data-add-row><x-icon name="plus" /> {{ __('Add item') }}</button>
+            @can('items.manage')
+                <button type="button" class="btn btn-sm btn-outline-soft" data-quick-target="select[data-item]" {{ quick_add('items', __('New raw material'), 'items.create', ['type' => 'raw']) }}><x-icon name="plus" /> {{ __('New raw material') }}</button>
+                <button type="button" class="btn btn-sm btn-outline-soft" data-quick-target="select[data-item]" {{ quick_add('items', __('New product'), 'items.create', ['type' => 'product']) }}><x-icon name="plus" /> {{ __('New product') }}</button>
+            @endcan
             @if ($type === 'count')
                 <div class="form-text">{{ __('Rows you leave empty are not changed.') }}</div>
             @endif

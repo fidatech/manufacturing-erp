@@ -28,7 +28,7 @@
                 </div>
                 <div class="col-12 col-md-5">
                     <label class="form-label" for="f-supplier">{{ __('Supplier') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-supplier" name="supplier_id" required data-search data-party>
+                    <select class="form-select" id="f-supplier" name="supplier_id" {{ quick_add('accounts', __('New supplier'), 'accounts.create', ['type' => 'supplier']) }} required data-search data-party>
                         <option value="">{{ __('Choose…') }}</option>
                         @foreach ($suppliers as $supplier)
                             <option value="{{ $supplier->id }}" data-cur="{{ $supplier->currency->code }}" @selected((string) old('supplier_id', $from?->supplier_id) === (string) $supplier->id)>{{ $supplier->name }} ({{ $supplier->currency->code }})</option>
@@ -38,7 +38,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label" for="f-warehouse">{{ __('Warehouse') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-warehouse" name="warehouse_id" required>
+                    <select class="form-select" id="f-warehouse" name="warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         @if ($warehouses->count() !== 1)
                             <option value="">{{ __('Choose…') }}</option>
                         @endif
@@ -86,6 +86,10 @@
             </div>
             <template data-row-template="lines">@include('purchases.row', ['i' => '__i__', 'line' => []])</template>
             <button type="button" class="btn btn-sm btn-outline-soft" data-add-row="lines"><x-icon name="plus" /> {{ __('Add item') }}</button>
+            @can('items.manage')
+                <button type="button" class="btn btn-sm btn-outline-soft" data-quick-target="select[data-item]" {{ quick_add('items', __('New raw material'), 'items.create', ['type' => 'raw']) }}><x-icon name="plus" /> {{ __('New raw material') }}</button>
+                <button type="button" class="btn btn-sm btn-outline-soft" data-quick-target="select[data-item]" {{ quick_add('items', __('New product'), 'items.create', ['type' => 'product']) }}><x-icon name="plus" /> {{ __('New product') }}</button>
+            @endcan
 
             <div class="row justify-content-end mt-3">
                 <div class="col-12 col-md-5">

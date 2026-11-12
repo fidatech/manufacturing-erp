@@ -17,7 +17,7 @@
             <div class="row g-3">
                 <div class="col-12 col-md-6">
                     <label class="form-label" for="f-item">{{ __('Product') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-item" name="item_id" required data-search>
+                    <select class="form-select" id="f-item" name="item_id" {{ quick_add('items', __('New product'), 'items.create', ['type' => 'product']) }} required data-search>
                         <option value="">{{ __('Choose…') }}</option>
                         @foreach ($products as $product)
                             <option value="{{ $product->id }}" @selected((string) old('item_id', $recipe?->item_id) === (string) $product->id)>{{ $product->label() }}</option>
@@ -77,6 +77,9 @@
             </div>
             <template data-row-template>@include('production.recipe-row', ['i' => '__i__', 'line' => []])</template>
             <button type="button" class="btn btn-sm btn-outline-soft" data-add-row><x-icon name="plus" /> {{ __('Add ingredient') }}</button>
+            @can('items.manage')
+                <button type="button" class="btn btn-sm btn-outline-soft" data-quick-target="select[data-item]" {{ quick_add('items', __('New raw material'), 'items.create', ['type' => 'raw']) }}><x-icon name="plus" /> {{ __('New raw material') }}</button>
+            @endcan
         </div>
     </div>
 
