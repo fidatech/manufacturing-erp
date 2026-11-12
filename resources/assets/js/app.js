@@ -307,6 +307,38 @@
         });
     }
 
+    // ------------------------------------------------------- amount boxes
+    // Every amount box (inputmode="decimal") accepts digits only and shows thousands
+    // with commas while typing: 12500.5 becomes 12,500.5. The server removes the commas.
+    ERP.formatNumber = function (value) {
+        var text = String(value == null ? '' : value).replace(/[^0-9.]/g, '');
+        var dot = text.indexOf('.');
+        var whole = dot < 0 ? text : text.slice(0, dot);
+        // only the first dot counts
+        var fraction = dot < 0 ? null : text.slice(dot + 1).replace(/\./g, '');
+        whole = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        if (dot === 0) whole = '0';
+        return fraction === null ? whole : whole + '.' + fraction;
+    };
+    ERP.numberInput = function (input) {
+        var before = input.value;
+        var caret = input.selectionStart == null ? before.length : input.selectionStart;
+        // how many digits and dots are left of the caret: the caret stays after the same one
+        var keep = before.slice(0, caret).replace(/[^0-9.]/g, '').length;
+        var after = ERP.formatNumber(before);
+        if (after === before) return;
+        input.value = after;
+        var position = 0;
+        for (var seen = 0; position < after.length && seen < keep; position++) {
+            if (/[0-9.]/.test(after.charAt(position))) seen++;
+        }
+        try { input.setSelectionRange(position, position); } catch (err) { return; }
+    };
+    var AMOUNT = 'input[inputmode="decimal"]';
+    document.addEventListener('input', function (e) {
+        if (e.target.matches && e.target.matches(AMOUNT)) ERP.numberInput(e.target);
+    });
+
     // ------------------------------------------------ select with search box
     // <select data-search> becomes a box you can type in. No library needed.
     ERP.searchSelect = function (select) {
@@ -518,6 +550,7 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     syncTheme();
+    $$(AMOUNT).forEach(function (input) { if (input.value) input.value = ERP.formatNumber(input.value); });
     enhance(document);
     cardifyAll();
     var active = $('#sidebarMenu .menu-sublink.active, #sidebarMenu .menu-item.active > .menu-link');

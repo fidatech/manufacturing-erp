@@ -258,6 +258,33 @@ class ModulesTest extends TestCase
         $this->assertDatabaseHas('accounts', ['name' => 'Fuel', 'currency_id' => $usd]);
     }
 
+    public function test_amounts_typed_with_thousands_commas_are_stored_as_plain_numbers(): void
+    {
+        $this->rate('AFN', '70');
+        $usd = $this->currency('USD')->id;
+        $afn = $this->currency('AFN')->id;
+
+        // opening balances with commas, and a name that only looks like a number
+        $this->post(route('accounts.store', ['type' => 'customer']), ['name' => '1,000', 'is_active' => '1',
+            'currencies' => [$usd => ['on' => '1', 'opening' => '12,500.75', 'side' => 'debit'], $afn => ['on' => '1', 'opening' => '1,400,000', 'side' => 'credit']],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $accounts = Account::where('name', '1,000')->with('currency')->get()->keyBy(fn ($a) => $a->currency->code);
+        $this->assertCount(2, $accounts);                                   // the name was left alone
+        $this->assertSame('12500.75', Ledger::balance($accounts['USD']->id));
+        $this->assertSame('-1400000.00', Ledger::balance($accounts['AFN']->id));
+
+        // the same on every other amount box
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => '2026-10-27', 'money_id' => $this->cash('USD')->id, 'other_id' => $accounts['USD']->id, 'amount' => '2,500.75', 'description' => '1,000'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('10000.00', Ledger::balance($accounts['USD']->id));
+        $this->assertDatabaseHas('journal_entries', ['description' => '1,000']);
+
+        // text is still refused where a number is needed
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => '2026-10-27', 'money_id' => $this->cash('USD')->id, 'other_id' => $accounts['USD']->id, 'amount' => 'ten'])->assertSessionHasErrors('amount');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => '2026-10-27', 'money_id' => $this->cash('USD')->id, 'other_id' => $accounts['USD']->id, 'amount' => '1,25'])->assertSessionHasErrors('amount');
+    }
+
     public function test_the_capital_page_adds_lists_and_totals_capital(): void
     {
         $owner = $this->account('shareholder', 'Partner A', 'USD', ['meta' => ['share_percent' => '100']]);

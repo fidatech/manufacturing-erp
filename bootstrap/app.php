@@ -3,6 +3,7 @@
 use App\Exceptions\UserError;
 use App\Http\Middleware\ConvertShamsiDates;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\StripNumberCommas;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
-        $middleware->web(append: [ConvertShamsiDates::class, EnsureUserIsActive::class]);
+        $middleware->web(append: [StripNumberCommas::class, ConvertShamsiDates::class, EnsureUserIsActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // A problem the user can fix: go back to the form and show the message.
