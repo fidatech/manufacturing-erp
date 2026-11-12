@@ -48,6 +48,9 @@ $crud = function (string $uri, string $controller, string $name): void {
     Route::delete("$uri/{id}", [$controller, 'destroy'])->name("$name.destroy")->whereNumber('id');
 };
 
+// the language can be chosen before and after signing in
+Route::post('language', [PreferenceController::class, 'locale'])->name('preferences.locale');
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'show'])->name('login');
     Route::post('login', [LoginController::class, 'store'])->name('login.store');

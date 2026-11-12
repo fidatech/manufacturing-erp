@@ -40,6 +40,7 @@
       data-confirm-ok="{{ __('app.nav.sign_out') }}" data-confirm-style="primary">@csrf</form>
 
 <form id="calendarForm" method="POST" action="{{ route('preferences.calendar') }}" hidden>@csrf</form>
+<form id="localeForm" method="POST" action="{{ route('preferences.locale') }}" hidden>@csrf</form>
 
 @include('partials.flash')
 @include('partials.scripts')

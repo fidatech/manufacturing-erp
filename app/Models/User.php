@@ -17,7 +17,7 @@ class User extends Authenticatable
     /** The role that may do everything. It cannot be edited or removed. */
     public const ADMIN_ROLE = 'Administrator';
 
-    protected $fillable = ['name', 'email', 'password', 'is_active', 'calendar'];
+    protected $fillable = ['name', 'email', 'password', 'is_active', 'calendar', 'locale'];
 
     protected $hidden = ['password', 'remember_token'];
 

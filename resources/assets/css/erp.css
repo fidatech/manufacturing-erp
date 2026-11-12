@@ -304,3 +304,16 @@
     .erp-quick .modal-dialog { margin: 0; min-height: 100%; align-items: flex-end; display: flex; }
     .erp-quick .modal-content { border-radius: 18px 18px 0 0; max-height: 92vh; }
 }
+
+/* ---------- Languages: the choice on the sign-in page, and small fixes for right-to-left ---------- */
+.auth-languages { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+.auth-languages button { padding: 5px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.auth-languages button:hover, .auth-languages button.active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+[dir="rtl"] body { font-family: 'Segoe UI', Tahoma, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Arial, sans-serif; letter-spacing: 0; }
+[dir="rtl"] .stat-card .sc-value, [dir="rtl"] .stmt-now-value, [dir="rtl"] .dash-figure, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h5 { letter-spacing: 0; }
+[dir="rtl"] .stmt-table thead th, [dir="rtl"] .table thead th { letter-spacing: 0; }
+[dir="rtl"] .chart-col.tip-start .chart-tip { left: auto; right: 0; }
+[dir="rtl"] .chart-col.tip-end .chart-tip { right: auto; left: 0; }
+/* amounts keep their own order inside right-to-left text: "9,400.00 USD", not "USD 9,400.00" */
+[dir="rtl"] .text-end, [dir="rtl"] .sc-value, [dir="rtl"] .sc-foot, [dir="rtl"] .hbar-head strong, [dir="rtl"] .bal-amount, [dir="rtl"] .dash-figure, [dir="rtl"] .stmt-now-value, [dir="rtl"] .chart-tip { unicode-bidi: plaintext; }
+[dir="rtl"] .sc-value, [dir="rtl"] .sc-foot { text-align: right; }

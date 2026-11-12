@@ -28,5 +28,11 @@
         </div>
         <button type="submit" class="btn btn-gradient btn-lg w-100">{{ __('app.auth.submit') }} <x-icon name="arrow-right" class="ms-1" /></button>
     </form>
+    <form method="POST" action="{{ route('preferences.locale') }}" class="auth-languages">
+        @csrf
+        @foreach (config('app.locales') as $code => $language)
+            <button type="submit" name="locale" value="{{ $code }}" lang="{{ $code }}" class="{{ app()->getLocale() === $code ? 'active' : '' }}">{{ $language }}</button>
+        @endforeach
+    </form>
 </div>
 @endsection

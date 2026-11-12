@@ -80,6 +80,9 @@ return [
 
     'locale' => env('APP_LOCALE', 'en'),
 
+    // the languages a user can choose; fa (Dari) and ps (Pashto) are written right to left
+    'locales' => ['en' => 'English', 'fa' => 'دری', 'ps' => 'پښتو'],
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
