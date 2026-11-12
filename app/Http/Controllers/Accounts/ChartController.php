@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounts;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Setup\CompanyController;
 use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\JournalLine;
@@ -46,6 +47,18 @@ class ChartController extends Controller
 
     /** Statement of one account: every movement between two dates with a running balance. */
     public function statement(Request $request): View
+    {
+        return view('accounts.statement', $this->statementData($request));
+    }
+
+    /** The same statement as a clean paper with the company logo, ready for the printer or "Save as PDF". */
+    public function statementPrint(Request $request): View
+    {
+        return view('accounts.statement-print', $this->statementData($request) + ['logo' => CompanyController::logoDataUri()]);
+    }
+
+    /** @return array<string, mixed> */
+    private function statementData(Request $request): array
     {
         $account = Account::with(['currency', 'type'])->findOrFail($request->route('id'));
         Gate::authorize($account->type->key === 'employee' ? 'hr.view' : 'accounts.view');
@@ -99,7 +112,7 @@ class ChartController extends Controller
         };
         $first = JournalLine::where('account_id', $account->id)->where('is_void', false)->min('date');
 
-        return view('accounts.statement', [
+        return [
             'account' => $account,
             'from' => $from,
             'to' => $to,
@@ -111,6 +124,6 @@ class ChartController extends Controller
             'money' => $account->type->is_money,
             'columns' => $columns,
             'periods' => Periods::quick($from, $to, $first ? substr((string) $first, 0, 10) : null),
-        ]);
+        ];
     }
 }

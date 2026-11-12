@@ -14,7 +14,7 @@
 
 @section('content')
 <x-page-header :title="__('Account statement')" icon="file-invoice" :crumbs="[[__('Chart of Accounts'), auth()->user()->can('accounts.view') ? route('chart') : null], [$account->name]]">
-    <button type="button" class="btn btn-primary" onclick="window.print()"><x-icon name="print" class="me-1" /> {{ __('Print') }}</button>
+    <a class="btn btn-primary" href="{{ route('statement.print', ['id' => $account->id, 'from' => $from, 'to' => $to]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print statement') }}</a>
 </x-page-header>
 
 <div class="stmt">

@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     // Accounts: customers, suppliers, banks, sarafi, shareholders, employees ...
     Route::get('chart-of-accounts', [ChartController::class, 'index'])->name('chart');
     Route::get('statement/{id}', [ChartController::class, 'statement'])->name('statement')->whereNumber('id');
+    Route::get('statement/{id}/print', [ChartController::class, 'statementPrint'])->name('statement.print')->whereNumber('id');
     $crud('accounts/{type}', AccountController::class, 'accounts');
 
     // Products and raw materials

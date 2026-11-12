@@ -40,6 +40,12 @@ class MoneyTest extends TestCase
         $this->assertSame('owe', $customer->balanceTone('-5'));
         $this->assertSame('zero', $customer->balanceTone('0'));
 
+        // the printed statement is a paper of its own with the company's name and the same figures
+        $this->get(route('statement', ['id' => $customer->id]))->assertSee(route('statement.print', ['id' => $customer->id]), false);
+        $this->get(route('statement.print', ['id' => $customer->id, 'from' => '2000-01-01', 'to' => today_iso()]))->assertOk()
+            ->assertSee('Account statement')->assertSee('Haji Sharif')->assertSee('Jalalabad')->assertSee('7,000.00 AFN')->assertSee('owes us')->assertSee('Prepared by')
+            ->assertDontSee('app-sidebar', false);
+
         // the list can be narrowed by currency and by the side of the balance
         $usdCustomer = $this->account('customer', 'Dollar Customer', 'USD');
         $list = fn (array $query) => $this->get(route('accounts.index', ['type' => 'customer'] + $query))->assertOk();
