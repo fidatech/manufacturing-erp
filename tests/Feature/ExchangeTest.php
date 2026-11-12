@@ -124,7 +124,8 @@ class ExchangeTest extends TestCase
         $this->assertTrue($exchange->fresh()->isCancelled());
         $this->assertSame('0.00', Ledger::balance($usd->id));
         $this->assertSame('0.00', Ledger::balance($afn->id));
-        $this->get(route('exchange.index'))->assertOk()->assertDontSee($exchange->number);
+        $this->get(route('exchange.index'));   // this page still carries the "deleted" message with the number
+        $this->get(route('exchange.index'))->assertOk()->assertDontSee($exchange->number)->assertSee('Nothing here yet');
         $this->get(route('exchange.edit', ['id' => $exchange->id]))->assertNotFound();
     }
 
