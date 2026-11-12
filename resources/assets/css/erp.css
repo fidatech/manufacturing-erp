@@ -30,10 +30,20 @@
 
 /* Select with a search box (replaces Select2). */
 .ss { position: relative; }
-.ss-list { display: none; position: absolute; z-index: 1060; top: calc(100% + 4px); inset-inline: 0; max-height: 260px; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 4px; }
+.ss > .form-control { padding-inline-end: 3.4rem; text-overflow: ellipsis; cursor: pointer; background-image: var(--erp-caret); background-repeat: no-repeat; background-position: right .85rem center; background-size: 12px; }
+[dir="rtl"] .ss > .form-control { background-position: left .85rem center; }
+.ss.open > .form-control { cursor: text; border-color: rgba(var(--primary-rgb), .6); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .14); }
+.ss-clear { position: absolute; top: 50%; inset-inline-end: 2rem; transform: translateY(-50%); display: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: var(--hover); color: var(--muted); font-size: 15px; line-height: 20px; cursor: pointer; }
+.ss-clear:hover { background: rgba(var(--danger-rgb), .12); color: var(--danger); }
+.ss.has-value .ss-clear { display: block; }
+.ss-list { display: none; position: absolute; z-index: 1060; top: calc(100% + 6px); inset-inline-start: 0; min-width: 100%; width: max-content; max-width: min(420px, 92vw); max-height: 280px; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 6px; animation: erpDrop .12s ease; }
+.ss.up .ss-list { top: auto; bottom: calc(100% + 6px); }
 .ss.open .ss-list { display: block; }
-.ss-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--heading); }
-.ss-item.focus, .ss-item:hover { background: rgba(var(--primary-rgb), .1); color: var(--primary); }
+.ss-item { position: relative; padding: 9px 12px; padding-inline-end: 30px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--heading); overflow-wrap: anywhere; }
+.ss-item.focus, .ss-item:hover { background: var(--hover); }
+.ss-item.selected { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.ss-item.selected::after { content: ""; position: absolute; top: 50%; inset-inline-end: 12px; width: 6px; height: 11px; margin-top: -8px; border: solid var(--primary); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+@keyframes erpDrop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .ss-empty { padding: 10px; color: var(--muted); font-size: 14px; }
 
 /* An open pick list must not be cut off by a scrolling table. */
@@ -338,3 +348,20 @@
 /* Excel and PDF buttons in the title bar of a list or report. */
 .export-buttons { display: inline-flex; gap: 8px; }
 @media (max-width: 575.98px) { .export-buttons { display: flex; width: 100%; } .export-buttons .btn { flex: 1; } }
+
+/* ---------- Pick lists: room for the arrow, a clear arrow, and enough width to read the choice ---------- */
+:root { --erp-caret: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3 6 5 5 5-5'/%3e%3c/svg%3e"); }
+[data-bs-theme="dark"] { --erp-caret: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239aa4b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3 6 5 5 5-5'/%3e%3c/svg%3e"); }
+.form-select { padding-inline-end: 2.4rem; text-overflow: ellipsis; cursor: pointer; background-image: var(--erp-caret); background-size: 12px; background-position: right .85rem center; transition: border-color .15s, box-shadow .15s; }
+[dir="rtl"] .form-select { background-position: left .85rem center; }
+.form-select:hover:not(:disabled), .ss > .form-control:hover { border-color: rgba(var(--primary-rgb), .45); }
+.form-select:disabled { cursor: not-allowed; opacity: .75; }
+.form-select-sm { padding-inline-end: 2rem; background-position: right .6rem center; }
+[dir="rtl"] .form-select-sm { background-position: left .6rem center; }
+.input-group > .form-select.erp-side { flex: 0 1 auto; width: auto; max-width: 55%; }
+/* filters in a row: wide enough for their words, and never squeezed under the arrow */
+.row > .col-auto > .form-select, .row > [class*="col-md-auto"] > .form-select, .row > .col-auto > .ss, .row > [class*="col-md-auto"] > .ss { min-width: 180px; }
+@media (max-width: 767.98px) {
+    .row > .col > .form-select, .row > [class*="col-md-auto"] > .form-select { min-width: 0; }
+    .ss-list { max-width: 92vw; }
+}

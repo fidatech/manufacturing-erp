@@ -345,7 +345,7 @@
         if (select._ss || select.disabled) return;
         select._ss = true;
         var wrap = document.createElement('div');
-        wrap.className = 'ss';
+        wrap.className = 'ss' + (select.classList.contains('form-select-sm') ? ' ss-sm' : '');
         var box = document.createElement('input');
         box.type = 'text';
         box.className = 'form-control ' + (select.classList.contains('is-invalid') ? 'is-invalid' : '');
@@ -357,33 +357,53 @@
         list.className = 'ss-list';
         select.parentNode.insertBefore(wrap, select);
         wrap.appendChild(box);
+        // a small cross empties the choice, when the list has an empty first line
+        var clear = null;
+        if (select.options.length && !select.options[0].value) {
+            clear = document.createElement('button');
+            clear.type = 'button';
+            clear.className = 'ss-clear';
+            clear.tabIndex = -1;
+            clear.setAttribute('aria-label', T.cancel || 'Clear');
+            clear.innerHTML = '&times;';
+            wrap.appendChild(clear);
+        }
         wrap.appendChild(list);
         wrap.appendChild(select);
         select.hidden = true;
         var focus = 0;
         var current = function () { var o = select.options[select.selectedIndex]; return o && o.value ? o.text : ''; };
-        var close = function () { wrap.classList.remove('open'); };
+        var close = function () { wrap.classList.remove('open', 'up'); };
+        var mark = function () { wrap.classList.toggle('has-value', !!select.value); };
         var show = function (all) {
             var q = all ? '' : box.value.trim().toLowerCase();
             var html = '';
             var n = 0;
             for (var i = 0; i < select.options.length && n < 60; i++) {
                 var o = select.options[i];
-                if (!o.value || (q && o.text.toLowerCase().indexOf(q) < 0)) continue;
-                html += '<div class="ss-item' + (n === 0 ? ' focus' : '') + '" data-value="' + ERP.escape(o.value) + '">' + ERP.escape(o.text) + '</div>';
+                if (!o.value || o.disabled || o.hidden || (q && o.text.toLowerCase().indexOf(q) < 0)) continue;
+                html += '<div class="ss-item' + (n === 0 ? ' focus' : '') + (o.value === select.value ? ' selected' : '') + '" data-value="' + ERP.escape(o.value) + '">' + ERP.escape(o.text) + '</div>';
                 n++;
             }
             list.innerHTML = html || '<div class="ss-empty">' + ERP.escape(T.noResults || 'No results') + '</div>';
             focus = 0;
             wrap.classList.add('open');
+            // open upwards when there is no room under the box
+            var rect = wrap.getBoundingClientRect();
+            wrap.classList.toggle('up', window.innerHeight - rect.bottom < 280 && rect.top > 280);
+            var chosen = $('.ss-item.selected', list);
+            if (chosen && all) chosen.scrollIntoView({ block: 'nearest' });
         };
         var pick = function (value) {
             select.value = value;
             box.value = current();
+            mark();
             close();
             select.dispatchEvent(new Event('change', { bubbles: true }));
         };
         box.value = current();
+        mark();
+        if (clear) clear.addEventListener('mousedown', function (e) { e.preventDefault(); pick(''); box.focus(); });
         box.addEventListener('focus', function () { box.select(); show(true); });
         // clicking a box that already has the cursor opens the list again, ready to type over
         box.addEventListener('click', function () { if (!wrap.classList.contains('open')) { box.select(); show(true); } });
@@ -409,14 +429,22 @@
             if (item) { e.preventDefault(); pick(item.getAttribute('data-value')); }
         });
         // the options or the value were changed from outside: show the chosen text again
-        select._ssSync = function () { box.value = current(); };
+        select._ssSync = function () { box.value = current(); mark(); };
+        // a value set by another script (with a change event) shows in the box too
+        select.addEventListener('change', function () { if (document.activeElement !== box) select._ssSync(); });
         box.addEventListener('blur', function () {
             if (box.value.trim() === '' && select.value !== '') pick('');
             else box.value = current();
             close();
         });
     };
-    var enhance = function (scope) { $$('select[data-search]', scope).forEach(ERP.searchSelect); };
+    // Lists marked data-search, and every list long enough to need it (8 choices or more), become searchable.
+    var enhance = function (scope) {
+        $$('select', scope).forEach(function (select) {
+            if (select.multiple || select.hasAttribute('data-plain') || select.closest('.input-group')) return;
+            if (select.hasAttribute('data-search') || select.options.length >= 9) ERP.searchSelect(select);
+        });
+    };
 
     // ------------------------------------------------------- Excel and PDF
     // Every page that shows a table (a list or a report, not a form) gets two buttons in its title bar:
@@ -814,7 +842,7 @@
                 if (o.hasAttribute('data-cash')) { match = o; break; }
                 match = match || o;
             }
-            if (match) money.value = match.value;
+            if (match) { money.value = match.value; if (money._ssSync) money._ssSync(); }
         };
         form.addEventListener('change', function (e) {
             if (form.hasAttribute('data-auto-money') && e.target.matches && e.target.matches('select[data-currency-of="other"]')) pickMoney();
