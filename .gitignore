@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# real client data for the client seeders: never in the repository
+/database/seeders/Clients/data/*
+!/database/seeders/Clients/data/example.php

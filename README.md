@@ -79,14 +79,36 @@ composer install
 cp .env.example .env          # then set DB_DATABASE, DB_USERNAME, DB_PASSWORD
 php artisan key:generate
 php artisan migrate
-php artisan app:create-admin  # asks for name, email and password
+php artisan db:seed           # starting records and the main administrator
 php artisan serve
 ```
 
-There is no default user and no sample data. The first administrator is created
-with `php artisan app:create-admin`. The system starts with three currencies
-(USD as the main one, AFN, PKR), a cash box for each, common units and the kinds
-of account it needs; everything else is entered by the company.
+### Seeders
+
+`php artisan db:seed` loads what every company needs and can be run again safely
+(a record that already exists is left alone): permissions, roles, currencies
+(USD as the main one, AFN, PKR), units, kinds of account, the system chart of
+accounts, a cash box for each currency, expense and income categories, asset
+categories, one warehouse, product and raw-material groups, departments and
+designations.
+
+It also makes the main administrator, **admin@gmail.com / admin@123**.
+Change this password right after the first sign-in: it is written in the
+repository. To make an administrator with your own email and password instead,
+use `php artisan app:create-admin`.
+
+The real data of one client is a separate seeder, run once and only for that client:
+
+```bash
+php artisan db:seed --class="Database\Seeders\Clients\KanozaySeeder"
+```
+
+It reads `database/seeders/Clients/data/kanozay.php` (company details, warehouses,
+items with opening stock, accounts with opening balances, assets, recipes,
+employees). Client data files hold the client's own figures, so they are **not in
+the repository**; copy the file into that folder before running the seeder.
+`example.php` in the same folder shows the format. A client seeder refuses to
+run twice, because opening balances written again would double the books.
 
 For production set `APP_ENV=production`, `APP_DEBUG=false` and run
 `php artisan optimize`.
