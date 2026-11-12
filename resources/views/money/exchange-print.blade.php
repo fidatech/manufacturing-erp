@@ -43,6 +43,7 @@
 .foot{margin-top:18px;text-align:center;font-size:11px;color:#666}
 @media print{body{background:#fff;padding:0}.sheet{border:0;border-radius:0;padding:0;max-width:none}.bar{display:none}}
 </style>
+{{ \App\Support\Fonts::style() }}
 </head>
 <body>
 <div class="bar">

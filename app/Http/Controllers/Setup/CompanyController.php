@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,11 +39,14 @@ class CompanyController extends Controller
             // a small picture keeps every page fast on a slow connection
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:300'],
             'remove_logo' => ['nullable'],
+            'app_font' => ['nullable', Rule::in(array_keys(config('fonts')))],
         ]);
 
         foreach (array_keys(self::FIELDS) as $key) {
             Setting::updateOrCreate(['key' => $key], ['value' => $data[$key] ?? null]);
         }
+
+        Setting::updateOrCreate(['key' => 'app_font'], ['value' => $data['app_font'] ?? null]);
 
         if ($request->boolean('remove_logo') || $request->hasFile('logo')) {
             if ($old = self::logoPath()) {

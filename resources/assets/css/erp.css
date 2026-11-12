@@ -321,3 +321,6 @@
 /* Top bar: the language button shows the language in two letters beside the globe. */
 .topbar-lang { width: auto; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 .topbar-lang span { font-size: 12px; font-weight: 800; letter-spacing: .3px; }
+
+/* Company Settings: a line of Dari and Pashto to see the chosen font. */
+.erp-font-sample { margin-top: 8px; padding: 10px 14px; border-radius: var(--radius); background: var(--hover); color: var(--heading); font-size: 18px; }

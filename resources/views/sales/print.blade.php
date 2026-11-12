@@ -20,6 +20,7 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #111;padding:6p
 [dir=rtl]{unicode-bidi:isolate}
 @media print{body{background:#fff;padding:0}.sheet{border:0;padding:0}.bar{display:none}}
 </style>
+{{ \App\Support\Fonts::style() }}
 </head>
 <body>
 @php

@@ -16,6 +16,20 @@
                 </div>
             @endforeach
             <div class="col-12 col-md-6">
+                <label class="form-label" for="f-font">{{ __('Font for Dari and Pashto') }}</label>
+                <select class="form-select @error('app_font') is-invalid @enderror" id="f-font" name="app_font">
+                    <option value="">{{ __('The device\'s own font') }}</option>
+                    @foreach (config('fonts') as $key => $font)
+                        <option value="{{ $key }}" @selected(old('app_font', setting('app_font')) === $key)>{{ $font['name'] }}{{ $font['pashto'] ? '' : ' · '.__('Dari only') }}</option>
+                    @endforeach
+                </select>
+                @error('app_font')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+                <div class="form-text">{{ __('Used for Dari and Pashto text on every screen and printed paper. English text and numbers keep the usual font.') }}</div>
+                <div class="erp-font-sample" dir="rtl" lang="fa">تولید مواد غذایی · د خوراکي توکو تولید · ۱۲۳۴۵</div>
+            </div>
+            <div class="col-12 col-md-6">
                 <label class="form-label" for="f-logo">{{ __('Logo') }}</label>
                 <input type="file" class="form-control @error('logo') is-invalid @enderror" id="f-logo" name="logo" accept="image/png,image/jpeg,image/webp">
                 @error('logo')

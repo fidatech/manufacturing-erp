@@ -71,6 +71,7 @@ tr{break-inside:avoid}
 @media print{body{background:#fff;padding:0}.bar{display:none}.sheet{max-width:none;border-radius:0;box-shadow:none}.pad{padding:16px 4px 0}.head{padding:0 4px 14px}}
 @media (max-width:600px){.head{flex-direction:column;align-items:flex-start}.doc{text-align:start}.info{grid-template-columns:1fr}.sums{grid-template-columns:1fr 1fr}}
 </style>
+{{ \App\Support\Fonts::style() }}
 </head>
 <body>
 <div class="bar">

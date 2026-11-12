@@ -58,6 +58,7 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
 @media print{body{background:#fff;padding:0}.paper-bar{display:none}.paper{max-width:none;border-radius:0;box-shadow:none}.paper-head{padding:0 4px 14px}.paper-body{padding:16px 4px 0}}
 @media (max-width:600px){.paper-head{flex-direction:column;align-items:flex-start}.paper-doc{text-align:start}}
 </style>
+{{ \App\Support\Fonts::style() }}
 </head>
 <body>
 <div class="paper-bar">

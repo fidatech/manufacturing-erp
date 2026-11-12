@@ -172,4 +172,25 @@ class SetupTest extends TestCase
         $this->get(route('dashboard'))->assertOk()->assertDontSee('ratesModal', false)->assertSee('topbar-lang', false);
         $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '70']])->assertForbidden();
     }
+
+    public function test_a_font_for_dari_and_pashto_can_be_chosen(): void
+    {
+        $this->admin();
+
+        // every font of the list has its file
+        foreach (config('fonts') as $font) {
+            $this->assertFileExists(public_path('fonts/'.$font['file']));
+        }
+
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('ErpFont', false);
+        $this->get(route('company.edit'))->assertOk()->assertSee('name="app_font"', false)->assertSee('Afghani')->assertSee('Droid Arabic Kufi');
+
+        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'afghani'])->assertRedirect();
+        $this->get(route('dashboard'))->assertOk()->assertSee('font-family:"ErpFont"', false)->assertSee('fonts/afghani.woff', false)->assertSee('unicode-range', false);
+        $this->get(route('reports.profit', ['print' => 1]))->assertOk()->assertSee('fonts/afghani.woff', false);
+
+        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'comic-sans'])->assertSessionHasErrors('app_font');
+        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => ''])->assertRedirect();
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('ErpFont', false);
+    }
 }
