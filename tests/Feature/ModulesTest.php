@@ -196,6 +196,98 @@ class ModulesTest extends TestCase
         $this->assertSame('100.00', Ledger::balance(Account::system('depreciation')->id));
     }
 
+    public function test_a_new_account_is_made_once_for_every_ticked_currency(): void
+    {
+        $this->rate('AFN', '70');
+        $usd = $this->currency('USD')->id;
+        $afn = $this->currency('AFN')->id;
+        $pkr = $this->currency('PKR')->id;
+
+        $this->get(route('accounts.create', ['type' => 'customer']))->assertOk()->assertSee('currencies['.$afn.'][on]', false);
+
+        // two currencies ticked, an opening balance only in afghani
+        $this->post(route('accounts.store', ['type' => 'customer']), [
+            'name' => 'Haji Sharif', 'phone' => '0700000000', 'is_active' => '1', 'opening_side' => 'debit',
+            'currencies' => [$usd => ['on' => '1', 'opening' => ''], $afn => ['on' => '1', 'opening' => '7000'], $pkr => ['opening' => '']],
+        ])->assertRedirect(route('accounts.index', ['type' => 'customer']));
+
+        $accounts = Account::where('name', 'Haji Sharif')->with('currency')->get()->keyBy(fn ($a) => $a->currency->code);
+        $this->assertSame(['AFN', 'USD'], $accounts->keys()->sort()->values()->all());
+        $this->assertSame('7000.00', Ledger::balance($accounts['AFN']->id));
+        $this->assertSame('0.00', Ledger::balance($accounts['USD']->id));
+        $this->get(route('accounts.index', ['type' => 'customer']))->assertOk()->assertSee('Haji Sharif');
+
+        // no currency ticked: nothing is made
+        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Nobody', 'is_active' => '1', 'opening_side' => 'credit', 'currencies' => [$usd => ['opening' => '5']]])->assertSessionHasErrors('currencies');
+        $this->assertDatabaseMissing('accounts', ['name' => 'Nobody']);
+
+        // one currency has no exchange rate: none of the accounts is made
+        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Half', 'is_active' => '1', 'opening_side' => 'credit',
+            'currencies' => [$usd => ['on' => '1', 'opening' => '10'], $pkr => ['on' => '1', 'opening' => '500']]])->assertSessionHas('danger');
+        $this->assertDatabaseMissing('accounts', ['name' => 'Half']);
+
+        // an expense category has no opening balance
+        $this->post(route('accounts.store', ['type' => 'expense']), ['name' => 'Fuel', 'is_active' => '1', 'currencies' => [$usd => ['on' => '1']]])->assertRedirect();
+        $this->assertDatabaseHas('accounts', ['name' => 'Fuel', 'currency_id' => $usd]);
+    }
+
+    public function test_the_capital_page_adds_lists_and_totals_capital(): void
+    {
+        $owner = $this->account('shareholder', 'Partner A', 'USD', ['meta' => ['share_percent' => '100']]);
+        $customer = $this->account('customer', 'Zaki', 'USD');
+        $cash = $this->cash('USD');
+
+        // only shareholders can be chosen
+        $this->get(route('capital'))->assertOk()->assertSee('Partner A')->assertDontSee('Zaki');
+
+        $this->post(route('money.store', ['kind' => 'in']), ['group' => 'shareholder', 'return' => 'capital', 'date' => '2026-01-01', 'money_id' => $cash->id, 'other_id' => $owner->id, 'amount' => '10000'])
+            ->assertRedirect(route('capital'));
+        $this->post(route('money.store', ['kind' => 'out']), ['group' => 'shareholder', 'date' => '2026-02-01', 'money_id' => $cash->id, 'other_id' => $owner->id, 'amount' => '1500']);
+        $this->post(route('money.profit.store'), ['date' => '2026-03-01', 'amount' => '700']);
+
+        $this->get(route('capital'))->assertOk()
+            ->assertSee('10,000.00')      // capital put in, and the row in the list
+            ->assertSee('1,500.00')       // taken out
+            ->assertSee('700.00')         // profit shared
+            ->assertSee('9,200.00');      // owners' money in the company now
+    }
+
+    public function test_only_the_page_being_shown_is_highlighted_in_the_menu(): void
+    {
+        $pages = [
+            [route('accounts.index', ['type' => 'customer']), 'Customers'],
+            [route('accounts.create', ['type' => 'supplier']), 'Suppliers'],
+            [route('sales.index', ['type' => 'invoice']), 'Sale Invoices'],
+            [route('sales.index', ['type' => 'invoice', 'view' => 'delivery']), 'Delivery Notes'],
+            [route('sales.index', ['type' => 'invoice', 'view' => 'dispatch']), 'Dispatch Planning'],
+            [route('purchases.index', ['type' => 'invoice', 'view' => 'grn']), 'Goods Received Notes'],
+            [route('money.index'), 'Transactions'],
+            [route('money.index', ['type' => 'expense']), 'Expenses'],
+            [route('money.create', ['kind' => 'in']), 'Money In'],
+            [route('money.create', ['kind' => 'out', 'group' => 'shareholder']), 'Withdrawals'],
+            [route('money.create', ['kind' => 'transfer', 'group' => 'exchange']), 'Currency Exchange'],
+            [route('capital'), 'Capital'],
+            [route('capital', ['from' => 'shareholders']), 'Capital Contribution'],
+            [route('items.index', ['type' => 'raw']), 'Raw Materials'],
+            [route('items.index', ['type' => 'product', 'from' => 'manufacturing']), 'Final Products'],
+            [route('stock.index'), 'Stock in Hand'],
+            [route('stock.index', ['from' => 'reports', 'q' => 'mango']), 'Stock in Hands'],
+            [route('chart'), 'Chart of Accounts'],
+            [route('hr.index', ['screen' => 'leave']), 'Leave Management'],
+            [route('lookups.index', ['type' => 'designation']), 'Designations'],
+            [route('accounts.index', ['type' => 'employee']), 'Employees'],
+        ];
+
+        foreach ($pages as [$url, $label]) {
+            $html = $this->get($url)->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, 'menu-sublink active'), "More or less than one active entry on $url");
+            $this->assertMatchesRegularExpression('/menu-sublink active" href="[^"]*">'.preg_quote($label, '/').'</', $html, "Wrong entry is active on $url");
+        }
+
+        // the Employees page is no longer listed under Accounts
+        $this->assertSame(1, substr_count($this->get(route('dashboard'))->getContent(), '>Employees<'));
+    }
+
     public function test_the_company_logo_can_be_uploaded_and_removed(): void
     {
         Storage::fake('local');

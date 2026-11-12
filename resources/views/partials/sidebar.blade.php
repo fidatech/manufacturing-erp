@@ -27,19 +27,16 @@
                 @if (isset($item['heading']))
                     <li class="menu-heading"><span>{{ __($item['heading']) }}</span></li>
                 @elseif (isset($item['children']))
-                    @php
-                        $open = collect($item['children'])->contains(fn ($child) => \App\Support\Menu::isActive($child));
-                    @endphp
-                    <li class="menu-item has-sub {{ $open ? 'open' : '' }}">
-                        <a class="menu-link" href="#menu-{{ $loop->index }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ $open ? 'true' : 'false' }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span><x-icon name="chevron-right" class="menu-arrow" /></a>
-                        <ul class="menu-sub collapse {{ $open ? 'show' : '' }}" id="menu-{{ $loop->index }}">
+                    <li class="menu-item has-sub {{ $item['open'] ? 'open' : '' }}">
+                        <a class="menu-link" href="#menu-{{ $loop->index }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ $item['open'] ? 'true' : 'false' }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span><x-icon name="chevron-right" class="menu-arrow" /></a>
+                        <ul class="menu-sub collapse {{ $item['open'] ? 'show' : '' }}" id="menu-{{ $loop->index }}">
                             @foreach ($item['children'] as $child)
-                                <li><a class="menu-sublink {{ \App\Support\Menu::isActive($child) ? 'active' : '' }}" href="{{ \App\Support\Menu::url($child) }}">{{ __($child['label']) }}</a></li>
+                                <li><a class="menu-sublink {{ ! empty($child['current']) ? 'active' : '' }}" href="{{ \App\Support\Menu::url($child) }}">{{ __($child['label']) }}</a></li>
                             @endforeach
                         </ul>
                     </li>
                 @else
-                    <li class="menu-item {{ \App\Support\Menu::isActive($item) ? 'active' : '' }}">
+                    <li class="menu-item {{ $item['current'] ? 'active' : '' }}">
                         <a class="menu-link" href="{{ \App\Support\Menu::url($item) }}"><span class="menu-icon"><x-icon :name="$item['icon']" /></span><span class="menu-text">{{ __($item['label']) }}</span></a>
                     </li>
                 @endif

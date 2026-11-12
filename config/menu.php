@@ -12,7 +12,9 @@
 |   ]]
 |
 | icon    a Font Awesome solid icon name; after adding one run: php tools/build-assets.php
-| params  route parameters (and query values) of the link
+| params  route parameters (and query values) of the link. Two entries may open the same
+|         page from different modules: give one of them ['from' => 'module'] so that
+|         only the one that was clicked is highlighted.
 | active  route-name pattern that highlights the entry (defaults to the route)
 | can     permission needed to see the entry
 |
@@ -22,8 +24,8 @@ return [
     ['label' => 'Dashboard', 'icon' => 'gauge-high', 'route' => 'dashboard'],
 
     ['label' => 'Manufacturing', 'icon' => 'industry', 'children' => [
-        ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product'], 'active' => 'items.*', 'can' => 'items.view'],
-        ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Final Products', 'route' => 'items.index', 'params' => ['type' => 'product', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
+        ['label' => 'Raw Materials', 'route' => 'items.index', 'params' => ['type' => 'raw', 'from' => 'manufacturing'], 'active' => 'items.*', 'can' => 'items.view'],
         ['label' => 'Recipes & Formulas', 'route' => 'recipes.index', 'active' => 'recipes.*', 'can' => 'production.view'],
         ['label' => 'Record Production', 'route' => 'production.create', 'can' => 'production.manage'],
         ['label' => 'Production Batches', 'route' => 'production.index', 'active' => 'production.*', 'can' => 'production.view'],
@@ -45,7 +47,6 @@ return [
         ['label' => 'Suppliers', 'route' => 'accounts.index', 'params' => ['type' => 'supplier'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Banks', 'route' => 'accounts.index', 'params' => ['type' => 'bank'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Sarafi', 'route' => 'accounts.index', 'params' => ['type' => 'sarafi'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
-        ['label' => 'Employees', 'route' => 'accounts.index', 'params' => ['type' => 'employee'], 'active' => 'accounts.*', 'can' => 'hr.view'],
         ['label' => 'Warehouse Managers', 'route' => 'accounts.index', 'params' => ['type' => 'warehouse_manager'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
     ]],
 
@@ -65,7 +66,7 @@ return [
     ]],
 
     ['label' => 'Accounting', 'icon' => 'calculator', 'children' => [
-        ['label' => 'Capital', 'route' => 'money.create', 'params' => ['kind' => 'in', 'group' => 'shareholder'], 'can' => 'money.manage'],
+        ['label' => 'Capital', 'route' => 'capital', 'can' => 'money.view'],
         ['label' => 'Assets', 'route' => 'assets.index', 'can' => 'assets.view'],
         ['label' => 'Liabilities', 'route' => 'accounts.index', 'params' => ['type' => 'liability'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Loan Received', 'route' => 'money.create', 'params' => ['kind' => 'in', 'group' => 'liability'], 'can' => 'money.manage'],
@@ -78,7 +79,7 @@ return [
 
     ['label' => 'Shareholders', 'icon' => 'handshake', 'children' => [
         ['label' => 'Shareholder Management', 'route' => 'accounts.index', 'params' => ['type' => 'shareholder'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
-        ['label' => 'Capital Contribution', 'route' => 'money.create', 'params' => ['kind' => 'in', 'group' => 'shareholder'], 'can' => 'money.manage'],
+        ['label' => 'Capital Contribution', 'route' => 'capital', 'params' => ['from' => 'shareholders'], 'can' => 'money.view'],
         ['label' => 'Withdrawals', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'shareholder'], 'can' => 'money.manage'],
         ['label' => 'Profit Distribution', 'route' => 'money.profit', 'can' => 'money.manage'],
         ['label' => 'Shareholder Statements', 'route' => 'reports.parties', 'params' => ['group' => 'shareholders'], 'can' => 'reports.view'],
@@ -128,12 +129,12 @@ return [
         ['label' => 'Balance Sheet', 'route' => 'reports.balance', 'can' => 'reports.view'],
         ['label' => 'Profit and Loss', 'route' => 'reports.profit', 'can' => 'reports.view'],
         ['label' => 'Trial Balance', 'route' => 'reports.trial', 'can' => 'reports.view'],
-        ['label' => 'Accounts Statements', 'route' => 'chart', 'can' => 'accounts.view'],
+        ['label' => 'Accounts Statements', 'route' => 'chart', 'params' => ['from' => 'reports'], 'can' => 'accounts.view'],
         ['label' => 'Customers Report', 'route' => 'reports.parties', 'params' => ['group' => 'customers'], 'can' => 'reports.view'],
         ['label' => 'Suppliers Report', 'route' => 'reports.parties', 'params' => ['group' => 'suppliers'], 'can' => 'reports.view'],
         ['label' => 'Purchases Report', 'route' => 'reports.purchases', 'can' => 'reports.view'],
         ['label' => 'Sales Report', 'route' => 'reports.sales', 'can' => 'reports.view'],
-        ['label' => 'Stock in Hands', 'route' => 'stock.index', 'can' => 'inventory.view'],
+        ['label' => 'Stock in Hands', 'route' => 'stock.index', 'params' => ['from' => 'reports'], 'can' => 'inventory.view'],
         ['label' => 'Creditors', 'route' => 'reports.parties', 'params' => ['group' => 'creditors'], 'can' => 'reports.view'],
         ['label' => 'Debtors', 'route' => 'reports.parties', 'params' => ['group' => 'debtors'], 'can' => 'reports.view'],
     ]],

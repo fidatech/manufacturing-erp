@@ -10,8 +10,37 @@
     $required = in_array('required', $field['rules'] ?? [], true);
     $readonly = ! empty($field['readonly']);
 @endphp
+@if (! empty($field['hidden']))
+    @php
+        return;
+    @endphp
+@endif
 <div class="col-12 col-md-{{ $field['col'] ?? 6 }}">
-    @if ($type === 'checkbox')
+    @if ($type === 'currencies')
+        <label class="form-label">{{ __($field['label']) }} <span class="text-danger">*</span></label>
+        <div class="row g-2">
+            @foreach ($field['options'] as $currencyId => $code)
+                @php
+                    $ticked = old('currencies') !== null ? ! empty(old("currencies.$currencyId.on")) : ($currencyId === ($field['default'] ?? null));
+                @endphp
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="input-group">
+                        <label class="input-group-text gap-2 mb-0" for="f-cur-{{ $currencyId }}">
+                            <input class="form-check-input mt-0" type="checkbox" id="f-cur-{{ $currencyId }}" name="currencies[{{ $currencyId }}][on]" value="1" @checked($ticked)>
+                            <strong>{{ $code }}</strong>
+                        </label>
+                        <input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" name="currencies[{{ $currencyId }}][opening]" value="{{ old("currencies.$currencyId.opening") }}" placeholder="{{ __('Opening balance') }}" aria-label="{{ __('Opening balance') }} {{ $code }}">
+                    </div>
+                </div>
+            @endforeach
+        </div>
+        @error('currencies')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
+        @if (! empty($field['help']))
+            <div class="form-text">{{ __($field['help']) }}</div>
+        @endif
+    @elseif ($type === 'checkbox')
         <div class="form-check form-switch mt-md-4 pt-md-2">
             <input type="hidden" name="{{ $name }}" value="0">
             <input class="form-check-input" type="checkbox" role="switch" id="f-{{ $name }}" name="{{ $name }}" value="1" @checked(old($name, $stored ?? ($field['default'] ?? false)))>

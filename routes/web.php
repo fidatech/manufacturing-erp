@@ -16,6 +16,7 @@ use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Lab\LabTestController;
+use App\Http\Controllers\Money\CapitalController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\Money\PettyCashController;
@@ -167,6 +168,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     // Money and day book
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');
     Route::get('petty-cash', PettyCashController::class)->name('petty-cash');
+    Route::get('capital', CapitalController::class)->name('capital');
     Route::get('money/profit', [MoneyController::class, 'profitForm'])->name('money.profit');
     Route::post('money/profit', [MoneyController::class, 'profitStore'])->name('money.profit.store');
     Route::get('money/{kind}/create', [MoneyController::class, 'create'])->name('money.create');

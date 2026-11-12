@@ -88,13 +88,23 @@ class AccountController extends CrudController
         $used = $record && $record->lines()->exists();
         $nameLabel = in_array($type->key, ['expense', 'income', 'cash', 'bank'], true) ? 'Name' : 'Full name';
 
-        $fields = [
-            ['name' => 'name', 'label' => $nameLabel, 'rules' => ['required', 'string', 'max:255']],
-            ['name' => 'currency_id', 'label' => 'Currency of this account', 'type' => 'select', 'readonly' => $used,
-                'options' => Currency::where('is_active', true)->orderByDesc('is_base')->orderBy('code')->pluck('code', 'id')->all(),
-                'rules' => ['required', 'exists:currencies,id'], 'default' => Currency::where('is_base', true)->value('id'),
-                'help' => $used ? 'The currency cannot change after the first transaction.' : 'All money of this account is counted in this currency.'],
-        ];
+        $currencies = Currency::where('is_active', true)->orderByDesc('is_base')->orderBy('code')->pluck('code', 'id')->all();
+        $withOpening = ! in_array($type->nature, ['income', 'expense'], true);
+
+        $fields = [['name' => 'name', 'label' => $nameLabel, 'rules' => ['required', 'string', 'max:255'], 'col' => $record ? 6 : 12]];
+        if ($record) {
+            $fields[] = ['name' => 'currency_id', 'label' => 'Currency of this account', 'type' => 'select', 'readonly' => $used, 'options' => $currencies,
+                'rules' => ['required', 'exists:currencies,id'],
+                'help' => $used ? 'The currency cannot change after the first transaction.' : 'All money of this account is counted in this currency.'];
+        } else {
+            // a new account: tick every currency it works in; one account is made for each
+            $fields[] = ['name' => 'currencies', 'label' => 'Currencies', 'type' => 'currencies', 'virtual' => true, 'col' => 12, 'options' => $currencies,
+                'default' => Currency::where('is_base', true)->value('id'), 'rules' => ['nullable', 'array'],
+                'help' => $withOpening
+                    ? 'Tick every currency this account works in. A separate account is made for each. Write an opening balance only if there is one.'
+                    : 'Tick every currency this account works in. A separate account is made for each.'];
+            $fields[] = ['name' => 'currency_id', 'label' => 'Currency', 'hidden' => true, 'rules' => ['required', 'exists:currencies,id']];
+        }
 
         if ($type->is_party) {
             $fields[] = ['name' => 'phone', 'label' => 'Phone', 'rules' => ['nullable', 'string', 'max:50']];
@@ -111,11 +121,11 @@ class AccountController extends CrudController
         $fields[] = ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000'], 'col' => 12];
         $fields[] = ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true];
 
-        if (! $record && ! in_array($type->nature, ['income', 'expense'], true)) {
-            $fields[] = ['name' => 'opening_amount', 'label' => 'Balance today (if any)', 'type' => 'decimal', 'virtual' => true, 'rules' => ['nullable', 'numeric', 'min:0'],
-                'help' => 'Leave empty when the account starts from zero.'];
-            $fields[] = ['name' => 'opening_side', 'label' => 'That balance means', 'type' => 'select', 'virtual' => true, 'rules' => ['required', 'in:debit,credit'],
-                'options' => self::sides($type), 'default' => in_array($type->nature, ['liability', 'equity'], true) ? 'credit' : 'debit'];
+        if (! $record && $withOpening) {
+            $fields[] = ['name' => 'opening_amount', 'label' => 'Opening balance', 'hidden' => true, 'virtual' => true, 'rules' => ['nullable', 'numeric', 'min:0']];
+            $fields[] = ['name' => 'opening_side', 'label' => 'An opening balance means', 'type' => 'select', 'virtual' => true, 'rules' => ['required', 'in:debit,credit'],
+                'options' => self::sides($type), 'default' => in_array($type->nature, ['liability', 'equity'], true) ? 'credit' : 'debit',
+                'help' => 'Only matters when you wrote an opening balance above.'];
         }
 
         return $fields;
@@ -161,10 +171,46 @@ class AccountController extends CrudController
         };
     }
 
+    /**
+     * A new account is saved once for every ticked currency, each with its own
+     * optional opening balance. All of them are saved together or not at all.
+     */
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        if (! $request->has('currencies')) {
+            return parent::store($request);
+        }
+        \Illuminate\Support\Facades\Gate::authorize($this->permission.'.manage');
+
+        $ticked = [];
+        foreach ((array) $request->input('currencies') as $currencyId => $row) {
+            if (! empty($row['on'])) {
+                $ticked[(int) $currencyId] = $row['opening'] ?? null;
+            }
+        }
+        if (! $ticked) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['currencies' => __('Tick at least one currency.')]);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $ticked) {
+            foreach ($ticked as $currencyId => $opening) {
+                $request->merge(['currency_id' => $currencyId, 'opening_amount' => $opening]);
+                $this->save($request, null);
+            }
+        });
+
+        return redirect()->route($this->route.'.index', $this->routeParams())->with('success', count($ticked) > 1
+            ? __(':count accounts saved, one for each currency.', ['count' => count($ticked)])
+            : __(':name saved.', ['name' => __($this->singular)]));
+    }
+
     protected function columns(): array
     {
         $type = $this->type();
-        $columns = ['Name' => fn (Account $a) => $a->name.($a->company ? ' · '.$a->company : '')];
+        $columns = [
+            'Name' => fn (Account $a) => $a->name.($a->company ? ' · '.$a->company : ''),
+            'Currency' => fn (Account $a) => $a->currency->code,
+        ];
 
         if ($type->is_party) {
             $columns['Phone'] = fn (Account $a) => $a->phone;

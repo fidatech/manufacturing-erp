@@ -129,7 +129,8 @@ class MoneyController extends Controller
         ]);
         audit('created', $entry, $entry->number.' '.$description);
 
-        return redirect()->route('money.index')->with('success', __('Saved as :number.', ['number' => $entry->number]));
+        return redirect()->to($request->input('return') === 'capital' ? route('capital') : route('money.index'))
+            ->with('success', __('Saved as :number.', ['number' => $entry->number]));
     }
 
     /** Share profit between the shareholders by their percentage. They take it out later with "Money out". */
