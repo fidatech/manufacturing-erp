@@ -80,7 +80,7 @@ class MoneyController extends Controller
             'kind' => $kind,
             'group' => $group,
             'heading' => $this->heading($kind, $group),
-            'moneyAccounts' => Account::money()->active()->with('currency')->orderBy('name')->get(),
+            'moneyAccounts' => Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get(),
             'others' => $this->others($kind, $group),
             'base' => Rates::base()->code,
         ]);

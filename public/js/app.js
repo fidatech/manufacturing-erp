@@ -342,6 +342,7 @@ select.dispatchEvent(new Event('change', { bubbles: true }));
 };
 box.value = current();
 box.addEventListener('focus', function () { box.select(); show(true); });
+box.addEventListener('click', function () { if (!wrap.classList.contains('open')) { box.select(); show(true); } });
 box.addEventListener('input', function () { show(false); });
 box.addEventListener('keydown', function (e) {
 var items = $$('.ss-item', list);
@@ -463,7 +464,28 @@ box.hidden = !differ;
 if (!differ) $('input', box).value = '';
 }
 };
-form.addEventListener('change', sync);
+var pickMoney = function () {
+var other = $('select[data-currency-of="other"]', form);
+var money = $('select[data-currency-of="money"]', form);
+if (!other || !money) return;
+var chosen = other.options[other.selectedIndex];
+var cur = chosen && chosen.value ? chosen.getAttribute('data-cur') : '';
+var now = money.options[money.selectedIndex];
+if (!cur || (now && now.value && now.getAttribute('data-cur') === cur)) return;
+var match = null;
+for (var i = 0; i < money.options.length; i++) {
+var o = money.options[i];
+if (!o.value || o.getAttribute('data-cur') !== cur) continue;
+if (o.hasAttribute('data-cash')) { match = o; break; }
+match = match || o;
+}
+if (match) money.value = match.value;
+};
+form.addEventListener('change', function (e) {
+if (form.hasAttribute('data-auto-money') && e.target.matches && e.target.matches('select[data-currency-of="other"]')) pickMoney();
+sync();
+});
+if (form.hasAttribute('data-auto-money')) pickMoney();
 sync();
 });
 var SKIP = '.keep-table, .table-sm';

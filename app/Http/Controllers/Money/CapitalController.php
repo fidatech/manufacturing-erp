@@ -47,7 +47,7 @@ class CapitalController extends Controller
             ],
             'shareholders' => $shareholders->where('is_active', true)->values(),
             'balances' => $balances,
-            'moneyAccounts' => Account::money()->active()->with('currency')->orderBy('name')->get(),
+            'moneyAccounts' => Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get(),
             'entries' => JournalEntry::with(['lines.account.currency', 'lines.account.type'])
                 ->where('type', 'receipt')
                 ->whereHas('lines', fn ($q) => $q->whereIn('account_id', $ids))

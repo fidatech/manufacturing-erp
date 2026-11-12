@@ -183,6 +183,11 @@ class ModulesTest extends TestCase
         $this->post(route('money.store', ['kind' => 'transfer']), ['group' => 'exchange', 'date' => '2026-10-27', 'money_id' => $this->cash('USD')->id, 'other_id' => $this->cash('AFN')->id, 'amount' => '100', 'other_amount' => '7050'])->assertRedirect();
         $this->assertSame('7050.00', Ledger::balance($this->cash('AFN')->id));
 
+        // the cash boxes are marked so the form can pick the one of the chosen person's currency
+        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-auto-money', false)->assertSee('data-cash', false);
+        $this->get(route('money.create', ['kind' => 'out']))->assertOk()->assertSee('data-auto-money', false);
+        $this->get(route('money.create', ['kind' => 'expense']))->assertOk()->assertDontSee('data-auto-money', false);
+
         $this->get(route('petty-cash'))->assertOk()->assertSee('Cash AFN')->assertSee('7,050.00')->assertSee('Currency exchange');
         $this->get(route('permissions'))->assertOk()->assertSee('Administrator');
         $this->get(route('assets.write-off', ['kind' => 'depreciation']))->assertOk();

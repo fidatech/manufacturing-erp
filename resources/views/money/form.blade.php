@@ -12,7 +12,7 @@
 @section('content')
 <x-page-header :title="$heading" icon="money-bill-wave" :crumbs="[[__('Money'), route('money.index')], [$heading]]" />
 
-<form method="POST" action="{{ route('money.store', ['kind' => $kind]) }}" class="card" data-money-form>
+<form method="POST" action="{{ route('money.store', ['kind' => $kind]) }}" class="card" data-money-form @if (in_array($kind, ['in', 'out'], true)) data-auto-money @endif>
     @csrf
     <input type="hidden" name="group" value="{{ $group }}">
     <div class="card-body">
@@ -41,7 +41,7 @@
                 <select class="form-select @error('money_id') is-invalid @enderror" id="f-money" name="money_id" required data-currency-of="money">
                     <option value="">{{ __('Choose…') }}</option>
                     @foreach ($moneyAccounts as $account)
-                        <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @selected((string) old('money_id') === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }})</option>
+                        <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @if ($account->type->key === 'cash') data-cash @endif @selected((string) old('money_id') === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }})</option>
                     @endforeach
                 </select>
                 @error('money_id')

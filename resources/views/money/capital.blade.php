@@ -11,7 +11,7 @@
 </div>
 
 @can('money.manage')
-    <form method="POST" action="{{ route('money.store', ['kind' => 'in']) }}" class="card mb-4" data-money-form>
+    <form method="POST" action="{{ route('money.store', ['kind' => 'in']) }}" class="card mb-4" data-money-form data-auto-money>
         @csrf
         <input type="hidden" name="group" value="shareholder">
         <input type="hidden" name="return" value="capital">
@@ -42,7 +42,7 @@
                         <select class="form-select @error('money_id') is-invalid @enderror" id="f-money" name="money_id" required data-currency-of="money">
                             <option value="">{{ __('Choose…') }}</option>
                             @foreach ($moneyAccounts as $account)
-                                <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @selected((string) old('money_id') === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }})</option>
+                                <option value="{{ $account->id }}" data-cur="{{ $account->currency->code }}" @if ($account->type->key === 'cash') data-cash @endif @selected((string) old('money_id') === (string) $account->id)>{{ $account->name }} ({{ $account->currency->code }})</option>
                             @endforeach
                         </select>
                     </div>
