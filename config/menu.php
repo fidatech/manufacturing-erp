@@ -42,6 +42,7 @@ return [
     ]],
 
     ['label' => 'Accounting', 'icon' => 'calculator', 'children' => [
+        ['label' => 'Chart of Accounts', 'route' => 'chart', 'can' => 'accounts.view'],
         ['label' => 'Capital', 'route' => 'capital', 'can' => 'money.view'],
         ['label' => 'Assets', 'route' => 'assets.index', 'can' => 'assets.view'],
         ['label' => 'Liabilities', 'route' => 'accounts.index', 'params' => ['type' => 'liability'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
@@ -161,7 +162,6 @@ return [
         ['label' => 'Income Categories', 'route' => 'accounts.index', 'params' => ['type' => 'income'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Asset Categories', 'route' => 'lookups.index', 'params' => ['type' => 'asset_category'], 'active' => 'lookups.*', 'can' => 'setup.view'],
         ['label' => 'Units', 'route' => 'units.index', 'active' => 'units.*', 'can' => 'setup.view'],
-        ['label' => 'Chart of Accounts', 'route' => 'chart', 'can' => 'accounts.view'],
         ['label' => 'Account Types', 'route' => 'account-types.index', 'active' => 'account-types.*', 'can' => 'setup.view'],
     ]],
 ];
