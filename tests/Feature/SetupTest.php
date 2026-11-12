@@ -179,17 +179,20 @@ class SetupTest extends TestCase
 
         // every font of the list has its file
         foreach (config('fonts') as $font) {
-            $this->assertFileExists(public_path('fonts/'.$font['file']));
+            foreach ($font['faces'] as [$file]) {
+                $this->assertFileExists(public_path('fonts/'.$file));
+            }
         }
+        $this->assertSame(['vazirmatn', 'noto-sans-arabic', 'noto-naskh-arabic', 'noto-kufi-arabic', 'droid-arabic-kufi', 'pokhto', 'sahel', 'shabnam'], array_keys(config('fonts')));
 
         $this->get(route('dashboard'))->assertOk()->assertDontSee('ErpFont', false);
-        $this->get(route('company.edit'))->assertOk()->assertSee('name="app_font"', false)->assertSee('Afghani')->assertSee('Droid Arabic Kufi');
+        $this->get(route('company.edit'))->assertOk()->assertSee('name="app_font"', false)->assertSee('Vazirmatn')->assertSee('Pokhto')->assertSee('Droid Arabic Kufi')->assertDontSee('Afghani');
 
-        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'afghani'])->assertRedirect();
-        $this->get(route('dashboard'))->assertOk()->assertSee('font-family:"ErpFont"', false)->assertSee('fonts/afghani.woff', false)->assertSee('unicode-range', false);
-        $this->get(route('reports.profit', ['print' => 1]))->assertOk()->assertSee('fonts/afghani.woff', false);
+        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'vazirmatn'])->assertRedirect();
+        $this->get(route('dashboard'))->assertOk()->assertSee('font-family:"ErpFont"', false)->assertSee('fonts/vazirmatn.woff2', false)->assertSee('font-weight:100 900', false)->assertSee('unicode-range', false);
+        $this->get(route('reports.profit', ['print' => 1]))->assertOk()->assertSee('fonts/vazirmatn.woff2', false);
 
-        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'comic-sans'])->assertSessionHasErrors('app_font');
+        $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'afghani'])->assertSessionHasErrors('app_font');
         $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => ''])->assertRedirect();
         $this->get(route('dashboard'))->assertOk()->assertDontSee('ErpFont', false);
     }

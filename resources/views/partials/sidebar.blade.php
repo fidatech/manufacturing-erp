@@ -4,12 +4,13 @@
 <aside class="app-sidebar" id="appSidebar" aria-label="{{ __('app.nav.menu') }}">
     <div class="sidebar-brand">
         <a href="{{ route('dashboard') }}" class="brand-link">
+            {{-- with a logo the logo stands alone; the name of the company is in the middle of the top bar --}}
             @if ($logo = \App\Http\Controllers\Setup\CompanyController::logoUrl())
-                <img src="{{ $logo }}" alt="" class="erp-brand-logo">
+                <img src="{{ $logo }}" alt="{{ setting('company_name') ?: config('app.name') }}" class="erp-brand-logo">
             @else
                 <x-brand-logo />
+                <span class="brand-text">{{ setting('company_name') ?: config('app.name') }}</span>
             @endif
-            <span class="brand-text">{{ setting('company_name') ?: config('app.name') }}</span>
         </a>
     </div>
     <div class="sidebar-scroll" id="sidebarScroll">

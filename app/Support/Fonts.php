@@ -26,15 +26,16 @@ class Fonts
         if (! $key) {
             return new HtmlString('');
         }
-        $url = asset_v('fonts/'.config('fonts')[$key]['file']);
         $fallback = text_dir() === 'rtl'
             ? "'Segoe UI',Tahoma,'Noto Naskh Arabic','Noto Sans Arabic','Geeza Pro',Arial,sans-serif"
             : "'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
 
-        return new HtmlString(
-            '<style>@font-face{font-family:"ErpFont";src:url("'.e($url).'") format("woff");font-display:swap;'
-            .'unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200F}'
-            .'html[dir] body{font-family:"ErpFont",'.$fallback.'}</style>'
-        );
+        $css = '';
+        foreach (config('fonts')[$key]['faces'] as [$file, $format, $weight]) {
+            $css .= '@font-face{font-family:"ErpFont";src:url("'.e(asset_v('fonts/'.$file)).'") format("'.$format.'");font-weight:'.$weight.';font-display:swap;'
+                .'unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200F}';
+        }
+
+        return new HtmlString('<style>'.$css.'html[dir] body{font-family:"ErpFont",'.$fallback.'}</style>');
     }
 }

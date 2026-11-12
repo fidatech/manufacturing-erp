@@ -19,7 +19,9 @@
 .erp-side { flex: 0 1 46%; }
 
 /* The company's own logo. */
-.erp-brand-logo { height: 32px; width: auto; max-width: 48px; object-fit: contain; border-radius: 6px; }
+.erp-brand-logo { height: auto; max-height: 42px; width: auto; max-width: 100%; object-fit: contain; }
+.sidebar-brand .brand-link:has(.erp-brand-logo) { flex: 1; justify-content: center; }
+[data-layout="collapsed"] .app-sidebar:not(:hover) .erp-brand-logo { max-width: 44px; max-height: 32px; }
 .erp-logo-preview { max-height: 72px; max-width: 220px; border: 1px solid var(--border); border-radius: 8px; padding: 4px; background: #fff; }
 
 /* Long company names fit the sidebar brand. */
@@ -324,3 +326,11 @@
 
 /* Company Settings: a line of Dari and Pashto to see the chosen font. */
 .erp-font-sample { margin-top: 8px; padding: 10px 14px; border-radius: var(--radius); background: var(--hover); color: var(--heading); font-size: 18px; }
+
+/* Top bar: the name of the company in the middle (wide screens; phones show the page title instead). */
+.topbar-brand { display: none; }
+@media (min-width: 1200px) {
+    .topbar-brand { display: block; position: absolute; left: 50%; transform: translateX(-50%); max-width: 34%; padding: 0 14px; color: var(--heading); font-size: 17px; font-weight: 800; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+    .topbar-brand::after { content: ""; display: block; width: 28px; height: 3px; margin: 3px auto 0; border-radius: 3px; background: var(--primary); }
+    [dir="rtl"] .topbar-brand { letter-spacing: 0; }
+}

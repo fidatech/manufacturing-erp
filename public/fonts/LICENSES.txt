@@ -1,0 +1,12 @@
+Fonts in this folder and their licences
+
+Vazirmatn            SIL Open Font License 1.1   (c) The Vazirmatn Project Authors, github.com/rastikerdar/vazirmatn
+Sahel                SIL Open Font License 1.1   (c) Saber Rastikerdar, github.com/rastikerdar/sahel-font
+Shabnam              SIL Open Font License 1.1   (c) Saber Rastikerdar, github.com/rastikerdar/shabnam-font
+Noto Naskh Arabic    SIL Open Font License 1.1   (c) The Noto Project Authors, github.com/notofonts/arabic
+Noto Sans Arabic     SIL Open Font License 1.1   (c) The Noto Project Authors, github.com/notofonts/arabic
+Noto Kufi Arabic     SIL Open Font License 1.1   (c) The Noto Project Authors, github.com/notofonts/arabic
+Droid Arabic Kufi    Apache License 2.0          (c) 2010 Google Corporation
+Pokhto               (c) MashriqSoft, Jalalabad, Afghanistan 1998-2004. All rights reserved. Supplied by the project owner.
+
+The three Noto fonts are cut down to the Arabic-script letters (U+0600-06FF, U+0750-077F) to keep them small.

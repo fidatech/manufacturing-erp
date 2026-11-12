@@ -10,6 +10,8 @@
         <x-icon name="magnifying-glass" /><span>{{ __('app.nav.search_placeholder') }}</span><span class="kbd-group"><kbd>Ctrl</kbd><kbd>K</kbd></span>
     </button>
 
+    <div class="topbar-brand" aria-hidden="true">{{ (text_dir() === 'rtl' ? setting('company_name_local') : null) ?: (setting('company_name') ?: config('app.name')) }}</div>
+
     <div class="topbar-right">
         @can('setup.manage')
             <button class="topbar-icon" type="button" data-bs-toggle="modal" data-bs-target="#ratesModal" title="{{ __('Today\'s exchange rates') }}" aria-label="{{ __('Today\'s exchange rates') }}"><x-icon name="coins" /></button>
