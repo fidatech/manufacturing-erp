@@ -42,9 +42,15 @@ class StockDocController extends Controller
         Gate::authorize('inventory.view');
         $type = $this->type($request);
 
-        $docs = StockDoc::with(['warehouse', 'toWarehouse'])->withCount('lines')->where('type', $type)->orderByDesc('date')->orderByDesc('id')->paginate(25);
+        $filters = $request->validate(['from' => ['nullable', 'date'], 'to' => ['nullable', 'date'], 'warehouse' => ['nullable', 'integer']]);
 
-        return view('stock.docs', ['docs' => $docs, 'type' => $type, 'title' => self::names()[$type], 'singular' => self::singular($type)]);
+        $docs = StockDoc::with(['warehouse', 'toWarehouse'])->withCount('lines')->where('type', $type)
+            ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
+            ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
+            ->when($filters['warehouse'] ?? null, fn ($q, $id) => $q->where(fn ($w) => $w->where('warehouse_id', $id)->orWhere('to_warehouse_id', $id)))
+            ->orderByDesc('date')->orderByDesc('id')->paginate(per_page(25))->withQueryString();
+
+        return view('stock.docs', ['filters' => $filters, 'warehouses' => \App\Models\Warehouse::orderBy('name')->get(), 'docs' => $docs, 'type' => $type, 'title' => self::names()[$type], 'singular' => self::singular($type)]);
     }
 
     public function create(Request $request): View

@@ -46,7 +46,7 @@ class SaleController extends Controller
             ->when($request->query('view') === 'dispatch', fn ($q) => $q->where('status', 'posted')->where('delivery_status', '!=', 'delivered'))
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%$term%"))))
             ->orderByDesc('date')->orderByDesc('id')
-            ->paginate(25)->withQueryString();
+            ->paginate(per_page(25))->withQueryString();
 
         return view('sales.index', ['sales' => $sales, 'type' => $type, 'names' => self::names(), 'filters' => $filters, 'view' => in_array($request->query('view'), ['delivery', 'dispatch'], true) ? $request->query('view') : null]);
     }

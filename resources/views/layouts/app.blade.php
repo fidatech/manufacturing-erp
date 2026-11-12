@@ -1,3 +1,7 @@
+{{-- ?print=1 turns any screen into a clean paper with the company logo (see layouts.print) --}}
+@if (request()->boolean('print'))
+@include('layouts.print')
+@else
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ text_dir() }}" data-bs-theme="light" data-sidebar="light" data-layout="vertical" data-primary="blue" data-width="fluid" data-icons="{{ asset_v('icons.svg') }}" data-home="{{ route('dashboard') }}">
 <head>
@@ -50,3 +54,4 @@
 @include('partials.scripts')
 </body>
 </html>
+@endif

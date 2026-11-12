@@ -75,7 +75,7 @@
     <div class="card-header"><h5 class="card-title">{{ __('Capital received') }}</h5></div>
     <div class="card-body">
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Shareholder') }}</th><th>{{ __('Put in') }}</th><th class="text-end">{{ __('Amount') }}</th><th>{{ __('Note') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Shareholder') }}</th><th>{{ __('Put in') }}</th><th class="text-end">{{ __('Amount') }}</th><th>{{ __('Note') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($entries as $entry)
                     @php

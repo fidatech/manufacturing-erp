@@ -89,6 +89,7 @@ class AccountController extends CrudController
 
         return Account::query()->where('account_type_id', $this->type()->id)->whereNull('system_key')
             ->when($currency > 0, fn (Builder $query) => $query->where('currency_id', $currency))
+            ->when(in_array($request->query('active'), ['yes', 'no'], true), fn (Builder $query) => $query->where('is_active', $request->query('active') === 'yes'))
             // debit = the balance is on the debit side (they owe us, we have it); credit = the other way round
             ->when(in_array($side, ['debit', 'credit'], true), fn (Builder $query) => $query->whereIn('id', function ($lines) use ($side) {
                 $lines->from('journal_lines')->select('account_id')->where('is_void', false)->groupBy('account_id')
@@ -105,6 +106,7 @@ class AccountController extends CrudController
                 'options' => Currency::orderBy('code')->pluck('code', 'id')->all()],
             ['name' => 'side', 'label' => __('Debit and credit'), 'value' => (string) $request->query('side'),
                 'options' => ['debit' => __('Debit').' · '.$sides['debit'], 'credit' => __('Credit').' · '.$sides['credit']]],
+            ['name' => 'active', 'label' => __('Active and not active'), 'value' => (string) $request->query('active'), 'options' => ['yes' => __('Active'), 'no' => __('Not active')]],
         ];
     }
 

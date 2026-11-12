@@ -51,7 +51,7 @@
                         @foreach (array_keys($columns) as $label)
                             <th>{{ __($label) }}</th>
                         @endforeach
-                        <th class="text-end">{{ __('Actions') }}</th>
+                        <th class="text-end no-print">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>

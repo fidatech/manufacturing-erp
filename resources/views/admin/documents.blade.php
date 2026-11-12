@@ -44,7 +44,7 @@
             <div class="col-auto"><button class="btn btn-light-secondary" type="submit"><x-icon name="magnifying-glass" /></button></div>
         </form>
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Title') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Belongs to') }}</th><th>{{ __('Added') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Title') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Belongs to') }}</th><th>{{ __('Added') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($documents as $document)
                     <tr>

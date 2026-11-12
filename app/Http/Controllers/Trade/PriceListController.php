@@ -43,9 +43,19 @@ class PriceListController extends CrudController
     {
         $term = trim((string) $request->query('q'));
 
-        return PriceList::query()->when($term !== '', fn ($q) => $q->where(fn ($i) => $i
+        return PriceList::query()
+            ->when((int) $request->query('customer'), fn ($q, $id) => $q->where('customer_id', $id))
+            ->when($term !== '', fn ($q) => $q->where(fn ($i) => $i
             ->whereHas('customer', fn ($c) => $c->where('name', 'like', "%$term%"))
             ->orWhereHas('item', fn ($c) => $c->where('name', 'like', "%$term%")->orWhere('code', 'like', "%$term%"))));
+    }
+
+    protected function filters(Request $request): array
+    {
+        return [
+            ['name' => 'customer', 'label' => __('All customers'), 'value' => (string) $request->query('customer'),
+                'options' => Account::whereIn('id', PriceList::query()->select('customer_id'))->orderBy('name')->get()->mapWithKeys(fn (Account $a) => [$a->id => $a->name])->all()],
+        ];
     }
 
     /** New prices are written like the items of a sale: one customer, then a row for every item. */

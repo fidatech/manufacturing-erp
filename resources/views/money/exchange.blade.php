@@ -24,7 +24,7 @@
                 <tr>
                     <th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Account') }}</th>
                     <th class="text-end">{{ __('Sold') }}</th><th class="text-end">{{ __('Rate') }}</th><th class="text-end">{{ __('Bought') }}</th>
-                    <th>{{ __('Description') }}</th><th class="text-end">{{ __('Actions') }}</th>
+                    <th>{{ __('Description') }}</th><th class="text-end no-print">{{ __('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>

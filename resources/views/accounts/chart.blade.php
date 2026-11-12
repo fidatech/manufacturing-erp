@@ -8,7 +8,7 @@
         <div class="card-header"><h5 class="card-title">{{ $natures[$nature] }}</h5></div>
         <div class="card-body">
             <table class="table table-hover w-100">
-                <thead><tr><th>{{ __('Account') }}</th><th>{{ __('Kind') }}</th><th class="text-end">{{ __('Balance') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Account') }}</th><th>{{ __('Kind') }}</th><th class="text-end">{{ __('Balance') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
                 <tbody>
                     @php
                         $total = '0';

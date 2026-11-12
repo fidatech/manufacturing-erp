@@ -35,7 +35,7 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
 .paper-doc h2{margin:0;font-size:19px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--paper-accent)}
 .paper-body{padding:22px 30px 26px}
 .paper-body .page-header,.paper-body .no-print,.paper-body .letterhead,.paper-body .report-strip{display:none!important}
-.paper-body form,.paper-body .btn,.paper-body .attachments{display:none!important}
+.paper-body form,.paper-body .btn,.paper-body .attachments,.paper-body .pagination,.paper-body nav,.paper-body .empty-state .es-icon,.paper-body td:has(.btn),.paper-body td:has(form){display:none!important}
 .paper-body .card{border:0;box-shadow:none;background:none;margin:0}
 .paper-body .card+.card{margin-top:16px}.paper-body .card-header{padding:0 0 6px;background:none;border:0}.paper-body .card-title{font-size:14px;font-weight:800;color:var(--paper-accent)}
 .paper-body .card-body{padding:0}
@@ -106,5 +106,9 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
         </div>
     </div>
 </div>
+@if (request()->boolean('pdf'))
+{{-- "PDF" opens the print window straight away: choose "Save as PDF" there --}}
+<script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });</script>
+@endif
 </body>
 </html>

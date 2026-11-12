@@ -14,7 +14,7 @@
             <div class="col-auto"><button class="btn btn-light-secondary" type="submit"><x-icon name="magnifying-glass" /></button></div>
         </form>
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Product') }}</th><th>{{ __('How it is made') }}</th><th>{{ __('Ingredients') }}</th><th class="text-end">{{ __('Cost of one (:base)', ['base' => $base]) }}</th><th class="text-end">{{ __('Sale price') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Product') }}</th><th>{{ __('How it is made') }}</th><th>{{ __('Ingredients') }}</th><th class="text-end">{{ __('Cost of one (:base)', ['base' => $base]) }}</th><th class="text-end">{{ __('Sale price') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($recipes as $recipe)
                     @php

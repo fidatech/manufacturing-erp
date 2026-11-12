@@ -27,7 +27,7 @@ class DocumentController extends Controller
         $documents = Attachment::with('uploader')
             ->when(trim((string) $request->query('q')), fn ($q, $term) => $q->where(fn ($i) => $i->where('title', 'like', "%$term%")->orWhere('category', 'like', "%$term%")->orWhere('original_name', 'like', "%$term%")))
             ->orderByDesc('id')
-            ->paginate(25)
+            ->paginate(per_page(25))
             ->withQueryString();
 
         return view('admin.documents', ['documents' => $documents, 'term' => (string) $request->query('q', ''), 'types' => \App\Models\Lookup::options('document_type')]);

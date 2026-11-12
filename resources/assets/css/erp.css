@@ -334,3 +334,7 @@
     .topbar-brand::after { content: ""; display: block; width: 28px; height: 3px; margin: 3px auto 0; border-radius: 3px; background: var(--primary); }
     [dir="rtl"] .topbar-brand { letter-spacing: 0; }
 }
+
+/* Excel and PDF buttons in the title bar of a list or report. */
+.export-buttons { display: inline-flex; gap: 8px; }
+@media (max-width: 575.98px) { .export-buttons { display: flex; width: 100%; } .export-buttons .btn { flex: 1; } }

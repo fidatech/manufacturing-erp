@@ -27,7 +27,7 @@
         </form>
 
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Details') }}</th><th>{{ __('Accounts') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Details') }}</th><th>{{ __('Accounts') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($entries as $entry)
                     <tr>

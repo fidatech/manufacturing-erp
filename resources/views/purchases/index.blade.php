@@ -38,7 +38,7 @@
         </form>
 
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Supplier') }}</th>@if ($grn)<th>{{ __('GRN') }}</th><th>{{ __('Received on') }}</th>@else<th class="text-end">{{ __('Total') }}</th>@endif<th>{{ __('Status') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Supplier') }}</th>@if ($grn)<th>{{ __('GRN') }}</th><th>{{ __('Received on') }}</th>@else<th class="text-end">{{ __('Total') }}</th>@endif<th>{{ __('Status') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($purchases as $purchase)
                     <tr>

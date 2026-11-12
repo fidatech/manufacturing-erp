@@ -9,8 +9,21 @@
 
 <div class="card">
     <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end mb-3 no-print">
+            @include('partials.date-filter', ['from' => $filters['from'] ?? null, 'to' => $filters['to'] ?? null])
+            <div class="col-12 col-md-auto">
+                <label class="form-label small mb-1">{{ __('Warehouse') }}</label>
+                <select class="form-select" name="warehouse">
+                    <option value="">{{ __('All warehouses') }}</option>
+                    @foreach ($warehouses as $warehouse)
+                        <option value="{{ $warehouse->id }}" @selected((string) ($filters['warehouse'] ?? '') === (string) $warehouse->id)>{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-auto"><button class="btn btn-light-secondary" type="submit">{{ __('Show') }}</button></div>
+        </form>
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Warehouse') }}</th><th>{{ __('Items') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Warehouse') }}</th><th>{{ __('Items') }}</th><th>{{ __('Status') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($docs as $doc)
                     <tr>

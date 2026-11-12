@@ -20,3 +20,6 @@ is-success is-danger is-warning is-info
 
 # balance colours are built in PHP as "bal-" / "is-" + tone (Account::balanceTone)
 bal-due bal-owe bal-capital bal-zero bal-plain is-due is-owe is-capital is-zero is-plain
+
+# Excel and PDF buttons are added by JavaScript
+#s-file-excel #s-file-pdf

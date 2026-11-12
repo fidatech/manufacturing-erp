@@ -72,7 +72,16 @@ class HrRecordController extends CrudController
 
     protected function query(Request $request): Builder
     {
-        return HrRecord::query()->whereIn('type', self::SCREENS[$this->screen()][3]);
+        return HrRecord::query()->whereIn('type', self::SCREENS[$this->screen()][3])
+            ->when((int) $request->query('employee'), fn (Builder $query, int $id) => $query->where('employee_id', $id));
+    }
+
+    protected function filters(Request $request): array
+    {
+        return [
+            ['name' => 'employee', 'label' => __('All employees'), 'value' => (string) $request->query('employee'),
+                'options' => Account::ofType('employee')->orderBy('name')->pluck('name', 'id')->all()],
+        ];
     }
 
     protected function fields(?Model $record): array

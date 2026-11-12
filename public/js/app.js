@@ -371,6 +371,36 @@ close();
 });
 };
 var enhance = function (scope) { $$('select[data-search]', scope).forEach(ERP.searchSelect); };
+(function () {
+var main = $('.app-content');
+var header = main ? $('.page-header', main) : null;
+if (!header || body.hasAttribute('data-no-export')) return;
+var tables = $$('table.table', main).filter(function (table) {
+return !table.hasAttribute('data-rows') && !table.classList.contains('dash-table') && !table.closest('form[method="POST"], form[method="post"]') && $('tbody tr td', table);
+});
+if (!tables.length) return;
+var actions = $('.page-header-actions', header);
+if (!actions) {
+actions = document.createElement('div');
+actions.className = 'page-header-actions';
+header.appendChild(actions);
+}
+var link = function (params, icon, text, blank) {
+var url = new URL(window.location.href);
+Object.keys(params).forEach(function (key) { url.searchParams.set(key, params[key]); });
+var a = document.createElement('a');
+a.className = 'btn btn-outline-soft';
+a.href = url.toString();
+if (blank) { a.target = '_blank'; a.rel = 'noopener'; }
+a.innerHTML = ERP.icon(icon, 'me-1') + ' ' + ERP.escape(text);
+return a;
+};
+var group = document.createElement('span');
+group.className = 'export-buttons';
+group.appendChild(link({ export: 'xlsx' }, 's-file-excel', 'Excel', false));
+group.appendChild(link({ print: '1', pdf: '1' }, 's-file-pdf', 'PDF', true));
+actions.insertBefore(group, actions.firstChild);
+})();
 var quickModal = null;
 var quickFor = null;
 var quickOpen = function (trigger) {

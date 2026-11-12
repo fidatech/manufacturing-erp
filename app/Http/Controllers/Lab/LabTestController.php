@@ -35,7 +35,7 @@ class LabTestController extends Controller
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['subject'] ?? null, fn ($q, $subject) => $q->where('subject', $subject))
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('batch_no', 'like', "%$term%")->orWhereHas('item', fn ($p) => $p->where('name', 'like', "%$term%"))))
-            ->orderByDesc('date')->orderByDesc('id')->paginate(25)->withQueryString();
+            ->orderByDesc('date')->orderByDesc('id')->paginate(per_page(25))->withQueryString();
 
         return view('lab.index', [
             'tests' => $tests,

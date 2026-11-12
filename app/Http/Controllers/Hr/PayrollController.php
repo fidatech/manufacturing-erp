@@ -27,7 +27,7 @@ class PayrollController extends Controller
     {
         Gate::authorize('hr.view');
 
-        return view('payroll.index', ['payrolls' => Payroll::withCount('lines')->orderByDesc('period')->paginate(24)]);
+        return view('payroll.index', ['payrolls' => Payroll::withCount('lines')->orderByDesc('period')->paginate(per_page(24))]);
     }
 
     public function create(Request $request): View

@@ -51,7 +51,7 @@ class CapitalController extends Controller
             'entries' => JournalEntry::with(['lines.account.currency', 'lines.account.type'])
                 ->where('type', 'receipt')
                 ->whereHas('lines', fn ($q) => $q->whereIn('account_id', $ids))
-                ->orderByDesc('date')->orderByDesc('id')->paginate(25),
+                ->orderByDesc('date')->orderByDesc('id')->paginate(per_page(25)),
         ]);
     }
 }

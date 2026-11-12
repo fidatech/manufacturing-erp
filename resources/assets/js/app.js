@@ -418,6 +418,41 @@
     };
     var enhance = function (scope) { $$('select[data-search]', scope).forEach(ERP.searchSelect); };
 
+    // ------------------------------------------------------- Excel and PDF
+    // Every page that shows a table (a list or a report, not a form) gets two buttons in its title bar:
+    // Excel downloads the table with the filters that are on the screen, PDF opens the page as a paper
+    // with the print window, where "Save as PDF" makes the file.
+    (function () {
+        var main = $('.app-content');
+        var header = main ? $('.page-header', main) : null;
+        if (!header || body.hasAttribute('data-no-export')) return;
+        var tables = $$('table.table', main).filter(function (table) {
+            return !table.hasAttribute('data-rows') && !table.classList.contains('dash-table') && !table.closest('form[method="POST"], form[method="post"]') && $('tbody tr td', table);
+        });
+        if (!tables.length) return;
+        var actions = $('.page-header-actions', header);
+        if (!actions) {
+            actions = document.createElement('div');
+            actions.className = 'page-header-actions';
+            header.appendChild(actions);
+        }
+        var link = function (params, icon, text, blank) {
+            var url = new URL(window.location.href);
+            Object.keys(params).forEach(function (key) { url.searchParams.set(key, params[key]); });
+            var a = document.createElement('a');
+            a.className = 'btn btn-outline-soft';
+            a.href = url.toString();
+            if (blank) { a.target = '_blank'; a.rel = 'noopener'; }
+            a.innerHTML = ERP.icon(icon, 'me-1') + ' ' + ERP.escape(text);
+            return a;
+        };
+        var group = document.createElement('span');
+        group.className = 'export-buttons';
+        group.appendChild(link({ export: 'xlsx' }, 's-file-excel', 'Excel', false));
+        group.appendChild(link({ print: '1', pdf: '1' }, 's-file-pdf', 'PDF', true));
+        actions.insertBefore(group, actions.firstChild);
+    })();
+
     // ------------------------------------------------------- quick add
     // A pick list that can get a new record without leaving the page:
     //   <select data-quick-add="/suppliers/create" data-quick-title="New supplier">   a "+ New" link appears in its label

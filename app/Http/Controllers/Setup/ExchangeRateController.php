@@ -40,7 +40,20 @@ class ExchangeRateController extends CrudController
 
     protected function query(Request $request): Builder
     {
-        return ExchangeRate::query()->when($request->query('currency'), fn ($q, $id) => $q->where('currency_id', $id));
+        return ExchangeRate::query()
+            ->when((int) $request->query('currency'), fn ($q, $id) => $q->where('currency_id', $id))
+            ->when($request->query('year'), fn ($q, $year) => $q->whereYear('date', (int) $year));
+    }
+
+    protected function filters(Request $request): array
+    {
+        $years = ExchangeRate::orderByDesc('date')->pluck('date')->map(fn ($date) => substr((string) $date, 0, 4))->unique()->values();
+
+        return [
+            ['name' => 'currency', 'label' => __('All currencies'), 'value' => (string) $request->query('currency'),
+                'options' => Currency::where('is_base', false)->orderBy('code')->pluck('code', 'id')->all()],
+            ['name' => 'year', 'label' => __('All years'), 'value' => (string) $request->query('year'), 'options' => $years->combine($years)->all()],
+        ];
     }
 
     protected function fields(?Model $record): array

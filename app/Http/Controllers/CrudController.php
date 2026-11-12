@@ -120,7 +120,7 @@ abstract class CrudController extends Controller
                 });
             })
             ->orderBy($this->orderBy, $this->orderDirection)
-            ->paginate(25)
+            ->paginate(per_page(25))
             ->withQueryString();
 
         return view('crud.index', $this->shared() + [

@@ -29,7 +29,7 @@ class ProductionController extends Controller
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
             ->when($filters['qc'] ?? null, fn ($q, $status) => $q->where('status', 'posted')->where('qc_status', $status))
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('batch_no', 'like', "%$term%")->orWhereHas('item', fn ($p) => $p->where('name', 'like', "%$term%")->orWhere('code', 'like', "%$term%"))))
-            ->orderByDesc('date')->orderByDesc('id')->paginate(25)->withQueryString();
+            ->orderByDesc('date')->orderByDesc('id')->paginate(per_page(25))->withQueryString();
 
         return view('production.index', ['batches' => $batches, 'filters' => $filters, 'base' => Rates::base()->code]);
     }

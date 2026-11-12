@@ -60,7 +60,18 @@ class ItemController extends CrudController
 
     protected function query(Request $request): Builder
     {
-        return Item::query()->where('type', $this->kind());
+        return Item::query()->where('type', $this->kind())
+            ->when((int) $request->query('group'), fn (Builder $query, int $id) => $query->where('item_category_id', $id))
+            ->when(in_array($request->query('active'), ['yes', 'no'], true), fn (Builder $query) => $query->where('is_active', $request->query('active') === 'yes'));
+    }
+
+    protected function filters(Request $request): array
+    {
+        return [
+            ['name' => 'group', 'label' => __('All groups'), 'value' => (string) $request->query('group'),
+                'options' => ItemCategory::where('type', $this->kind())->orderBy('name')->pluck('name', 'id')->all()],
+            ['name' => 'active', 'label' => __('Active and not active'), 'value' => (string) $request->query('active'), 'options' => ['yes' => __('Active'), 'no' => __('Not active')]],
+        ];
     }
 
     protected function fields(?Model $record): array

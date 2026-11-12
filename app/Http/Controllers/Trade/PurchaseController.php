@@ -43,7 +43,7 @@ class PurchaseController extends Controller
             ->when($request->boolean('waiting'), fn ($q) => $q->where('status', 'posted')->whereNull('received_date'))
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('supplier_invoice_no', 'like', "%$term%")->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%$term%"))))
             ->orderByDesc('date')->orderByDesc('id')
-            ->paginate(25)->withQueryString();
+            ->paginate(per_page(25))->withQueryString();
 
         return view('purchases.index', ['purchases' => $purchases, 'type' => $type, 'names' => self::names(), 'filters' => $filters, 'grn' => $request->query('view') === 'grn']);
     }

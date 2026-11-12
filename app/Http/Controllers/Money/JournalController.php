@@ -30,7 +30,7 @@ class JournalController extends Controller
             ->whereDate('date', '<=', $to)
             ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('description', 'like', "%$term%")))
             ->orderBy('date')->orderBy('id')
-            ->paginate(50)->withQueryString();
+            ->paginate(per_page(50))->withQueryString();
 
         return view('journal.index', ['entries' => $entries, 'from' => $from, 'to' => $to, 'term' => $filters['q'] ?? '']);
     }

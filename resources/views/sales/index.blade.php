@@ -41,7 +41,7 @@
         </form>
 
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Customer') }}</th>@if ($view)<th>{{ __('Deliver to') }}</th><th>{{ __('Transport') }}</th>@else<th class="text-end">{{ __('Total') }}</th>@endif<th>{{ __('Status') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Customer') }}</th>@if ($view)<th>{{ __('Deliver to') }}</th><th>{{ __('Transport') }}</th>@else<th class="text-end">{{ __('Total') }}</th>@endif<th>{{ __('Status') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($sales as $sale)
                     <tr>

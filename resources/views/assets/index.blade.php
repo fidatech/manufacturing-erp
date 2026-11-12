@@ -30,7 +30,7 @@
         </form>
 
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Asset') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Bought on') }}</th><th class="text-end">{{ __('Cost') }}</th><th class="text-end">{{ __('Written off') }}</th><th class="text-end">{{ __('Worth now (:base)', ['base' => $base]) }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Asset') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Bought on') }}</th><th class="text-end">{{ __('Cost') }}</th><th class="text-end">{{ __('Written off') }}</th><th class="text-end">{{ __('Worth now (:base)', ['base' => $base]) }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($rows as $row)
                     @php

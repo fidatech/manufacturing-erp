@@ -119,3 +119,14 @@ if (! function_exists('quick_add')) {
         return new \Illuminate\Support\HtmlString('data-quick-add="'.e(route($route, $params)).'" data-quick-title="'.e($title).'"');
     }
 }
+
+if (! function_exists('per_page')) {
+    /**
+     * Rows of a list on one page. A printed paper or an Excel file (?print=1, ?export=...) gets
+     * the whole list, not only the page that is on the screen.
+     */
+    function per_page(int $usual = 25): int
+    {
+        return request()->boolean('print') || request()->filled('export') ? 5000 : $usual;
+    }
+}

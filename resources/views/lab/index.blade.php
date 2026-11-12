@@ -46,7 +46,7 @@
             <div class="col-auto"><button class="btn btn-light-secondary" type="submit">{{ __('Show') }}</button></div>
         </form>
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Tested') }}</th><th>{{ __('Batch') }}</th><th>{{ __('Tested by') }}</th><th>{{ __('Result') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('No.') }}</th><th>{{ __('Date') }}</th><th>{{ __('Tested') }}</th><th>{{ __('Batch') }}</th><th>{{ __('Tested by') }}</th><th>{{ __('Result') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($tests as $test)
                     <tr>

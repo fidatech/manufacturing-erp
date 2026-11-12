@@ -29,7 +29,7 @@ class ExchangeController extends Controller
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
             ->orderByDesc('date')->orderByDesc('id')
-            ->paginate(25)->withQueryString();
+            ->paginate(per_page(25))->withQueryString();
 
         return view('money.exchange', ['exchanges' => $exchanges, 'filters' => $filters]);
     }

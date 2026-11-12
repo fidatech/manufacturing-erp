@@ -21,7 +21,7 @@ class AuditController extends Controller
             ->when($request->query('to'), fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when(trim((string) $request->query('q')), fn ($q, $term) => $q->where(fn ($i) => $i->where('description', 'like', "%$term%")->orWhere('subject_type', 'like', "%$term%")))
             ->orderByDesc('id')
-            ->paginate(50)
+            ->paginate(per_page(50))
             ->withQueryString();
 
         return view('admin.audit', ['logs' => $logs, 'users' => User::orderBy('name')->pluck('name', 'id')]);

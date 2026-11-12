@@ -33,7 +33,7 @@ class RecipeController extends Controller
         $term = trim((string) $request->query('q'));
         $recipes = Recipe::with(['item.unit', 'lines.item.unit'])
             ->when($term !== '', fn ($q) => $q->where(fn ($i) => $i->where('name', 'like', "%$term%")->orWhereHas('item', fn ($p) => $p->where('name', 'like', "%$term%")->orWhere('code', 'like', "%$term%"))))
-            ->orderBy('name')->paginate(25)->withQueryString();
+            ->orderBy('name')->paginate(per_page(25))->withQueryString();
 
         return view('production.recipes', ['recipes' => $recipes, 'term' => $term, 'base' => Rates::base()->code, 'methods' => self::methods()]);
     }

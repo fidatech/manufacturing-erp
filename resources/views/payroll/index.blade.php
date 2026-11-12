@@ -10,7 +10,7 @@
 <div class="card">
     <div class="card-body">
         <table class="table table-hover w-100">
-            <thead><tr><th>{{ __('Month') }}</th><th>{{ __('Date') }}</th><th>{{ __('Employees') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
+            <thead><tr><th>{{ __('Month') }}</th><th>{{ __('Date') }}</th><th>{{ __('Employees') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
             <tbody>
                 @forelse ($payrolls as $payroll)
                     <tr>
