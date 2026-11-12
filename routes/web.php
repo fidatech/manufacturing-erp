@@ -17,6 +17,7 @@ use App\Http\Controllers\Inventory\StockDocController;
 use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Lab\LabTestController;
 use App\Http\Controllers\Money\CapitalController;
+use App\Http\Controllers\Money\ExchangeController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\Money\PettyCashController;
@@ -169,6 +170,10 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');
     Route::get('petty-cash', PettyCashController::class)->name('petty-cash');
     Route::get('capital', CapitalController::class)->name('capital');
+    Route::get('exchange', [ExchangeController::class, 'index'])->name('exchange.index');
+    Route::get('exchange/rates', [ExchangeController::class, 'rates'])->name('exchange.rates');
+    Route::post('exchange', [ExchangeController::class, 'store'])->name('exchange.store');
+    Route::delete('exchange/{id}', [ExchangeController::class, 'destroy'])->name('exchange.destroy')->whereNumber('id');
     Route::get('money/profit', [MoneyController::class, 'profitForm'])->name('money.profit');
     Route::post('money/profit', [MoneyController::class, 'profitStore'])->name('money.profit.store');
     Route::get('money/{kind}/create', [MoneyController::class, 'create'])->name('money.create');

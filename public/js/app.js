@@ -449,6 +449,101 @@ document.addEventListener('change', function (e) {
 if (e.target.matches && e.target.matches('select[data-party]')) showCurrency(e.target.closest('form'));
 });
 $$('form[data-totals]').forEach(function (form) { recalc(form); showCurrency(form); });
+$$('form[data-exchange]').forEach(function (form) {
+var rates = {};
+try { rates = JSON.parse(form.getAttribute('data-rates') || '{}') || {}; } catch (err) { rates = {}; }
+var holder = $('[name="holder"]', form);
+var sellCur = $('[data-exchange-sell]', form);
+var buyCur = $('[data-exchange-buy]', form);
+var sellAmount = $('[name="sell_amount"]', form);
+var buyAmount = $('[name="buy_amount"]', form);
+var rate = $('[name="rate"]', form);
+var operation = $('[name="operation"]', form);
+var date = $('[name="date"]', form);
+var hint = $('[data-rate-hint]', form);
+var sum = $('[data-exchange-sum]', form);
+if (!holder || !sellCur || !buyCur) return;
+var number = function (input) { var v = parseFloat(String(input.value).replace(/,/g, '')); return isFinite(v) && v > 0 ? v : 0; };
+var show = function (value, decimals) {
+if (!(value > 0) || !isFinite(value)) return '';
+var text = value.toFixed(decimals);
+if (decimals > 2) text = text.replace(/0+$/, '').replace(/\.$/, '');
+return ERP.formatNumber(text);
+};
+var code = function (select) { var o = select.options[select.selectedIndex]; return o ? o.getAttribute('data-code') : ''; };
+var say = function (key) { if (hint) hint.textContent = key ? form.getAttribute('data-text-' + key) || '' : ''; };
+var summary = function () {
+$$('[data-sell-code]', form).forEach(function (el) { el.textContent = '(' + code(sellCur) + ')'; });
+$$('[data-buy-code]', form).forEach(function (el) { el.textContent = '(' + code(buyCur) + ')'; });
+if (!sum) return;
+var sold = number(sellAmount), bought = number(buyAmount), r = number(rate);
+sum.hidden = !(sold && bought && r);
+if (!sum.hidden) {
+sum.textContent = show(sold, 2) + ' ' + code(sellCur) + ' ' + (operation.value === 'divide' ? '÷' : '×') + ' ' + show(r, 6) + ' = ' + show(bought, 2) + ' ' + code(buyCur);
+}
+};
+var calcBuy = function () {
+var sold = number(sellAmount), r = number(rate);
+buyAmount.value = sold && r ? show(operation.value === 'divide' ? sold / r : sold * r, 2) : '';
+summary();
+};
+var calcRate = function () {
+var sold = number(sellAmount), bought = number(buyAmount);
+if (sold && bought) { rate.value = show(operation.value === 'divide' ? sold / bought : bought / sold, 6); say('manual'); }
+summary();
+};
+var tableRate = function () {
+if (!holder.value) { say(''); summary(); return; }
+var s = parseFloat(rates[sellCur.value]), b = parseFloat(rates[buyCur.value]);
+if (!(s > 0) || !(b > 0)) { rate.value = ''; say('none'); calcBuy(); return; }
+operation.value = b >= s ? 'multiply' : 'divide';
+rate.value = show(b >= s ? b / s : s / b, 6);
+say('table');
+calcBuy();
+};
+var limit = function () {
+var option = holder.options[holder.selectedIndex];
+var allowed = option && option.value ? String(option.getAttribute('data-currencies') || '').split(',') : null;
+[sellCur, buyCur].forEach(function (select) {
+Array.prototype.forEach.call(select.options, function (o) {
+var ok = !allowed || allowed.indexOf(o.value) >= 0;
+o.hidden = !ok;
+o.disabled = !ok;
+});
+if (select.options[select.selectedIndex] && select.options[select.selectedIndex].disabled) {
+var first = Array.prototype.filter.call(select.options, function (o) { return !o.disabled; })[0];
+if (first) select.value = first.value;
+}
+});
+};
+var differ = function (changed) {
+if (sellCur.value !== buyCur.value) return;
+var other = changed === buyCur ? sellCur : buyCur;
+var next = Array.prototype.filter.call(other.options, function (o) { return !o.disabled && o.value !== changed.value; })[0];
+if (next) other.value = next.value;
+};
+holder.addEventListener('change', function () { limit(); differ(sellCur); tableRate(); });
+sellCur.addEventListener('change', function () { differ(sellCur); tableRate(); });
+buyCur.addEventListener('change', function () { differ(buyCur); tableRate(); });
+sellAmount.addEventListener('input', calcBuy);
+rate.addEventListener('input', function () { say('manual'); calcBuy(); });
+operation.addEventListener('change', calcBuy);
+buyAmount.addEventListener('input', calcRate);
+var again = $('[data-table-rate]', form);
+if (again) again.addEventListener('click', tableRate);
+if (date) date.addEventListener('change', function () {
+var url = form.getAttribute('data-rates-url');
+if (!url || !date.value || !window.fetch) return;
+var query = '?date=' + encodeURIComponent(date.value) + ($('input[name="_shamsi[]"]', form) ? '&_shamsi[]=date' : '');
+fetch(url + query, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+.then(function (response) { return response.ok ? response.json() : null; })
+.then(function (data) { if (data) { rates = data; tableRate(); } })
+.catch(function () { return null; });
+});
+limit();
+differ(sellCur);
+if (rate.value) summary(); else tableRate();
+});
 $$('form[data-money-form]').forEach(function (form) {
 var sync = function () {
 var cur = {};

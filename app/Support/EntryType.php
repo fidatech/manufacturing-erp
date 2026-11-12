@@ -13,6 +13,7 @@ class EntryType
             'payment' => [__('Money out'), 'danger'],
             'expense' => [__('Expense'), 'warning'],
             'transfer' => [__('Transfer'), 'info'],
+            'exchange' => [__('Currency exchange'), 'info'],
             'profit' => [__('Profit paid'), 'warning'],
             'sale' => [__('Sale'), 'primary'],
             'sale_return' => [__('Sale return'), 'danger'],

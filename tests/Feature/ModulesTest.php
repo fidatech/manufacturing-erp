@@ -324,7 +324,7 @@ class ModulesTest extends TestCase
             [route('money.index', ['type' => 'expense']), 'Expenses'],
             [route('money.create', ['kind' => 'in']), 'Money In'],
             [route('money.create', ['kind' => 'out', 'group' => 'shareholder']), 'Withdrawals'],
-            [route('money.create', ['kind' => 'transfer', 'group' => 'exchange']), 'Currency Exchange'],
+            [route('exchange.index'), 'Currency Exchange'],
             [route('capital'), 'Capital'],
             [route('capital', ['from' => 'shareholders']), 'Capital Contribution'],
             [route('items.index', ['type' => 'raw']), 'Raw Materials'],

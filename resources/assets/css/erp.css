@@ -264,3 +264,6 @@
     .hbars { padding-inline: 14px; }
     .dash-figure { font-size: 19px; }
 }
+
+/* Currency exchange: the sum in one line under the form (1,000 USD × 70 = 70,000 AFN). */
+.exchange-sum { padding: 12px 16px; border-radius: var(--radius); background: var(--primary-soft); color: var(--primary); font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; text-align: center; }
