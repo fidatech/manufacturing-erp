@@ -54,7 +54,8 @@
                     <div class="form-check form-switch mt-md-4 pt-md-2">
                         <input type="hidden" name="is_active" value="0">
                         <input class="form-check-input" type="checkbox" role="switch" id="f-active" name="is_active" value="1" @checked(old('is_active', $recipe?->is_active ?? true))>
-                        <label class="form-check-label" for="f-active">{{ __('In use') }}</label>
+                        <label class="form-check-label" for="f-active">{{ __('Active') }}</label>
+                        <div class="form-text">{{ __('Switch off to stop using it. It disappears from pick lists, but its history stays.') }}</div>
                     </div>
                 </div>
             </div>

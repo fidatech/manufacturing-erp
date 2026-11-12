@@ -23,13 +23,20 @@
                 @php
                     $ticked = old('currencies') !== null ? ! empty(old("currencies.$currencyId.on")) : ($currencyId === ($field['default'] ?? null));
                 @endphp
-                <div class="col-12 col-sm-6 col-lg-4">
+                <div class="col-12 {{ empty($field['sides']) ? 'col-sm-4 col-lg-3' : 'col-xl-6' }}">
                     <div class="input-group">
                         <label class="input-group-text gap-2 mb-0" for="f-cur-{{ $currencyId }}">
                             <input class="form-check-input mt-0" type="checkbox" id="f-cur-{{ $currencyId }}" name="currencies[{{ $currencyId }}][on]" value="1" @checked($ticked)>
                             <strong>{{ $code }}</strong>
                         </label>
-                        <input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" name="currencies[{{ $currencyId }}][opening]" value="{{ old("currencies.$currencyId.opening") }}" placeholder="{{ __('Opening balance') }}" aria-label="{{ __('Opening balance') }} {{ $code }}">
+                        @if (! empty($field['sides']))
+                            <input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" name="currencies[{{ $currencyId }}][opening]" value="{{ old("currencies.$currencyId.opening") }}" placeholder="{{ __('Opening balance') }}" aria-label="{{ __('Opening balance') }} {{ $code }}">
+                            <select class="form-select erp-side" name="currencies[{{ $currencyId }}][side]" aria-label="{{ __('Opening balance is') }} {{ $code }}">
+                                @foreach ($field['sides'] as $side => $sideLabel)
+                                    <option value="{{ $side }}" @selected(old("currencies.$currencyId.side", $field['side'] ?? 'debit') === $side)>{{ $sideLabel }}</option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -45,6 +52,9 @@
             <input type="hidden" name="{{ $name }}" value="0">
             <input class="form-check-input" type="checkbox" role="switch" id="f-{{ $name }}" name="{{ $name }}" value="1" @checked(old($name, $stored ?? ($field['default'] ?? false)))>
             <label class="form-check-label" for="f-{{ $name }}">{{ __($field['label']) }}</label>
+            @if (! empty($field['help']))
+                <div class="form-text">{{ __($field['help']) }}</div>
+            @endif
         </div>
     @else
         <label class="form-label" for="f-{{ $name }}">{{ __($field['label']) }}@if ($required) <span class="text-danger">*</span>@endif</label>

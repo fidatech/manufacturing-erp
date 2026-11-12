@@ -103,9 +103,10 @@ class AccountController extends CrudController
         } else {
             // a new account: tick every currency it works in; one account is made for each
             $fields[] = ['name' => 'currencies', 'label' => 'Currencies', 'type' => 'currencies', 'virtual' => true, 'col' => 12, 'options' => $currencies,
+                'sides' => $withOpening ? self::sides($type) : null, 'side' => self::defaultSide($type),
                 'default' => Currency::where('is_base', true)->value('id'), 'rules' => ['nullable', 'array'],
                 'help' => $withOpening
-                    ? 'Tick every currency this account works in. A separate account is made for each. Write an opening balance only if there is one.'
+                    ? 'Tick every currency this account works in. A separate account is made for each. An opening balance is optional: write it only if there is one, and choose what it means in that currency.'
                     : 'Tick every currency this account works in. A separate account is made for each.'];
             $fields[] = ['name' => 'currency_id', 'label' => 'Currency', 'hidden' => true, 'rules' => ['required', 'exists:currencies,id']];
         }
@@ -123,29 +124,34 @@ class AccountController extends CrudController
         }
 
         $fields[] = ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000'], 'col' => 12];
-        $fields[] = ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true];
+        $fields[] = ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'default' => true, 'help' => 'Switch off to stop using it. It disappears from pick lists, but its history stays.'];
 
         if (! $record && $withOpening) {
+            // filled in for each ticked currency by store()
             $fields[] = ['name' => 'opening_amount', 'label' => 'Opening balance', 'hidden' => true, 'virtual' => true, 'rules' => ['nullable', 'numeric', 'min:0']];
-            $fields[] = ['name' => 'opening_side', 'label' => 'An opening balance means', 'type' => 'select', 'virtual' => true, 'rules' => ['required', 'in:debit,credit'],
-                'options' => self::sides($type), 'default' => in_array($type->nature, ['liability', 'equity'], true) ? 'credit' : 'debit',
-                'help' => 'Only matters when you wrote an opening balance above.'];
+            $fields[] = ['name' => 'opening_side', 'label' => 'Opening balance is', 'hidden' => true, 'virtual' => true, 'rules' => ['nullable', 'in:debit,credit']];
         }
 
         return $fields;
     }
 
-    /** Plain-language meaning of the two sides of an account, by kind. */
+    /** What an opening balance can mean, by kind of account. */
     public static function sides(AccountType $type): array
     {
         if ($type->is_money) {
-            return ['debit' => __('We have this money'), 'credit' => __('We owe this money')];
+            return ['debit' => __('We have it'), 'credit' => __('We owe it')];
         }
         if ($type->key === 'shareholder') {
-            return ['credit' => __('Capital they put in'), 'debit' => __('They owe the company')];
+            return ['credit' => __('Capital (payable to them)'), 'debit' => __('Receivable (they owe us)')];
         }
 
-        return ['debit' => __('They owe us'), 'credit' => __('We owe them')];
+        return ['debit' => __('Receivable (they owe us)'), 'credit' => __('Payable (we owe them)')];
+    }
+
+    /** The usual meaning: suppliers, employees, loans and owners are owed by us; everyone else owes us. */
+    public static function defaultSide(AccountType $type): string
+    {
+        return in_array($type->nature, ['liability', 'equity'], true) ? 'credit' : 'debit';
     }
 
     /** Extra boxes a kind of account needs. They are kept in the "meta" column. */
@@ -159,7 +165,7 @@ class AccountController extends CrudController
             'employee' => [
                 ['name' => 'father_name', 'label' => 'Father name', 'rules' => ['nullable', 'string', 'max:150']],
                 ['name' => 'department', 'label' => 'Department', 'type' => 'select', 'options' => \App\Models\Lookup::options('department'), 'rules' => ['nullable', 'string', 'max:150']],
-                ['name' => 'job_title', 'label' => 'Designation', 'type' => 'select', 'options' => \App\Models\Lookup::options('designation'), 'rules' => ['nullable', 'string', 'max:150'],
+                ['name' => 'job_title', 'label' => 'Designation', 'type' => 'select', 'options' => \App\Models\Lookup::designations(), 'rules' => ['nullable', 'string', 'max:150'],
                     'help' => 'Add departments and designations under Human Resource first.'],
                 ['name' => 'gender', 'label' => 'Gender', 'type' => 'select', 'options' => ['male' => __('Male'), 'female' => __('Female')], 'rules' => ['nullable', 'in:male,female']],
                 ['name' => 'id_number', 'label' => 'Tazkira number', 'rules' => ['nullable', 'string', 'max:100']],
@@ -189,7 +195,7 @@ class AccountController extends CrudController
         $ticked = [];
         foreach ((array) $request->input('currencies') as $currencyId => $row) {
             if (! empty($row['on'])) {
-                $ticked[(int) $currencyId] = $row['opening'] ?? null;
+                $ticked[(int) $currencyId] = ['opening' => $row['opening'] ?? null, 'side' => $row['side'] ?? null];
             }
         }
         if (! $ticked) {
@@ -197,8 +203,9 @@ class AccountController extends CrudController
         }
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($request, $ticked) {
-            foreach ($ticked as $currencyId => $opening) {
-                $request->merge(['currency_id' => $currencyId, 'opening_amount' => $opening]);
+            // each currency has its own balance and its own meaning: receivable in one, payable in another
+            foreach ($ticked as $currencyId => $row) {
+                $request->merge(['currency_id' => $currencyId, 'opening_amount' => $row['opening'], 'opening_side' => $row['side']]);
                 $this->save($request, null);
             }
         });
@@ -225,7 +232,7 @@ class AccountController extends CrudController
             $columns['Monthly salary'] = fn (Account $a) => $a->metaValue('salary') ? money($a->metaValue('salary'), $a->currency->code) : '';
         }
         $columns['Balance'] = fn (Account $a) => $a->describeBalance($this->balanceOf($a));
-        $columns['In use'] = fn (Account $a) => $a->is_active ? __('Yes') : __('No');
+        $columns['Active'] = fn (Account $a) => $a->is_active ? __('Yes') : __('No');
 
         return $columns;
     }
@@ -258,7 +265,7 @@ class AccountController extends CrudController
             return;
         }
 
-        $side = $virtual['opening_side'] ?? 'debit';
+        $side = ($virtual['opening_side'] ?? null) ?: self::defaultSide($this->type());
         $base = \App\Services\Rates::toBase($amount, $record->currency_id, today_iso());
         Ledger::post('opening', today_iso(), __('Opening balance').': '.$record->name, [
             ['account' => $record, $side => $amount, 'base' => $base],

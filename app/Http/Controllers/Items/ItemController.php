@@ -82,7 +82,7 @@ class ItemController extends CrudController
         }
         $fields[] = ['name' => 'min_stock', 'label' => 'Warn me when stock is below', 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0'], 'default' => 0];
         $fields[] = ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:2000'], 'col' => 12];
-        $fields[] = ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true];
+        $fields[] = ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'default' => true, 'help' => 'Switch off to stop using it. It disappears from pick lists, but its history stays.'];
 
         return $fields;
     }

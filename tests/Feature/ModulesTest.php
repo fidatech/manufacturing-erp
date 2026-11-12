@@ -34,8 +34,21 @@ class ModulesTest extends TestCase
         foreach (array_keys(LookupController::LISTS) as $type) {
             $this->get(route('lookups.index', ['type' => $type]))->assertOk();
             $this->get(route('lookups.create', ['type' => $type]))->assertOk();
-            $this->post(route('lookups.store', ['type' => $type]), ['name' => 'Production'])->assertRedirect(route('lookups.index', ['type' => $type]));
+            // a designation needs its department (departments come first in the list of lists)
+            $extra = $type === 'designation' ? ['parent_id' => Lookup::where('type', 'department')->value('id')] : [];
+            $this->post(route('lookups.store', ['type' => $type]), ['name' => 'Production'] + $extra)->assertRedirect(route('lookups.index', ['type' => $type]));
         }
+
+        // a designation without a department is refused; the same job may exist in two departments
+        $this->post(route('lookups.store', ['type' => 'designation']), ['name' => 'Operator'])->assertSessionHasErrors('parent_id');
+        $this->post(route('lookups.store', ['type' => 'department']), ['name' => 'Sales'])->assertRedirect();
+        $production = Lookup::where('type', 'department')->where('name', 'Production')->value('id');
+        $sales = Lookup::where('type', 'department')->where('name', 'Sales')->value('id');
+        $this->post(route('lookups.store', ['type' => 'designation']), ['name' => 'Manager', 'parent_id' => $production])->assertRedirect();
+        $this->post(route('lookups.store', ['type' => 'designation']), ['name' => 'Manager', 'parent_id' => $sales])->assertRedirect();
+        $this->post(route('lookups.store', ['type' => 'designation']), ['name' => 'Manager', 'parent_id' => $sales])->assertSessionHasErrors('name');
+        $this->assertSame(2, Lookup::where('type', 'designation')->where('name', 'Manager')->count());
+        $this->get(route('lookups.index', ['type' => 'designation']))->assertOk()->assertSee('Sales');
         $this->assertSame(count(LookupController::LISTS), Lookup::where('name', 'Production')->count());
 
         // the same name twice in one list is refused
@@ -207,22 +220,36 @@ class ModulesTest extends TestCase
 
         // two currencies ticked, an opening balance only in afghani
         $this->post(route('accounts.store', ['type' => 'customer']), [
-            'name' => 'Haji Sharif', 'phone' => '0700000000', 'is_active' => '1', 'opening_side' => 'debit',
-            'currencies' => [$usd => ['on' => '1', 'opening' => ''], $afn => ['on' => '1', 'opening' => '7000'], $pkr => ['opening' => '']],
+            'name' => 'Haji Sharif', 'phone' => '0700000000', 'is_active' => '1',
+            'currencies' => [$usd => ['on' => '1', 'opening' => '', 'side' => 'debit'], $afn => ['on' => '1', 'opening' => '7000', 'side' => 'debit'], $pkr => ['opening' => '']],
         ])->assertRedirect(route('accounts.index', ['type' => 'customer']));
 
         $accounts = Account::where('name', 'Haji Sharif')->with('currency')->get()->keyBy(fn ($a) => $a->currency->code);
         $this->assertSame(['AFN', 'USD'], $accounts->keys()->sort()->values()->all());
         $this->assertSame('7000.00', Ledger::balance($accounts['AFN']->id));
         $this->assertSame('0.00', Ledger::balance($accounts['USD']->id));
+
+        // he owes us in dollars, and we owe him in afghani
+        $this->get(route('accounts.create', ['type' => 'customer']))->assertOk()->assertSee('currencies['.$afn.'][side]', false)->assertSee('Receivable')->assertSee('Payable');
+        $this->post(route('accounts.store', ['type' => 'customer']), ['name' => 'Zaki Trading', 'is_active' => '1',
+            'currencies' => [$usd => ['on' => '1', 'opening' => '300', 'side' => 'debit'], $afn => ['on' => '1', 'opening' => '14000', 'side' => 'credit']],
+        ])->assertRedirect();
+        $zaki = Account::where('name', 'Zaki Trading')->with('currency')->get()->keyBy(fn ($a) => $a->currency->code);
+        $this->assertSame('300.00', Ledger::balance($zaki['USD']->id));
+        $this->assertSame('-14000.00', Ledger::balance($zaki['AFN']->id));
+        $this->get(route('accounts.index', ['type' => 'customer', 'q' => 'Zaki']))->assertOk()->assertSee('owes us')->assertSee('we owe');
+
+        // a supplier's balance is payable unless told otherwise
+        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Javed', 'is_active' => '1', 'currencies' => [$usd => ['on' => '1', 'opening' => '50']]])->assertRedirect();
+        $this->assertSame('-50.00', Ledger::balance(Account::where('name', 'Javed')->value('id')));
         $this->get(route('accounts.index', ['type' => 'customer']))->assertOk()->assertSee('Haji Sharif');
 
         // no currency ticked: nothing is made
-        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Nobody', 'is_active' => '1', 'opening_side' => 'credit', 'currencies' => [$usd => ['opening' => '5']]])->assertSessionHasErrors('currencies');
+        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Nobody', 'is_active' => '1', 'currencies' => [$usd => ['opening' => '5']]])->assertSessionHasErrors('currencies');
         $this->assertDatabaseMissing('accounts', ['name' => 'Nobody']);
 
         // one currency has no exchange rate: none of the accounts is made
-        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Half', 'is_active' => '1', 'opening_side' => 'credit',
+        $this->post(route('accounts.store', ['type' => 'supplier']), ['name' => 'Half', 'is_active' => '1',
             'currencies' => [$usd => ['on' => '1', 'opening' => '10'], $pkr => ['on' => '1', 'opening' => '500']]])->assertSessionHas('danger');
         $this->assertDatabaseMissing('accounts', ['name' => 'Half']);
 

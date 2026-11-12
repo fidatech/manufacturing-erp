@@ -32,7 +32,7 @@ class CurrencyController extends CrudController
             ['name' => 'code', 'label' => 'Code', 'rules' => ['required', 'alpha', 'size:3', Rule::unique('currencies')->ignore($record?->id)], 'help' => 'Three letters, for example AFN', 'readonly' => (bool) $record],
             ['name' => 'name', 'label' => 'Name', 'rules' => ['required', 'string', 'max:100']],
             ['name' => 'symbol', 'label' => 'Symbol', 'rules' => ['nullable', 'string', 'max:10']],
-            ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true],
+            ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'default' => true, 'help' => 'Switch off to stop using it. It disappears from pick lists, but its history stays.'],
         ];
     }
 
@@ -42,7 +42,7 @@ class CurrencyController extends CrudController
             'Code' => fn (Currency $c) => $c->code,
             'Name' => fn (Currency $c) => $c->name.($c->is_base ? ' ('.__('main currency').')' : ''),
             'Symbol' => fn (Currency $c) => $c->symbol,
-            'In use' => fn (Currency $c) => $c->is_active ? __('Yes') : __('No'),
+            'Active' => fn (Currency $c) => $c->is_active ? __('Yes') : __('No'),
         ];
     }
 

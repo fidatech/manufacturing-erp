@@ -31,7 +31,7 @@ class WarehouseController extends CrudController
             ['name' => 'location', 'label' => 'Location', 'rules' => ['nullable', 'string', 'max:255']],
             ['name' => 'manager_account_id', 'label' => 'Warehouse manager', 'type' => 'select', 'rules' => ['nullable', 'exists:accounts,id'],
                 'options' => Account::ofType('warehouse_manager')->orderBy('name')->pluck('name', 'id')->all()],
-            ['name' => 'is_active', 'label' => 'In use', 'type' => 'checkbox', 'default' => true],
+            ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'default' => true, 'help' => 'Switch off to stop using it. It disappears from pick lists, but its history stays.'],
         ];
     }
 
@@ -41,7 +41,7 @@ class WarehouseController extends CrudController
             'Name' => fn (Warehouse $w) => $w->name,
             'Location' => fn (Warehouse $w) => $w->location,
             'Warehouse manager' => fn (Warehouse $w) => $w->manager?->name,
-            'In use' => fn (Warehouse $w) => $w->is_active ? __('Yes') : __('No'),
+            'Active' => fn (Warehouse $w) => $w->is_active ? __('Yes') : __('No'),
         ];
     }
 }
