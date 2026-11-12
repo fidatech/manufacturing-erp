@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => __('Balance sheet')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Balance sheet')])
 
 @php
     $titles = ['asset' => __('What the company has'), 'liability' => __('What the company owes'), 'equity' => __('What belongs to the owners')];

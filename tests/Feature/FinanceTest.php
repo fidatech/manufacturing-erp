@@ -136,6 +136,16 @@ class FinanceTest extends TestCase
         $this->get(route('reports.sales', $range))->assertOk()->assertSee('Mango KC9012')->assertSee('300.00');
         $this->get(route('reports.purchases', $range))->assertOk()->assertSee('2,000.00');
 
+        // every report has a printable paper of its own: company heading, the same figures, no menu
+        $this->get(route('reports.profit', $range))->assertSee('print=1', false);
+        $this->get(route('reports.profit', $range + ['print' => 1]))->assertOk()
+            ->assertSee('paper-head', false)->assertSee('Profit and loss')->assertSee('700.00')->assertSee('200.00 USD')->assertSee('Prepared by')
+            ->assertDontSee('app-sidebar', false)->assertDontSee('name="from"', false);
+        foreach (['reports.balance', 'reports.trial', 'reports.cash', 'reports.balances', 'reports.sales', 'reports.purchases'] as $report) {
+            $this->get(route($report, $range + ['print' => 1]))->assertOk()->assertSee('paper-head', false)->assertSee('Approved by')->assertDontSee('app-sidebar', false);
+        }
+        $this->get(route('reports.parties', ['group' => 'customers', 'print' => 1]))->assertOk()->assertSee('paper-head', false)->assertSee('Haji Sharif');
+
         // the dashboard shows the same numbers
         $this->get(route('dashboard'))->assertOk()->assertSee('3,900.00 USD')->assertSee('1,600.00');
         $this->get(route('dashboard'))->assertOk()->assertSee('Sales in the last 30 days')->assertSee('Sales and purchases, last 6 months')->assertSee('Best sellers this month')->assertSee('chart-bar s2', false);

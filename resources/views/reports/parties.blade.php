@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => $title])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => $title])
 
 @section('content')
 <x-page-header :title="$title" icon="users" :crumbs="[[__('Reports'), route('reports.index')], [$title]]" />

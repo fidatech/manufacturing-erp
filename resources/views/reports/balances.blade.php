@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => __('Who owes us, whom we owe')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Who owes us, whom we owe')])
 
 @section('content')
 <x-page-header :title="__('Who owes us, whom we owe')" icon="scale-balanced" :crumbs="[[__('Reports'), route('reports.index')], [__('Balances')]]" />

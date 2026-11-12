@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => __('Purchases report')])
+@extends(request()->boolean('print') ? 'layouts.print' : 'layouts.app', ['title' => __('Purchases report')])
 
 @section('content')
 <x-page-header :title="__('Purchases report')" icon="cart-flatbed" :crumbs="[[__('Reports'), route('reports.index')], [__('Purchases report')]]" />
