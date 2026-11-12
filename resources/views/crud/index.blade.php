@@ -1,6 +1,9 @@
 @extends('layouts.app', ['title' => $title])
 
 @section('content')
+@php
+    $filtered = collect($filters ?? [])->contains(fn ($filter) => (string) $filter['value'] !== '');
+@endphp
 <x-page-header :title="$title" :icon="$icon">
     @isset($headerLinks)
         @foreach ($headerLinks as $link)
@@ -15,9 +18,19 @@
 <div class="card">
     <div class="card-body">
         <form method="GET" class="row g-2 mb-3">
-            <div class="col">
+            <div class="col-12 col-md">
                 <input type="search" class="form-control" name="q" value="{{ $term }}" placeholder="{{ __('Search…') }}" aria-label="{{ __('Search') }}">
             </div>
+            @foreach ($filters ?? [] as $filter)
+                <div class="col col-md-auto">
+                    <select class="form-select" name="{{ $filter['name'] }}" aria-label="{{ $filter['label'] }}" onchange="this.form.submit()">
+                        <option value="">{{ $filter['label'] }}</option>
+                        @foreach ($filter['options'] as $value => $text)
+                            <option value="{{ $value }}" @selected((string) $filter['value'] === (string) $value)>{{ $text }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endforeach
             <div class="col-auto">
                 <button class="btn btn-light-secondary" type="submit"><x-icon name="magnifying-glass" /></button>
             </div>
@@ -26,8 +39,8 @@
         @if ($rows->isEmpty())
             <div class="empty-state">
                 <div class="es-icon"><x-icon :name="$icon" /></div>
-                <h3>{{ $term !== '' ? __('Nothing found') : __('Nothing here yet') }}</h3>
-                @if ($canManage && $term === '')
+                <h3>{{ $term !== '' || $filtered ? __('Nothing found') : __('Nothing here yet') }}</h3>
+                @if ($canManage && $term === '' && ! $filtered)
                     <p>{{ __('Press "Add :name" to create the first one.', ['name' => $singular]) }}</p>
                 @endif
             </div>

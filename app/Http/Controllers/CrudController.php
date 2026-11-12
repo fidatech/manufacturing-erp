@@ -115,10 +115,21 @@ abstract class CrudController extends Controller
             'rows' => $rows,
             'columns' => $this->columns(),
             'term' => $term,
+            'filters' => $this->filters($request),
             'canManage' => $request->user()->can($this->permission.'.manage'),
             'links' => fn (Model $record) => $this->rowLinks($record),
             'editable' => fn (Model $record) => $this->canEdit($record),
         ]);
+    }
+
+    /**
+     * Extra pick lists beside the search box of the list:
+     * [['name' => 'currency', 'label' => 'Currency', 'options' => [value => text], 'value' => chosen], ...]
+     * The screen applies them itself in query().
+     */
+    protected function filters(Request $request): array
+    {
+        return [];
     }
 
     public function create(Request $request): View

@@ -39,6 +39,15 @@ class MoneyTest extends TestCase
         $this->get(route('accounts.index', ['type' => 'customer']))->assertSee('bal bal-due', false)->assertSee('7,000.00 AFN');
         $this->assertSame('owe', $customer->balanceTone('-5'));
         $this->assertSame('zero', $customer->balanceTone('0'));
+
+        // the list can be narrowed by currency and by the side of the balance
+        $usdCustomer = $this->account('customer', 'Dollar Customer', 'USD');
+        $list = fn (array $query) => $this->get(route('accounts.index', ['type' => 'customer'] + $query))->assertOk();
+        $list([])->assertSee('Debit · Receivable (they owe us)')->assertSee('Credit · Payable (we owe them)');
+        $list(['currency' => $this->currency('AFN')->id])->assertSee('Haji Sharif')->assertDontSee('Dollar Customer');
+        $list(['currency' => $this->currency('USD')->id])->assertDontSee('Haji Sharif')->assertSee('Dollar Customer');
+        $list(['side' => 'debit'])->assertSee('Haji Sharif')->assertDontSee('Dollar Customer');
+        $list(['side' => 'credit'])->assertDontSee('Haji Sharif')->assertSee('Nothing found');
         $this->get(route('statement', ['id' => $customer->id]))->assertOk()->assertSee('7,000.00');
         // the statement offers quick periods and names the kind of each movement
         $this->get(route('statement', ['id' => $customer->id, 'from' => '2000-01-01', 'to' => today_iso()]))

@@ -83,7 +83,28 @@ class AccountController extends CrudController
 
     protected function query(Request $request): Builder
     {
-        return Account::query()->where('account_type_id', $this->type()->id)->whereNull('system_key');
+        $currency = (int) $request->query('currency');
+        $side = $request->query('side');
+
+        return Account::query()->where('account_type_id', $this->type()->id)->whereNull('system_key')
+            ->when($currency > 0, fn (Builder $query) => $query->where('currency_id', $currency))
+            // debit = the balance is on the debit side (they owe us, we have it); credit = the other way round
+            ->when(in_array($side, ['debit', 'credit'], true), fn (Builder $query) => $query->whereIn('id', function ($lines) use ($side) {
+                $lines->from('journal_lines')->select('account_id')->where('is_void', false)->groupBy('account_id')
+                    ->havingRaw('SUM(debit) - SUM(credit) '.($side === 'debit' ? '> 0' : '< 0'));
+            }));
+    }
+
+    protected function filters(Request $request): array
+    {
+        $sides = self::sides($this->type());
+
+        return [
+            ['name' => 'currency', 'label' => __('All currencies'), 'value' => (string) $request->query('currency'),
+                'options' => Currency::orderBy('code')->pluck('code', 'id')->all()],
+            ['name' => 'side', 'label' => __('Debit and credit'), 'value' => (string) $request->query('side'),
+                'options' => ['debit' => __('Debit').' · '.$sides['debit'], 'credit' => __('Credit').' · '.$sides['credit']]],
+        ];
     }
 
     protected function fields(?Model $record): array
