@@ -39,6 +39,39 @@ class Periods
         }, $list);
     }
 
+    /**
+     * The last months up to this one, oldest first, in the calendar the user reads.
+     *
+     * @return list<array{label: string, from: string, to: string}>
+     */
+    public static function months(int $count): array
+    {
+        $today = today_iso();
+        $shamsi = calendar() === 'shamsi';
+        $names = $shamsi
+            ? [__('Hamal'), __('Sawr'), __('Jawza'), __('Saratan'), __('Asad'), __('Sunbula'), __('Mizan'), __('Aqrab'), __('Qaws'), __('Jadi'), __('Dalw'), __('Hoot')]
+            : [__('Jan'), __('Feb'), __('Mar'), __('Apr'), __('May'), __('Jun'), __('Jul'), __('Aug'), __('Sep'), __('Oct'), __('Nov'), __('Dec')];
+
+        [$y, $m, $d] = array_map('intval', explode('-', $today));
+        if ($shamsi) {
+            [$y, $m] = Shamsi::fromGregorian($y, $m, $d);
+        }
+        $start = fn (int $year, int $month) => $shamsi
+            ? vsprintf('%04d-%02d-%02d', Shamsi::toGregorian($year, $month, 1))
+            : sprintf('%04d-%02d-01', $year, $month);
+
+        $months = [];
+        $end = $today;
+        for ($i = 0; $i < $count; $i++) {
+            $from = $start($y, $m);
+            array_unshift($months, ['label' => $names[$m - 1], 'from' => $from, 'to' => $end]);
+            $end = Carbon::parse($from)->subDay()->toDateString();
+            [$y, $m] = $m === 1 ? [$y - 1, 12] : [$y, $m - 1];
+        }
+
+        return $months;
+    }
+
     /** @return array{string,string,string} start of this month, of last month, of this year */
     private static function gregorianStarts(string $today): array
     {

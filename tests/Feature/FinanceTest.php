@@ -138,6 +138,7 @@ class FinanceTest extends TestCase
 
         // the dashboard shows the same numbers
         $this->get(route('dashboard'))->assertOk()->assertSee('3,900.00 USD')->assertSee('1,600.00');
+        $this->get(route('dashboard'))->assertOk()->assertSee('Sales in the last 30 days')->assertSee('Sales and purchases, last 6 months')->assertSee('Best sellers this month')->assertSee('chart-bar s2', false);
     }
 
     public function test_a_user_only_sees_the_dashboard_parts_he_may_see(): void
@@ -145,6 +146,7 @@ class FinanceTest extends TestCase
         $this->userWith(['sales.view']);
 
         $this->get(route('dashboard'))->assertOk()->assertSee('Sales today')->assertDontSee('Money we have')->assertDontSee('Stock is worth');
+        $this->get(route('dashboard'))->assertSee('Sales in the last 30 days')->assertDontSee('chart-bar s2', false);
         $this->get(route('reports.index'))->assertForbidden();
         $this->get(route('assets.index'))->assertForbidden();
         $this->get(route('payroll.index'))->assertForbidden();
