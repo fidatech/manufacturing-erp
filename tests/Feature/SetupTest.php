@@ -186,7 +186,7 @@ class SetupTest extends TestCase
         $this->assertSame(['vazirmatn', 'noto-sans-arabic', 'noto-naskh-arabic', 'noto-kufi-arabic', 'droid-arabic-kufi', 'pokhto', 'sahel', 'shabnam'], array_keys(config('fonts')));
 
         $this->get(route('dashboard'))->assertOk()->assertDontSee('ErpFont', false);
-        $this->get(route('company.edit'))->assertOk()->assertSee('name="app_font"', false)->assertSee('Vazirmatn')->assertSee('Pokhto')->assertSee('Droid Arabic Kufi')->assertDontSee('Afghani');
+        $this->get(route('company.edit'))->assertOk()->assertSee('name="app_font"', false)->assertSee('Vazirmatn')->assertSee('Pokhto')->assertSee('Droid Arabic Kufi')->assertDontSee('Ahmadzai');
 
         $this->put(route('company.update'), ['company_name' => 'Test Foods', 'app_font' => 'vazirmatn'])->assertRedirect();
         $this->get(route('dashboard'))->assertOk()->assertSee('font-family:"ErpFont"', false)->assertSee('fonts/vazirmatn.woff2', false)->assertSee('font-weight:100 900', false)->assertSee('unicode-range', false);
