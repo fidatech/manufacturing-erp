@@ -133,7 +133,7 @@ class Account extends Model
         $amount = $plain ? \App\Support\Num::format($balance, 2) : \App\Support\Num::format(\App\Support\Num::abs($balance), 2);
 
         return new \Illuminate\Support\HtmlString(
-            '<span class="bal bal-'.$tone.'"><span class="bal-amount">'.e($amount).' <small>'.e($code).'</small></span>'
+            '<span class="bal bal-'.$tone.'"><span class="bal-amount">'.e(trim($amount.' '.$code)).'</span>'
             .($words !== '' ? '<span class="bal-tag">'.e($words).'</span>' : '').'</span>'
         );
     }

@@ -17,3 +17,6 @@ is-success is-danger is-warning is-info
 #s-building-user #s-user-tag #s-folder-tree #s-layer-group
 #s-umbrella-beach #s-star #s-file-signature #s-clock #s-business-time #s-scale-unbalanced
 #s-list-check #s-vial
+
+# balance colours are built in PHP as "bal-" / "is-" + tone (Account::balanceTone)
+bal-due bal-owe bal-capital bal-zero bal-plain is-due is-owe is-capital is-zero is-plain

@@ -35,6 +35,10 @@ class MoneyTest extends TestCase
         $this->assertBooksBalance();
 
         $this->get(route('accounts.index', ['type' => 'customer']))->assertOk()->assertSee('Haji Sharif')->assertSee('owes us');
+        // balances are coloured: green when they owe us
+        $this->get(route('accounts.index', ['type' => 'customer']))->assertSee('bal bal-due', false)->assertSee('7,000.00 AFN');
+        $this->assertSame('owe', $customer->balanceTone('-5'));
+        $this->assertSame('zero', $customer->balanceTone('0'));
         $this->get(route('statement', ['id' => $customer->id]))->assertOk()->assertSee('7,000.00');
         // the statement offers quick periods and names the kind of each movement
         $this->get(route('statement', ['id' => $customer->id, 'from' => '2000-01-01', 'to' => today_iso()]))

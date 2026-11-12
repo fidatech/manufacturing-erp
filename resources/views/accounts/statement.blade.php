@@ -5,7 +5,8 @@
 
     $code = $account->currency->code;
     $words = $account->balanceWords($closing);
-    $tone = fn ($balance) => Num::isNegative($balance) ? 'is-minus' : (Num::isZero($balance) ? 'is-zero' : 'is-plus');
+    // green when they owe us (or we have it), red when we owe, blue for owners' capital
+    $tone = fn ($balance) => 'is-'.$account->balanceTone($balance);
     $show = fn ($balance) => $money || $account->type->is_party ? money(Num::abs($balance)) : money($balance);
     $kindIcon = $money ? 'wallet' : ($account->type->is_party ? 'user' : 'folder');
     $periodText = fmt_date($from).' – '.fmt_date($to);
@@ -158,8 +159,8 @@
             </div>
             @if ($money || $account->type->is_party)
                 <div class="stmt-legend">
-                    <span class="stmt-bal is-plus">●</span> {{ $account->balanceWords('1') ?: __('we have') }}
-                    <span class="stmt-bal is-minus ms-3">●</span> {{ $account->balanceWords('-1') }}
+                    <span class="stmt-bal {{ $tone('1') }}">●</span> {{ $account->balanceWords('1') ?: __('we have') }}
+                    <span class="stmt-bal {{ $tone('-1') }} ms-3">●</span> {{ $account->balanceWords('-1') }}
                 </div>
             @endif
         @else
