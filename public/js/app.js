@@ -395,10 +395,20 @@ if (select.multiple || select.hasAttribute('data-plain') || select.closest('.inp
 if (select.hasAttribute('data-search') || select.options.length >= 9) ERP.searchSelect(select);
 });
 };
+document.addEventListener('input', function (e) {
+if (!e.target.matches || !e.target.matches('input[data-days]')) return;
+var row = e.target.closest('[data-days-row]');
+var out = row ? $('[data-days-total]', row) : null;
+if (!out) return;
+var sum = 0;
+$$('input[data-days]', row).forEach(function (input) { var v = parseFloat(String(input.value).replace(/,/g, '')); if (isFinite(v)) sum += v; });
+out.textContent = String(Math.round(sum * 10) / 10);
+out.classList.toggle('text-danger', sum > parseFloat(out.getAttribute('data-days-max')));
+});
 (function () {
 var main = $('.app-content');
 var header = main ? $('.page-header', main) : null;
-if (!header || body.hasAttribute('data-no-export')) return;
+if (!header || $('[data-no-export]', main)) return;
 var tables = $$('table.table', main).filter(function (table) {
 return !table.hasAttribute('data-rows') && !table.classList.contains('dash-table') && !table.closest('form[method="POST"], form[method="post"]') && $('tbody tr td', table);
 });

@@ -2,42 +2,58 @@
 
 namespace App\Http\Controllers\Hr;
 
+use App\Exceptions\UserError;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
-use App\Models\HrRecord;
+use App\Models\AttendanceMonth;
+use App\Support\Num;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
-/** Daily attendance: one sheet per day with every employee on it. */
+/**
+ * Attendance month by month: one sheet for a month with every employee on it,
+ * and for each the days present, absent, on leave and holidays.
+ */
 class AttendanceController extends Controller
 {
-    public static function statuses(): array
+    /** The four numbers of the sheet, in the order of its columns. */
+    public static function columns(): array
     {
-        return ['present' => __('Present'), 'absent' => __('Absent'), 'leave' => __('On leave'), 'half' => __('Half day')];
+        return ['present' => __('Present days'), 'absent' => __('Absent days'), 'leave' => __('Leave'), 'holidays' => __('Holidays')];
     }
 
     public function index(Request $request): View
     {
         Gate::authorize('hr.view');
 
-        $date = $request->validate(['date' => ['nullable', 'date']])['date'] ?? today_iso();
-        $monthStart = substr($date, 0, 8).'01';
-        $monthEnd = date('Y-m-t', strtotime($monthStart));
+        $period = $request->validate(['month' => ['nullable', 'date_format:Y-m']])['month'] ?? substr(today_iso(), 0, 7);
+        $start = Carbon::parse($period.'-01');
 
-        $summary = HrRecord::where('type', 'attendance')->whereDate('date', '>=', $monthStart)->whereDate('date', '<=', $monthEnd)
-            ->groupBy('employee_id', 'status')->selectRaw('employee_id, status, COUNT(*) as days')->toBase()->get()->groupBy('employee_id')
-            ->map(fn ($rows) => $rows->pluck('days', 'status'));
+        $employees = Account::ofType('employee')->active()->orderBy('name')->get();
+        $rows = AttendanceMonth::whereDate('month', $start->toDateString())->get()->keyBy('employee_id');
+
+        $totals = array_fill_keys(AttendanceMonth::COLUMNS, '0');
+        foreach ($rows as $row) {
+            foreach (AttendanceMonth::COLUMNS as $column) {
+                $totals[$column] = Num::add($totals[$column], $row->{$column});
+            }
+        }
 
         return view('hr.attendance', [
-            'date' => $date,
-            'employees' => Account::ofType('employee')->active()->orderBy('name')->get(),
-            'marked' => HrRecord::where('type', 'attendance')->whereDate('date', $date)->get()->keyBy('employee_id'),
-            'summary' => $summary,
-            'statuses' => self::statuses(),
-            'month' => substr($date, 0, 7),
+            'period' => $period,
+            'daysInMonth' => $start->daysInMonth,
+            'previous' => $start->copy()->subMonthNoOverflow()->format('Y-m'),
+            'next' => $start->copy()->addMonthNoOverflow()->format('Y-m'),
+            'employees' => $employees,
+            'rows' => $rows,
+            'totals' => $totals,
+            'columns' => self::columns(),
+            // on paper and in Excel the sheet is shown as plain numbers, not as boxes to type in
+            'editing' => $request->user()->can('hr.manage') && ! $request->boolean('print') && ! $request->filled('export'),
         ]);
     }
 
@@ -46,29 +62,55 @@ class AttendanceController extends Controller
         Gate::authorize('hr.manage');
 
         $data = $request->validate([
-            'date' => ['required', 'date', 'before_or_equal:today'],
+            'month' => ['required', 'date_format:Y-m'],
             'rows' => ['required', 'array'],
-            'rows.*.status' => ['nullable', 'in:present,absent,leave,half'],
+            'rows.*.present' => ['nullable', 'numeric', 'min:0', 'max:31'],
+            'rows.*.absent' => ['nullable', 'numeric', 'min:0', 'max:31'],
+            'rows.*.leave' => ['nullable', 'numeric', 'min:0', 'max:31'],
+            'rows.*.holidays' => ['nullable', 'numeric', 'min:0', 'max:31'],
             'rows.*.notes' => ['nullable', 'string', 'max:255'],
+        ], [], [
+            'rows.*.present' => __('present days'), 'rows.*.absent' => __('absent days'), 'rows.*.leave' => __('leave'), 'rows.*.holidays' => __('holidays'),
         ]);
 
-        DB::transaction(function () use ($data, $request) {
-            $employees = Account::ofType('employee')->whereIn('id', array_keys($data['rows']))->pluck('id');
-            foreach ($employees as $employeeId) {
-                $row = $data['rows'][$employeeId];
-                $existing = HrRecord::where('type', 'attendance')->where('employee_id', $employeeId)->whereDate('date', $data['date'])->first();
-                if (empty($row['status'])) {
+        $start = Carbon::parse($data['month'].'-01');
+        if ($start->isAfter(Carbon::parse(today_iso())->startOfMonth())) {
+            throw new UserError(__('A month that has not started yet cannot be filled in.'));
+        }
+        $days = (string) $start->daysInMonth;
+
+        DB::transaction(function () use ($data, $start, $days, $request) {
+            $employees = Account::ofType('employee')->whereIn('id', array_keys($data['rows']))->get()->keyBy('id');
+            foreach ($data['rows'] as $employeeId => $row) {
+                $employee = $employees->get($employeeId);
+                if (! $employee) {
+                    continue;
+                }
+                $values = [];
+                foreach (AttendanceMonth::COLUMNS as $column) {
+                    $values[$column] = Num::round($row[$column] ?? 0, 1);
+                }
+                $sum = Num::sum(array_values($values));
+                if (Num::cmp($sum, $days) > 0) {
+                    throw new UserError(__(':name: the days add up to :sum, but :month has only :days days.', [
+                        'name' => $employee->name, 'sum' => Num::format($sum, 1, true), 'month' => $data['month'], 'days' => $days,
+                    ]));
+                }
+
+                $existing = AttendanceMonth::where('employee_id', $employee->id)->whereDate('month', $start->toDateString())->first();
+                // a line with nothing in it is not kept
+                if (Num::isZero($sum) && empty($row['notes'])) {
                     $existing?->delete();
 
                     continue;
                 }
-                $values = ['status' => $row['status'], 'notes' => $row['notes'] ?? null];
+                $values['notes'] = $row['notes'] ?? null;
                 $existing
                     ? $existing->update($values)
-                    : HrRecord::create($values + ['type' => 'attendance', 'employee_id' => $employeeId, 'date' => $data['date'], 'created_by' => $request->user()->id]);
+                    : AttendanceMonth::create($values + ['employee_id' => $employee->id, 'month' => $start->toDateString(), 'created_by' => $request->user()->id]);
             }
         });
 
-        return redirect()->route('attendance.index', ['date' => $data['date']])->with('success', __('Attendance saved.'));
+        return redirect()->route('attendance.index', ['month' => $data['month']])->with('success', __('Attendance of :month saved.', ['month' => $data['month']]));
     }
 }

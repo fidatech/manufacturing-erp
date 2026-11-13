@@ -446,6 +446,19 @@
         });
     };
 
+    // ------------------------------------------------------- attendance
+    // The total of a line of the monthly sheet is added up while typing, and turns red when it is more than the month has days.
+    document.addEventListener('input', function (e) {
+        if (!e.target.matches || !e.target.matches('input[data-days]')) return;
+        var row = e.target.closest('[data-days-row]');
+        var out = row ? $('[data-days-total]', row) : null;
+        if (!out) return;
+        var sum = 0;
+        $$('input[data-days]', row).forEach(function (input) { var v = parseFloat(String(input.value).replace(/,/g, '')); if (isFinite(v)) sum += v; });
+        out.textContent = String(Math.round(sum * 10) / 10);
+        out.classList.toggle('text-danger', sum > parseFloat(out.getAttribute('data-days-max')));
+    });
+
     // ------------------------------------------------------- Excel and PDF
     // Every page that shows a table (a list or a report, not a form) gets two buttons in its title bar:
     // Excel downloads the table with the filters that are on the screen, PDF opens the page as a paper
@@ -453,7 +466,8 @@
     (function () {
         var main = $('.app-content');
         var header = main ? $('.page-header', main) : null;
-        if (!header || body.hasAttribute('data-no-export')) return;
+        // a page that brings its own Excel and PDF buttons says so with data-no-export
+        if (!header || $('[data-no-export]', main)) return;
         var tables = $$('table.table', main).filter(function (table) {
             return !table.hasAttribute('data-rows') && !table.classList.contains('dash-table') && !table.closest('form[method="POST"], form[method="post"]') && $('tbody tr td', table);
         });

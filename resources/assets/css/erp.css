@@ -365,3 +365,6 @@
     .row > .col > .form-select, .row > [class*="col-md-auto"] > .form-select { min-width: 0; }
     .ss-list { max-width: 92vw; }
 }
+
+/* Monthly attendance sheet: narrow boxes for the four numbers. */
+.attendance-table input[data-days] { min-width: 76px; max-width: 110px; margin-inline-start: auto; }

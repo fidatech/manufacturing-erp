@@ -1,67 +1,138 @@
-@extends('layouts.app', ['title' => __('Attendance')])
+@extends('layouts.app', ['title' => __('Attendance').' '.$period])
+
+@php
+    use App\Support\Num;
+
+    $show = fn ($value) => Num::isZero($value ?? 0) ? '' : Num::format($value, 1, true);
+    $icons = ['present' => ['user-check', 'success'], 'absent' => ['user-xmark', 'danger'], 'leave' => ['umbrella-beach', 'warning'], 'holidays' => ['calendar-day', 'info']];
+@endphp
+
+@if (request()->boolean('print'))
+    @section('doc')
+        <h2>{{ __('Attendance') }}</h2>
+        <div>{{ $period }}</div>
+        <div>{{ __(':days days in the month', ['days' => $daysInMonth]) }}</div>
+    @endsection
+@endif
 
 @section('content')
-<x-page-header :title="__('Attendance')" icon="calendar-check" :subtitle="__('Mark every employee once a day.')" />
+<x-page-header :title="__('Attendance')" icon="calendar-check" :subtitle="__('One sheet for each month: the days every employee was present, absent, on leave, and the holidays.')">
+    @unless ($employees->isEmpty())
+        <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['month' => $period, 'export' => 'xlsx']) }}"><x-icon name="file-excel" class="me-1" /> Excel</a>
+        <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['month' => $period, 'print' => 1, 'pdf' => 1]) }}" target="_blank" rel="noopener"><x-icon name="file-pdf" class="me-1" /> PDF</a>
+    @endunless
+</x-page-header>
 
-<form method="GET" class="card mb-4">
+<div class="card mb-4 no-print" data-no-export>
     <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-8 col-md-auto"><label class="form-label small mb-1">{{ __('Day') }}</label><x-date name="date" :value="$date" /></div>
-            <div class="col-4 col-md-auto"><button type="submit" class="btn btn-light-secondary w-100">{{ __('Show') }}</button></div>
-        </div>
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-auto"><a class="btn btn-light-secondary" href="{{ route('attendance.index', ['month' => $previous]) }}" aria-label="{{ __('Previous') }}"><x-icon name="chevron-left" /></a></div>
+            <div class="col col-md-auto">
+                <label class="form-label small mb-1" for="f-month">{{ __('Month') }}</label>
+                <input type="month" class="form-control" id="f-month" name="month" value="{{ $period }}" max="{{ substr(today_iso(), 0, 7) }}">
+            </div>
+            <div class="col-auto"><a class="btn btn-light-secondary" href="{{ route('attendance.index', ['month' => $next]) }}" aria-label="{{ __('Next') }}"><x-icon name="chevron-right" /></a></div>
+            <div class="col-auto"><button type="submit" class="btn btn-primary">{{ __('Show') }}</button></div>
+        </form>
     </div>
-</form>
+</div>
 
 @if ($employees->isEmpty())
     <div class="alert alert-info">{{ __('Add employees first.') }}</div>
 @else
-    <form method="POST" action="{{ route('attendance.store') }}" class="card mb-4">
-        @csrf
-        <input type="hidden" name="date" value="{{ $date }}">
-        <div class="card-header"><h5 class="card-title">{{ fmt_date($date) }}</h5></div>
-        <div class="card-body">
-            <table class="table w-100 keep-table">
-                <thead><tr><th>{{ __('Employee') }}</th><th>{{ __('Today') }}</th><th>{{ __('Note') }}</th></tr></thead>
-                <tbody>
-                    @foreach ($employees as $employee)
-                        <tr>
-                            <td>{{ $employee->name }}<div class="small text-muted">{{ $employee->metaValue('job_title') }}</div></td>
-                            <td>
-                                <select class="form-select" name="rows[{{ $employee->id }}][status]" aria-label="{{ __('Today') }}">
-                                    <option value="">{{ __('Not marked') }}</option>
-                                    @foreach ($statuses as $key => $name)
-                                        <option value="{{ $key }}" @selected(($marked->get($employee->id)?->status ?? ($marked->isEmpty() ? 'present' : '')) === $key)>{{ $name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control" name="rows[{{ $employee->id }}][notes]" value="{{ $marked->get($employee->id)?->notes ?? '' }}" aria-label="{{ __('Note') }}"></td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @can('hr.manage')
-            <div class="card-footer d-flex justify-content-end"><button type="submit" class="btn btn-primary"><x-icon name="check" class="me-1" /> {{ __('Save attendance') }}</button></div>
-        @endcan
-    </form>
-
-    <div class="card">
-        <div class="card-header"><h5 class="card-title">{{ __('This month so far') }} ({{ $month }})</h5></div>
-        <div class="card-body">
-            <table class="table w-100 keep-table">
-                <thead><tr><th>{{ __('Employee') }}</th>@foreach ($statuses as $name)<th class="text-end">{{ $name }}</th>@endforeach</tr></thead>
-                <tbody>
-                    @foreach ($employees as $employee)
-                        <tr>
-                            <td>{{ $employee->name }}</td>
-                            @foreach (array_keys($statuses) as $key)
-                                <td class="text-end">{{ $summary->get($employee->id)?->get($key) ?? 0 }}</td>
-                            @endforeach
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+    <div class="row g-3 mb-4 no-print">
+        @foreach ($columns as $key => $name)
+            <div class="col-6 col-xl-3">
+                <div class="card stat-card h-100 mb-0">
+                    <div class="sc-top">
+                        <div><div class="sc-label">{{ $name }}</div><div class="sc-value">{{ Num::format($totals[$key], 1, true) }}</div></div>
+                        <span class="sc-icon icon-soft {{ $icons[$key][1] }}"><x-icon :name="$icons[$key][0]" /></span>
+                    </div>
+                    <div class="sc-foot">{{ __('All employees, :month', ['month' => $period]) }}</div>
+                </div>
+            </div>
+        @endforeach
     </div>
+
+    @if ($editing)
+        <form method="POST" action="{{ route('attendance.store') }}" class="card">
+            @csrf
+            <input type="hidden" name="month" value="{{ $period }}">
+            <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                <h5 class="card-title mb-0">{{ $period }}</h5>
+                <span class="badge-soft secondary">{{ __(':days days in the month', ['days' => $daysInMonth]) }}</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table w-100 keep-table attendance-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Employee') }}</th>
+                                @foreach ($columns as $name)
+                                    <th class="text-end">{{ $name }}</th>
+                                @endforeach
+                                <th class="text-end">{{ __('Total') }}</th>
+                                <th>{{ __('Note') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($employees as $employee)
+                                @php $row = $rows->get($employee->id); @endphp
+                                <tr data-days-row>
+                                    <td>{{ $employee->name }}<div class="small text-muted">{{ $employee->metaValue('job_title') }}</div></td>
+                                    @foreach ($columns as $key => $name)
+                                        <td><input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" data-days name="rows[{{ $employee->id }}][{{ $key }}]"
+                                                   value="{{ old('rows.'.$employee->id.'.'.$key, $show($row?->{$key})) }}" aria-label="{{ $name }}"></td>
+                                    @endforeach
+                                    <td class="text-end fw-semibold text-nowrap"><span data-days-total data-days-max="{{ $daysInMonth }}">{{ $row ? Num::format(Num::sum([$row->present, $row->absent, $row->leave, $row->holidays]), 1, true) : '0' }}</span> / {{ $daysInMonth }}</td>
+                                    <td><input type="text" class="form-control" name="rows[{{ $employee->id }}][notes]" value="{{ old('rows.'.$employee->id.'.notes', $row?->notes) }}" maxlength="255" aria-label="{{ __('Note') }}"></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="form-text">{{ __('Half days can be written as 0.5. The four numbers of a line cannot be more than the days of the month.') }}</div>
+            </div>
+            <div class="card-footer d-flex justify-content-end"><button type="submit" class="btn btn-primary"><x-icon name="check" class="me-1" /> {{ __('Save attendance') }}</button></div>
+        </form>
+    @else
+        <div class="card">
+            <div class="card-body">
+                <table class="table w-100 keep-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Employee') }}</th>
+                            @foreach ($columns as $name)
+                                <th class="text-end">{{ $name }}</th>
+                            @endforeach
+                            <th class="text-end">{{ __('Total') }}</th>
+                            <th>{{ __('Note') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($employees as $employee)
+                            @php $row = $rows->get($employee->id); @endphp
+                            <tr>
+                                <td>{{ $employee->name }}</td>
+                                @foreach (array_keys($columns) as $key)
+                                    <td class="text-end">{{ Num::format($row?->{$key} ?? 0, 1, true) }}</td>
+                                @endforeach
+                                <td class="text-end fw-semibold">{{ Num::format($row ? Num::sum([$row->present, $row->absent, $row->leave, $row->holidays]) : 0, 1, true) }}</td>
+                                <td>{{ $row?->notes }}</td>
+                            </tr>
+                        @endforeach
+                        <tr class="fw-bold">
+                            <td>{{ __('Total') }}</td>
+                            @foreach (array_keys($columns) as $key)
+                                <td class="text-end">{{ Num::format($totals[$key], 1, true) }}</td>
+                            @endforeach
+                            <td class="text-end">{{ Num::format(Num::sum(array_values($totals)), 1, true) }}</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
 @endif
 @endsection

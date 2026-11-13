@@ -95,24 +95,45 @@ class ModulesTest extends TestCase
         $this->assertSame(6, HrRecord::count());
     }
 
-    public function test_daily_attendance_sheet(): void
+    public function test_monthly_attendance_sheet(): void
     {
+        $this->admin();
         $a = $this->account('employee', 'Abdul Wahab', 'AFN');
         $b = $this->account('employee', 'Khalid Khan', 'AFN');
-        $today = now()->toDateString();
 
-        $this->get(route('attendance.index'))->assertOk()->assertSee('Abdul Wahab');
-        $this->post(route('attendance.store'), ['date' => $today, 'rows' => [$a->id => ['status' => 'present'], $b->id => ['status' => 'absent', 'notes' => 'Sick']]])->assertRedirect();
-        $this->assertSame(2, HrRecord::where('type', 'attendance')->count());
+        $this->get(route('attendance.index', ['month' => '2026-10']))->assertOk()
+            ->assertSee('Abdul Wahab')->assertSee('Present days')->assertSee('Absent days')->assertSee('Leave')->assertSee('Holidays')->assertSee('31 days in the month');
 
-        // saving the same day again changes the marks instead of adding new ones
-        $this->post(route('attendance.store'), ['date' => $today, 'rows' => [$a->id => ['status' => 'half'], $b->id => ['status' => '']]])->assertRedirect();
-        $this->assertSame(1, HrRecord::where('type', 'attendance')->count());
-        $this->assertSame('half', HrRecord::where('type', 'attendance')->first()->status);
-        $this->get(route('attendance.index', ['date' => $today]))->assertOk();
+        $this->post(route('attendance.store'), ['month' => '2026-10', 'rows' => [
+            $a->id => ['present' => '24', 'absent' => '1', 'leave' => '2', 'holidays' => '4'],
+            $b->id => ['present' => '20.5', 'absent' => '', 'leave' => '', 'holidays' => '4', 'notes' => 'Started on the 7th'],
+        ]])->assertRedirect(route('attendance.index', ['month' => '2026-10']));
+        $this->assertSame(2, \App\Models\AttendanceMonth::count());
+        $wahab = \App\Models\AttendanceMonth::where('employee_id', $a->id)->firstOrFail();
+        $this->assertSame(['24.0', '1.0', '2.0', '4.0'], [\App\Support\Num::round($wahab->present, 1), \App\Support\Num::round($wahab->absent, 1), \App\Support\Num::round($wahab->leave, 1), \App\Support\Num::round($wahab->holidays, 1)]);
+        $this->get(route('attendance.index', ['month' => '2026-10']))->assertOk()->assertSee('44.5')->assertSee('Started on the 7th');   // 24 + 20.5 present
 
-        // tomorrow cannot be marked yet
-        $this->post(route('attendance.store'), ['date' => now()->addDay()->toDateString(), 'rows' => [$a->id => ['status' => 'present']]])->assertSessionHasErrors('date');
+        // saving the month again changes the line instead of adding one; an emptied line is removed
+        $this->post(route('attendance.store'), ['month' => '2026-10', 'rows' => [$a->id => ['present' => '25', 'absent' => '0', 'leave' => '2', 'holidays' => '4'], $b->id => ['present' => '']]])->assertRedirect();
+        $this->assertSame(1, \App\Models\AttendanceMonth::count());
+        $this->assertSame('25.0', \App\Support\Num::round($wahab->fresh()->present, 1));
+
+        // another month has its own sheet
+        $this->get(route('attendance.index', ['month' => '2026-09']))->assertOk()->assertSee('30 days in the month')->assertDontSee('Started on the 7th');
+
+        // more days than the month has, or a month that has not started
+        $this->post(route('attendance.store'), ['month' => '2026-09', 'rows' => [$a->id => ['present' => '28', 'absent' => '3']]])->assertSessionHas('danger');
+        $this->post(route('attendance.store'), ['month' => now()->addMonthNoOverflow()->format('Y-m'), 'rows' => [$a->id => ['present' => '1']]])->assertSessionHas('danger');
+        $this->assertSame(1, \App\Models\AttendanceMonth::count());
+
+        // the paper and the Excel file carry the numbers, not the boxes
+        $this->get(route('attendance.index', ['month' => '2026-10', 'print' => 1]))->assertOk()->assertSee('paper-head', false)->assertSee('Abdul Wahab')->assertDontSee('name="rows[', false);
+        $this->get(route('attendance.index', ['month' => '2026-10', 'export' => 'xlsx']))->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        // someone who may only look sees the sheet but cannot save it
+        $this->userWith(['hr.view']);
+        $this->get(route('attendance.index', ['month' => '2026-10']))->assertOk()->assertSee('Abdul Wahab')->assertDontSee('Save attendance');
+        $this->post(route('attendance.store'), ['month' => '2026-10', 'rows' => [$a->id => ['present' => '1']]])->assertForbidden();
     }
 
     public function test_sale_order_supplier_quotation_and_customer_price_list(): void
