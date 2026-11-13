@@ -63,8 +63,12 @@ class Menu
         }
         $address = fn (string $key) => (string) (request()->route($key) ?? request()->query($key) ?? '');
 
+        // An entry that points at this very page wins over one that only covers it with a pattern:
+        // "Test a Batch" (lab.create) is the current page there, not "Lab Tests" (lab.*).
         $exact = null;
+        $covering = null;
         $loose = null;
+        $here = request()->route()?->getName();
         foreach ($menu as $i => $item) {
             foreach ($item['children'] ?? [null] as $j => $child) {
                 $entry = $child ?? $item;
@@ -79,12 +83,17 @@ class Menu
                         break;
                     }
                 }
-                if ($same) {
+                if (! $same) {
+                    continue;
+                }
+                if ($entry['route'] === $here) {
                     $exact = [$i, $j];
                     break 2;
                 }
+                $covering ??= [$i, $j];
             }
         }
+        $exact ??= $covering;
 
         if ($exact) {
             [$i, $j] = $exact;

@@ -374,4 +374,31 @@ class ModulesTest extends TestCase
         $this->put(route('company.update'), ['company_name' => 'Kanozay Foods', 'remove_logo' => '1'])->assertRedirect();
         $this->get(route('company.logo'))->assertNotFound();
     }
+
+    public function test_the_laboratory_menu_marks_the_page_that_is_open(): void
+    {
+        $this->admin();
+
+        // the one entry with the "current" mark, read from the sidebar
+        $current = function (string $url): array {
+            $html = $this->get($url)->assertOk()->getContent();
+            preg_match_all('/<a[^>]*class="[^"]*\bactive\b[^"]*"[^>]*href="([^"]+)"|<a[^>]*href="([^"]+)"[^>]*class="[^"]*\bactive\b[^"]*"/', \Illuminate\Support\Str::between($html, '<aside', '</aside>'), $found);
+
+            return array_values(array_filter(array_map('html_entity_decode', array_merge($found[1], $found[2]))));
+        };
+
+        $pages = [
+            route('lab.index'),
+            route('lab.create', ['subject' => 'product']),
+            route('lab.create', ['subject' => 'raw']),
+            route('production.index', ['qc' => 'pending']),
+            route('production.index', ['qc' => 'failed']),
+            route('lookups.index', ['type' => 'qc_parameter']),
+        ];
+        foreach ($pages as $page) {
+            $this->assertSame([$page], $current($page), 'Wrong menu entry is marked on '.$page);
+        }
+        // the plain production list belongs to Manufacturing, not to the laboratory
+        $this->assertSame([route('production.index')], $current(route('production.index')));
+    }
 }
