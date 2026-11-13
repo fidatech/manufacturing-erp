@@ -398,12 +398,19 @@ if (select.hasAttribute('data-search') || select.options.length >= 9) ERP.search
 document.addEventListener('input', function (e) {
 if (!e.target.matches || !e.target.matches('input[data-days]')) return;
 var row = e.target.closest('[data-days-row]');
-var out = row ? $('[data-days-total]', row) : null;
-if (!out) return;
-var sum = 0;
-$$('input[data-days]', row).forEach(function (input) { var v = parseFloat(String(input.value).replace(/,/g, '')); if (isFinite(v)) sum += v; });
-out.textContent = String(Math.round(sum * 10) / 10);
-out.classList.toggle('text-danger', sum > parseFloat(out.getAttribute('data-days-max')));
+if (!row) return;
+var box = function (kind) { return $('input[data-days="' + kind + '"]', row); };
+var number = function (kind) { var v = parseFloat(String(box(kind).value).replace(/,/g, '')); return isFinite(v) && v > 0 ? v : 0; };
+var tidy = function (value) { return String(Math.round(value * 10) / 10); };
+var month = parseFloat(row.getAttribute('data-days-month')) || 0;
+if (e.target.getAttribute('data-days') !== 'present') {
+box('present').value = tidy(Math.max(0, month - number('absent') - number('leave') - number('holidays')));
+}
+var out = $('[data-days-total]', row);
+if (out) {
+out.textContent = tidy(number('present') + number('holidays'));
+out.classList.toggle('text-danger', number('present') + number('absent') + number('leave') + number('holidays') > month);
+}
 });
 (function () {
 var main = $('.app-content');

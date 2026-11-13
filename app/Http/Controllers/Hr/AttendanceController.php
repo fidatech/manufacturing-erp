@@ -43,9 +43,17 @@ class AttendanceController extends Controller
             }
         }
 
+        // the usual month, shown for an employee whose line is not saved yet:
+        // every Friday is a holiday, every other day is a present day
+        $fridays = 0;
+        for ($day = $start->copy(); $day->month === $start->month; $day->addDay()) {
+            $fridays += $day->isFriday() ? 1 : 0;
+        }
+
         return view('hr.attendance', [
             'period' => $period,
             'daysInMonth' => $start->daysInMonth,
+            'usual' => ['present' => (string) ($start->daysInMonth - $fridays), 'absent' => '0', 'leave' => '0', 'holidays' => (string) $fridays],
             'previous' => $start->copy()->subMonthNoOverflow()->format('Y-m'),
             'next' => $start->copy()->addMonthNoOverflow()->format('Y-m'),
             'employees' => $employees,

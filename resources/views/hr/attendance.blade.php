@@ -3,7 +3,9 @@
 @php
     use App\Support\Num;
 
-    $show = fn ($value) => Num::isZero($value ?? 0) ? '' : Num::format($value, 1, true);
+    $show = fn ($value) => Num::format($value ?? 0, 1, true);
+    // holidays count as present: the total of a line is the present days plus the holidays
+    $total = fn (array $line) => Num::format(Num::add($line['present'], $line['holidays']), 1, true);
     $icons = ['present' => ['user-check', 'success'], 'absent' => ['user-xmark', 'danger'], 'leave' => ['umbrella-beach', 'warning'], 'holidays' => ['calendar-day', 'info']];
 @endphp
 
@@ -77,21 +79,27 @@
                         </thead>
                         <tbody>
                             @foreach ($employees as $employee)
-                                @php $row = $rows->get($employee->id); @endphp
-                                <tr data-days-row>
+                                @php
+                                    $row = $rows->get($employee->id);
+                                    $line = [];
+                                    foreach (array_keys($columns) as $key) {
+                                        $line[$key] = old('rows.'.$employee->id.'.'.$key, $row ? $row->{$key} : $usual[$key]) ?? 0;
+                                    }
+                                @endphp
+                                <tr data-days-row data-days-month="{{ $daysInMonth }}">
                                     <td>{{ $employee->name }}<div class="small text-muted">{{ $employee->metaValue('job_title') }}</div></td>
                                     @foreach ($columns as $key => $name)
-                                        <td><input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" data-days name="rows[{{ $employee->id }}][{{ $key }}]"
-                                                   value="{{ old('rows.'.$employee->id.'.'.$key, $show($row?->{$key})) }}" aria-label="{{ $name }}"></td>
+                                        <td><input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" data-days="{{ $key }}" name="rows[{{ $employee->id }}][{{ $key }}]"
+                                                   value="{{ is_numeric($line[$key]) ? $show($line[$key]) : $line[$key] }}" aria-label="{{ $name }}"></td>
                                     @endforeach
-                                    <td class="text-end fw-semibold text-nowrap"><span data-days-total data-days-max="{{ $daysInMonth }}">{{ $row ? Num::format(Num::sum([$row->present, $row->absent, $row->leave, $row->holidays]), 1, true) : '0' }}</span> / {{ $daysInMonth }}</td>
+                                    <td class="text-end fw-semibold text-nowrap"><span data-days-total>{{ is_numeric($line['present']) && is_numeric($line['holidays']) ? $total($line) : '' }}</span> / {{ $daysInMonth }}@unless ($row) <div class="small fw-normal text-muted">{{ __('not saved yet') }}</div>@endunless</td>
                                     <td><input type="text" class="form-control" name="rows[{{ $employee->id }}][notes]" value="{{ old('rows.'.$employee->id.'.notes', $row?->notes) }}" maxlength="255" aria-label="{{ __('Note') }}"></td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-                <div class="form-text">{{ __('Half days can be written as 0.5. The four numbers of a line cannot be more than the days of the month.') }}</div>
+                <div class="form-text">{{ __('Every line starts as the usual month: Fridays are holidays and the other days are present. Write the absent or leave days and the present days and the total change by themselves. Holidays count as present in the total. Half days can be written as 0.5.') }}</div>
             </div>
             <div class="card-footer d-flex justify-content-end"><button type="submit" class="btn btn-primary"><x-icon name="check" class="me-1" /> {{ __('Save attendance') }}</button></div>
         </form>
@@ -117,7 +125,7 @@
                                 @foreach (array_keys($columns) as $key)
                                     <td class="text-end">{{ Num::format($row?->{$key} ?? 0, 1, true) }}</td>
                                 @endforeach
-                                <td class="text-end fw-semibold">{{ Num::format($row ? Num::sum([$row->present, $row->absent, $row->leave, $row->holidays]) : 0, 1, true) }}</td>
+                                <td class="text-end fw-semibold">{{ $row ? $total(['present' => $row->present, 'holidays' => $row->holidays]) : '0' }}</td>
                                 <td>{{ $row?->notes }}</td>
                             </tr>
                         @endforeach
@@ -126,7 +134,7 @@
                             @foreach (array_keys($columns) as $key)
                                 <td class="text-end">{{ Num::format($totals[$key], 1, true) }}</td>
                             @endforeach
-                            <td class="text-end">{{ Num::format(Num::sum(array_values($totals)), 1, true) }}</td>
+                            <td class="text-end">{{ $total($totals) }}</td>
                             <td></td>
                         </tr>
                     </tbody>

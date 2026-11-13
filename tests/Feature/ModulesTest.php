@@ -103,6 +103,12 @@ class ModulesTest extends TestCase
 
         $this->get(route('attendance.index', ['month' => '2026-10']))->assertOk()
             ->assertSee('Abdul Wahab')->assertSee('Present days')->assertSee('Absent days')->assertSee('Leave')->assertSee('Holidays')->assertSee('31 days in the month');
+        // a line that is not saved yet shows the usual month: October 2026 has 5 Fridays, so 26 present and 5 holidays, total 31
+        $this->get(route('attendance.index', ['month' => '2026-10']))
+            ->assertSee('name="rows['.$a->id.'][present]"', false)->assertSee('value="26"', false)->assertSee('value="5"', false)->assertSee('value="0"', false)
+            ->assertSee('<span data-days-total>31</span>', false)->assertSee('not saved yet');
+        // November 2026 has 4 Fridays: 26 present, 4 holidays
+        $this->get(route('attendance.index', ['month' => '2026-11']))->assertSee('value="26"', false)->assertSee('value="4"', false)->assertSee('<span data-days-total>30</span>', false);
 
         $this->post(route('attendance.store'), ['month' => '2026-10', 'rows' => [
             $a->id => ['present' => '24', 'absent' => '1', 'leave' => '2', 'holidays' => '4'],
@@ -112,6 +118,8 @@ class ModulesTest extends TestCase
         $wahab = \App\Models\AttendanceMonth::where('employee_id', $a->id)->firstOrFail();
         $this->assertSame(['24.0', '1.0', '2.0', '4.0'], [\App\Support\Num::round($wahab->present, 1), \App\Support\Num::round($wahab->absent, 1), \App\Support\Num::round($wahab->leave, 1), \App\Support\Num::round($wahab->holidays, 1)]);
         $this->get(route('attendance.index', ['month' => '2026-10']))->assertOk()->assertSee('44.5')->assertSee('Started on the 7th');   // 24 + 20.5 present
+        // holidays count as present in the total: 24 + 4 = 28
+        $this->get(route('attendance.index', ['month' => '2026-10']))->assertSee('<span data-days-total>28</span>', false)->assertSee('<span data-days-total>24.5</span>', false);
 
         // saving the month again changes the line instead of adding one; an emptied line is removed
         $this->post(route('attendance.store'), ['month' => '2026-10', 'rows' => [$a->id => ['present' => '25', 'absent' => '0', 'leave' => '2', 'holidays' => '4'], $b->id => ['present' => '']]])->assertRedirect();
