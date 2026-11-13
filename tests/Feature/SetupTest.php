@@ -154,6 +154,18 @@ class SetupTest extends TestCase
         $this->get(route('dashboard'))->assertOk()->assertSee('id="ratesModal"', false)->assertSee('data-bs-target="#ratesModal"', false)
             ->assertSee('topbar-lang', false)->assertSee('name="rates['.$afn->id.']"', false);
 
+        // at the start of the day the pop-up asks by itself, with the last rate ready in each box
+        $this->rate('AFN', '64.5', now()->subDay()->toDateString());
+        $this->get(route('dashboard'))->assertSee('data-auto-open="'.today_iso().'"', false)->assertSee('value="64.5"', false)->assertSee('are not saved yet');
+        $this->post(route('rates.daily'), ['date' => today_iso(), 'rates' => [$afn->id => '64.7', $pkr->id => '281']])->assertRedirect();
+        $this->get(route('dashboard'))->assertDontSee('data-auto-open', false)->assertSee('value="64.7"', false)->assertSee('saved for today');
+        $this->assertSame('64.700000', \App\Support\Num::round(\App\Services\Rates::rate($afn->id, today_iso()), 6));
+        // changed by hand during the day: the new rate replaces it
+        $this->post(route('rates.daily'), ['date' => today_iso(), 'rates' => [$afn->id => '64.9']])->assertRedirect();
+        $this->assertSame('64.900000', \App\Support\Num::round(\App\Services\Rates::rate($afn->id, today_iso()), 6));
+        $this->assertSame(1, \App\Models\ExchangeRate::where('currency_id', $afn->id)->whereDate('date', today_iso())->count());
+        \App\Models\ExchangeRate::query()->delete();
+
         $this->post(route('rates.daily'), ['date' => '2026-11-12', 'rates' => [$afn->id => '64.80', $pkr->id => '']])->assertRedirect()->assertSessionHas('success');
         $this->assertSame('64.800000', \App\Support\Num::round(\App\Services\Rates::rate($afn->id, '2026-11-12'), 6));
         $this->assertSame(0, \App\Models\ExchangeRate::where('currency_id', $pkr->id)->count());

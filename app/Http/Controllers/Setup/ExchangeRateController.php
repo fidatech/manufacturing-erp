@@ -122,7 +122,9 @@ class ExchangeRateController extends CrudController
         $rows = [];
         foreach (Currency::where('is_base', false)->where('is_active', true)->orderBy('code')->get() as $currency) {
             $last = ExchangeRate::where('currency_id', $currency->id)->orderByDesc('date')->first();
-            $rows[] = ['currency' => $currency, 'rate' => $last?->rate, 'date' => $last?->date];
+            $day = $last ? substr((string) $last->getRawOriginal('date'), 0, 10) : null;
+            // 'today' tells whether this currency already has its rate of the day
+            $rows[] = ['currency' => $currency, 'rate' => $last?->rate, 'date' => $last?->date, 'today' => $day === today_iso()];
         }
 
         return $rows;

@@ -395,6 +395,20 @@ if (select.multiple || select.hasAttribute('data-plain') || select.closest('.inp
 if (select.hasAttribute('data-search') || select.options.length >= 9) ERP.searchSelect(select);
 });
 };
+(function () {
+var modal = $('#ratesModal[data-auto-open]');
+if (!modal) return;
+var day = modal.getAttribute('data-auto-open');
+try {
+if (window.sessionStorage.getItem('erp-rates-asked') === day) return;
+window.sessionStorage.setItem('erp-rates-asked', day);
+} catch (err) { /* no storage: ask on this page */ }
+setTimeout(function () {
+ERP.showModal(modal);
+var first = $('input[inputmode="decimal"]', modal);
+if (first) { first.focus(); first.select(); }
+}, 250);
+})();
 document.addEventListener('input', function (e) {
 if (!e.target.matches || !e.target.matches('input[data-days]')) return;
 var row = e.target.closest('[data-days-row]');

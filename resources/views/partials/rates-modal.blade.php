@@ -2,8 +2,10 @@
 @php
     $rateRows = \App\Http\Controllers\Setup\ExchangeRateController::latest();
     $rateBase = \App\Services\Rates::base()->code;
+    // at the start of the day (no rate written for today yet) the pop-up opens by itself, once after signing in
+    $rateAsk = collect($rateRows)->contains(fn ($row) => ! $row['today']);
 @endphp
-<div class="modal fade erp-quick" id="ratesModal" tabindex="-1" aria-label="{{ __('Today\'s exchange rates') }}" aria-hidden="true">
+<div class="modal fade erp-quick" id="ratesModal" @if ($rateAsk) data-auto-open="{{ today_iso() }}" @endif tabindex="-1" aria-label="{{ __('Today\'s exchange rates') }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" action="{{ route('rates.daily') }}" class="modal-content">
             @csrf
@@ -12,7 +14,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('app.actions.cancel') }}"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small">{{ __('Write how many of each currency equal 1 :base today. Leave a box empty to keep its last rate.', ['base' => $rateBase]) }}</p>
+                @if ($rateAsk)
+                    <div class="alert alert-warning py-2 small">{{ __('Today\'s rates are not saved yet. Check them and press Save: they are used for everything written today, until you change them here.') }}</div>
+                @endif
+                <p class="text-muted small">{{ __('Write how many of each currency equal 1 :base today. Each box starts with the last rate.', ['base' => $rateBase]) }}</p>
                 <div class="mb-3">
                     <label class="form-label" for="rates-date">{{ __('Date') }}</label>
                     <x-date name="date" :value="today_iso()" id="rates-date" required />
@@ -23,11 +28,13 @@
                         <div class="input-group" dir="ltr">
                             <span class="input-group-text">{{ __('1 :base =', ['base' => $rateBase]) }}</span>
                             <input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" id="rate-{{ $row['currency']->id }}" name="rates[{{ $row['currency']->id }}]"
-                                   placeholder="{{ $row['rate'] !== null ? \App\Support\Num::format($row['rate'], 6, true) : '' }}">
+                                   value="{{ $row['rate'] !== null ? \App\Support\Num::format($row['rate'], 6, true) : '' }}">
                             <span class="input-group-text">{{ $row['currency']->code }}</span>
                         </div>
                         <div class="form-text">
-                            @if ($row['rate'] !== null)
+                            @if ($row['today'])
+                                <span class="text-success">{{ __('saved for today') }}</span>
+                            @elseif ($row['rate'] !== null)
                                 {{ __('last: :rate on :date', ['rate' => \App\Support\Num::format($row['rate'], 6, true), 'date' => fmt_date($row['date'])]) }}
                             @else
                                 {{ __('no rate yet') }}

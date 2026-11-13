@@ -446,6 +446,24 @@
         });
     };
 
+    // ------------------------------------------------------- rates of the day
+    // The rates pop-up opens by itself when today has no rate yet: once after signing in
+    // (remembered for this browser tab), so closing it does not bring it back on every page.
+    (function () {
+        var modal = $('#ratesModal[data-auto-open]');
+        if (!modal) return;
+        var day = modal.getAttribute('data-auto-open');
+        try {
+            if (window.sessionStorage.getItem('erp-rates-asked') === day) return;
+            window.sessionStorage.setItem('erp-rates-asked', day);
+        } catch (err) { /* no storage: ask on this page */ }
+        setTimeout(function () {
+            ERP.showModal(modal);
+            var first = $('input[inputmode="decimal"]', modal);
+            if (first) { first.focus(); first.select(); }
+        }, 250);
+    })();
+
     // ------------------------------------------------------- attendance
     // Monthly sheet: when the absent days, the leave or the holidays change, the present days are
     // worked out again (days of the month minus the three). Holidays count as present, so the
