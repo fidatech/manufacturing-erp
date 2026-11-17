@@ -237,10 +237,30 @@ class MoneyController extends Controller
     {
         Gate::authorize('money.manage');
 
+        // the last six months that have ended: their profit and whether it was shared
+        $months = collect(range(1, 6))->map(function (int $back) {
+            $start = now()->startOfMonth()->subMonthsNoOverflow($back);
+            $month = $start->format('Y-m');
+
+            return ['month' => $month, 'net' => \App\Services\ProfitService::net($start->format('Y-m-d'), $start->copy()->endOfMonth()->format('Y-m-d')), 'entry' => \App\Services\ProfitService::sharedEntry($month)];
+        });
+
         return view('money.profit', [
             'shareholders' => Account::ofType('shareholder')->active()->with('currency')->orderBy('name')->get(),
             'base' => Rates::base()->code,
+            'months' => $months,
         ]);
+    }
+
+    /** Share one month's profit now, instead of waiting for the 1st of the month. */
+    public function profitMonth(Request $request): RedirectResponse
+    {
+        Gate::authorize('money.manage');
+
+        $month = $request->validate(['month' => ['required', 'date_format:Y-m', 'before:'.now()->startOfMonth()->format('Y-m-d')]])['month'];
+        [$entry, $message] = \App\Services\ProfitService::distributeMonth($month);
+
+        return back()->with($entry ? 'success' : 'warning', $message);
     }
 
     public function profitStore(Request $request): RedirectResponse
@@ -253,29 +273,7 @@ class MoneyController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $shareholders = Account::ofType('shareholder')->active()->get()->filter(fn (Account $a) => Num::isPositive($a->metaValue('share_percent', 0)))->values();
-        $totalPercent = Num::sum($shareholders->map(fn (Account $a) => $a->metaValue('share_percent', 0)));
-        if ($shareholders->isEmpty() || ! Num::isPositive($totalPercent)) {
-            throw new UserError(__('First give every shareholder a share (%) on the Shareholders screen.'));
-        }
-
-        $amount = Num::money($data['amount']);
-        $left = $amount;
-        $lines = [['account' => Account::system('profit_paid'), 'debit' => $amount]];
-        foreach ($shareholders as $index => $shareholder) {
-            $share = $index === $shareholders->count() - 1
-                ? $left
-                : Num::money(Num::div(Num::mul($amount, $shareholder->metaValue('share_percent')), $totalPercent));
-            $left = Num::money(Num::sub($left, $share));
-            if (! Num::isPositive($share)) {
-                continue;
-            }
-            $own = $shareholder->currency_id === Rates::base()->id ? $share : Rates::fromBase($share, $shareholder->currency_id, $data['date']);
-            $lines[] = ['account' => $shareholder, 'credit' => $own, 'base' => $share];
-        }
-
-        $entry = Ledger::post('profit', $data['date'], ($data['description'] ?? null) ?: __('Profit shared between shareholders'), $lines);
-        audit('created', $entry, $entry->number.' profit shared');
+        $entry = \App\Services\ProfitService::share($data['amount'], $data['date'], ($data['description'] ?? null) ?: __('Profit shared between shareholders'));
 
         return redirect()->route('money.index')->with('success', __('Saved as :number.', ['number' => $entry->number]));
     }

@@ -138,4 +138,39 @@ class ClientChangesTest extends TestCase
         $this->delete(route('dead-cash.destroy', ['id' => $entry->id]))->assertRedirect();
         $this->assertSame('300.00', \App\Services\Ledger::balance($cash->id));
     }
+
+    public function test_last_months_profit_is_shared_by_itself_once(): void
+    {
+        $this->admin();
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-01 01:00', 'Asia/Kabul'));
+        $a = $this->account('shareholder', 'Partner A', 'USD', ['meta' => ['share_percent' => '60']]);
+        $b = $this->account('shareholder', 'Partner B', 'USD', ['meta' => ['share_percent' => '40']]);
+        $cash = $this->cash('USD');
+        $income = $this->account('income', 'Juice sales', 'USD');
+        $rent = $this->account('expense', 'Rent', 'USD');
+        \App\Services\Ledger::post('receipt', '2026-10-10', 'October sales', [['account' => $cash, 'debit' => '1000'], ['account' => $income, 'credit' => '1000']]);
+        \App\Services\Ledger::post('expense', '2026-10-20', 'October rent', [['account' => $rent, 'debit' => '200'], ['account' => $cash, 'credit' => '200']]);
+        \App\Services\Ledger::post('receipt', '2026-11-01', 'November sales', [['account' => $cash, 'debit' => '500'], ['account' => $income, 'credit' => '500']]);
+
+        $this->artisan('profit:distribute')->assertSuccessful()->expectsOutputToContain('was shared');
+        $this->assertSame('-480.00', \App\Services\Ledger::balance($a->id));   // 60% of 800, owed to him
+        $this->assertSame('-320.00', \App\Services\Ledger::balance($b->id));
+        $entry = \App\Models\JournalEntry::where('type', 'profit')->firstOrFail();
+        $this->assertSame(['2026-10-31', 'PROFIT-2026-10'], [$entry->date->format('Y-m-d'), $entry->reference]);
+
+        // a second run, or the button, never shares the month again
+        $this->artisan('profit:distribute')->assertSuccessful()->expectsOutputToContain('already shared');
+        $this->post(route('money.profit.month'), ['month' => '2026-10'])->assertSessionHas('warning');
+        $this->assertSame(1, \App\Models\JournalEntry::where('type', 'profit')->count());
+        $this->get(route('money.profit'))->assertOk()->assertSee('Monthly profit')->assertSee($entry->number);
+
+        // the month that is still running cannot be shared; a month with a loss shares nothing
+        $this->post(route('money.profit.month'), ['month' => '2026-11'])->assertSessionHasErrors('month');
+        $this->artisan('profit:distribute', ['--month' => '2026-09'])->assertSuccessful()->expectsOutputToContain('Nothing to share');
+
+        // the scheduler runs it on the 1st of the month
+        $event = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->first(fn ($e) => str_contains($e->command ?? '', 'profit:distribute'));
+        $this->assertNotNull($event);
+        $this->assertSame('0 1 1 * *', $event->expression);
+    }
 }

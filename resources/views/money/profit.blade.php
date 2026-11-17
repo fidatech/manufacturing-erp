@@ -39,4 +39,31 @@
         <button type="submit" class="btn btn-primary"><x-icon name="check" class="me-1" /> {{ __('Save') }}</button>
     </div>
 </form>
+
+<div class="card mt-4">
+    <div class="card-header"><div><h5 class="card-title">{{ __('Monthly profit') }}</h5><div class="small text-muted">{{ __('On the 1st of every month the profit of the month before is added to the shareholders\' accounts by itself. A month is never shared twice.') }}</div></div></div>
+    <div class="card-body">
+        <table class="table w-100 keep-table">
+            <thead><tr><th>{{ __('Month') }}</th><th class="text-end">{{ __('Net profit (:base)', ['base' => $base]) }}</th><th>{{ __('Shared') }}</th><th class="text-end no-print"></th></tr></thead>
+            <tbody>
+                @foreach ($months as $row)
+                    <tr>
+                        <td dir="ltr" class="text-start">{{ $row['month'] }}</td>
+                        <td class="text-end {{ \App\Support\Num::isNegative($row['net']) ? 'text-danger' : '' }}">{{ money($row['net'], $base) }}</td>
+                        <td>@if ($row['entry'])<span class="badge-soft success">{{ $row['entry']->number }}</span>@else<span class="text-muted">{{ __('Not yet') }}</span>@endif</td>
+                        <td class="text-end">
+                            @if (! $row['entry'] && \App\Support\Num::isPositive($row['net']))
+                                <form method="POST" action="{{ route('money.profit.month') }}" class="d-inline">
+                                    @csrf
+                                    <input type="hidden" name="month" value="{{ $row['month'] }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-soft">{{ __('Share now') }}</button>
+                                </form>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
 @endsection

@@ -191,6 +191,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::delete('exchange/{id}', [ExchangeController::class, 'destroy'])->name('exchange.destroy')->whereNumber('id');
     Route::get('money/profit', [MoneyController::class, 'profitForm'])->name('money.profit');
     Route::post('money/profit', [MoneyController::class, 'profitStore'])->name('money.profit.store');
+    Route::post('money/profit/month', [MoneyController::class, 'profitMonth'])->name('money.profit.month');
     Route::get('money/{kind}/create', [MoneyController::class, 'create'])->name('money.create');
     Route::post('money/{kind}', [MoneyController::class, 'store'])->name('money.store');
     Route::delete('money/{id}', [MoneyController::class, 'destroy'])->name('money.destroy')->whereNumber('id');
