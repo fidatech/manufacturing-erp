@@ -140,6 +140,74 @@ class ReportController extends Controller
         return view('reports.cash', ['from' => $from, 'to' => $to, 'base' => Rates::base()->code, 'rows' => $rows, 'byType' => $byType, 'typeNames' => self::entryTypes()]);
     }
 
+    /** The parts of the system and the kinds of entries each one makes. */
+    public const MODULES = [
+        'money' => ['Money', ['receipt', 'payment', 'expense', 'transfer', 'exchange', 'dead_cash', 'profit']],
+        'sales' => ['Sales', ['sale', 'sale_return']],
+        'purchases' => ['Purchases', ['purchase', 'purchase_return']],
+        'production' => ['Manufacturing', ['production']],
+        'inventory' => ['Inventory', ['stock_count']],
+        'hr' => ['Human Resources', ['payroll']],
+        'assets' => ['Assets', ['asset', 'depreciation']],
+        'accounting' => ['Accounting', ['journal', 'opening']],
+    ];
+
+    public static function moduleOf(string $type): string
+    {
+        foreach (self::MODULES as $key => [, $types]) {
+            if (in_array($type, $types, true)) {
+                return $key;
+            }
+        }
+
+        return 'accounting';
+    }
+
+    /** Enterprise transactions: every line of every account, by module, with filters. */
+    public function transactions(Request $request): View
+    {
+        Gate::authorize('reports.view');
+        [$from, $to] = $this->dates($request);
+        $filters = $request->validate([
+            'module' => ['nullable', 'in:'.implode(',', array_keys(self::MODULES))],
+            'account' => ['nullable', 'integer'],
+            'currency' => ['nullable', 'integer'],
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $query = JournalLine::query()
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
+            ->where('journal_lines.is_void', false)
+            ->whereBetween('journal_lines.date', [$from, $to])
+            ->when($filters['module'] ?? null, fn ($q, $module) => $q->whereIn('journal_entries.type', self::MODULES[$module][1]))
+            ->when($filters['account'] ?? null, fn ($q, $id) => $q->where('journal_lines.account_id', $id))
+            ->when($filters['currency'] ?? null, fn ($q, $id) => $q->where('accounts.currency_id', $id))
+            ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($w) => $w->where('journal_entries.number', 'like', "%$term%")->orWhere('journal_entries.description', 'like', "%$term%")->orWhere('journal_entries.reference', 'like', "%$term%")));
+
+        // totals of each module, in the main currency
+        $summary = (clone $query)->groupBy('journal_entries.type')
+            ->selectRaw('journal_entries.type as type, COUNT(DISTINCT journal_entries.id) as entries, COALESCE(SUM(journal_lines.base_debit), 0) as debit, COALESCE(SUM(journal_lines.base_credit), 0) as credit')
+            ->toBase()->get()
+            ->groupBy(fn ($row) => self::moduleOf($row->type))
+            ->map(fn ($rows) => ['entries' => $rows->sum('entries'), 'debit' => Num::money(Num::sum($rows->pluck('debit'))), 'credit' => Num::money(Num::sum($rows->pluck('credit')))]);
+        $modules = collect(self::MODULES)->filter(fn ($m, $key) => $summary->has($key))->map(fn ($m, $key) => ['name' => __($m[0])] + $summary[$key]);
+
+        $lines = $query->select('journal_lines.*', 'journal_entries.number as entry_number', 'journal_entries.type as entry_type', 'journal_entries.description as entry_description', 'journal_entries.reference as entry_reference')
+            ->with(['account.currency'])
+            ->orderBy('journal_lines.date')->orderBy('journal_lines.journal_entry_id')->orderBy('journal_lines.id')
+            ->paginate(per_page(100))->withQueryString();
+
+        return view('reports.transactions', [
+            'from' => $from, 'to' => $to, 'base' => Rates::base()->code, 'filters' => $filters,
+            'modules' => $modules, 'lines' => $lines,
+            'totals' => ['debit' => Num::money(Num::sum($modules->pluck('debit'))), 'credit' => Num::money(Num::sum($modules->pluck('credit'))), 'entries' => $modules->sum('entries')],
+            'moduleNames' => collect(self::MODULES)->map(fn ($m) => __($m[0]))->all(),
+            'accounts' => Account::with('currency')->orderBy('code')->get(['id', 'code', 'name', 'currency_id']),
+            'currencies' => \App\Models\Currency::orderBy('id')->get(),
+        ]);
+    }
+
     public static function entryTypes(): array
     {
         return [

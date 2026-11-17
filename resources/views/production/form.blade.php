@@ -47,7 +47,13 @@
         <input type="hidden" name="recipe_id" value="{{ $recipe->id }}">
         <input type="hidden" name="qty" value="{{ $qty }}">
         <input type="hidden" name="warehouse_id" value="{{ $warehouseId }}">
-        <div class="card-header"><h5 class="card-title">{{ qty($qty) }} × {{ $recipe->item->label() }}</h5></div>
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="card-title">{{ qty($qty) }} × {{ $recipe->item->label() }}</h5>
+            <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-soft" href="{{ route('production.materials', ['recipe' => $recipe->id, 'qty' => $qty, 'warehouse' => $warehouseId, 'print' => 1, 'pdf' => 1]) }}" target="_blank" rel="noopener"><x-icon name="file-pdf" class="me-1" /> {{ __('Materials PDF') }}</a>
+                <a class="btn btn-sm btn-outline-soft" href="{{ route('production.materials', ['recipe' => $recipe->id, 'qty' => $qty, 'warehouse' => $warehouseId, 'export' => 'xlsx']) }}"><x-icon name="file-excel" class="me-1" /> {{ __('Materials Excel') }}</a>
+            </div>
+        </div>
         <div class="card-body">
             @if ($short)
                 <div class="alert alert-danger">{{ __('Some raw materials are not enough in this warehouse. Buy or transfer them first, or correct the quantity used.') }}</div>

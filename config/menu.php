@@ -93,6 +93,7 @@ return [
         ['label' => 'Record Production', 'route' => 'production.create', 'can' => 'production.manage'],
         ['label' => 'Production Batches', 'route' => 'production.index', 'active' => 'production.*', 'can' => 'production.view'],
         ['label' => 'Production Report', 'route' => 'production.report', 'can' => 'production.view'],
+        ['label' => 'Materials Check', 'route' => 'production.materials', 'can' => 'production.view'],
     ]],
 
     ['label' => 'Laboratory & QC', 'icon' => 'vial', 'children' => [
@@ -138,6 +139,7 @@ return [
         ['label' => 'Balance Sheet', 'route' => 'reports.balance', 'can' => 'reports.view'],
         ['label' => 'Profit and Loss', 'route' => 'reports.profit', 'can' => 'reports.view'],
         ['label' => 'Trial Balance', 'route' => 'reports.trial', 'can' => 'reports.view'],
+        ['label' => 'Enterprise Transactions', 'route' => 'reports.transactions', 'can' => 'reports.view'],
         ['label' => 'Accounts Statements', 'route' => 'chart', 'params' => ['from' => 'reports'], 'can' => 'accounts.view'],
         ['label' => 'Customers Report', 'route' => 'reports.parties', 'params' => ['group' => 'customers'], 'can' => 'reports.view'],
         ['label' => 'Suppliers Report', 'route' => 'reports.parties', 'params' => ['group' => 'suppliers'], 'can' => 'reports.view'],

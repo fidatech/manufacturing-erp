@@ -8,6 +8,7 @@
         [__('Sales report'), __('Sales by product and by customer, with profit.'), 'reports.sales', 'file-invoice-dollar'],
         [__('Purchases report'), __('Purchases by item and by supplier.'), 'reports.purchases', 'cart-flatbed'],
         [__('Balance sheet'), __('What the company has, owes and is worth.'), 'reports.balance', 'building-columns'],
+        [__('Enterprise transactions'), __('Every entry of every account, by module, with filters.'), 'reports.transactions', 'list-ul'],
         [__('Trial balance'), __('Every account with its balance. For the accountant.'), 'reports.trial', 'list-check'],
     ];
 @endphp

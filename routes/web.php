@@ -101,6 +101,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('production', [ProductionController::class, 'index'])->name('production.index');
     Route::get('production/create', [ProductionController::class, 'create'])->name('production.create');
     Route::get('production/report', [ProductionController::class, 'report'])->name('production.report');
+    Route::get('production/materials', [ProductionController::class, 'materials'])->name('production.materials');
     Route::post('production', [ProductionController::class, 'store'])->name('production.store');
     Route::get('production/{id}', [ProductionController::class, 'show'])->name('production.show')->whereNumber('id');
     Route::post('production/{id}/cancel', [ProductionController::class, 'cancel'])->name('production.cancel')->whereNumber('id');
@@ -175,6 +176,7 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('reports/balances', [ReportController::class, 'balances'])->name('reports.balances');
     Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
     Route::get('reports/purchases', [ReportController::class, 'purchases'])->name('reports.purchases');
+    Route::get('reports/transactions', [ReportController::class, 'transactions'])->name('reports.transactions');
     Route::get('reports/people/{group}', [ReportController::class, 'parties'])->name('reports.parties');
 
     // Money and day book

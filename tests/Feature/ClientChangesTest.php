@@ -173,4 +173,44 @@ class ClientChangesTest extends TestCase
         $this->assertNotNull($event);
         $this->assertSame('0 1 1 * *', $event->expression);
     }
+
+    public function test_enterprise_transactions_report_by_module(): void
+    {
+        $this->admin();
+        $cash = $this->cash('USD');
+        $customer = $this->account('customer', 'Haji Sharif', 'USD');
+        $rent = $this->account('expense', 'Rent', 'USD');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'description' => 'Paid his bill', 'lines' => [['money_id' => $cash->id, 'amount' => '300']]]);
+        $this->post(route('money.store', ['kind' => 'expense']), ['date' => today_iso(), 'money_id' => $cash->id, 'other_id' => $rent->id, 'amount' => '120', 'description' => 'Office rent']);
+        \App\Services\Ledger::post('journal', today_iso(), 'Correction by the accountant', [['account' => $rent, 'debit' => '5'], ['account' => $cash, 'credit' => '5']]);
+
+        $this->get(route('reports.index'))->assertSee('Enterprise transactions');
+        $this->get(route('reports.transactions'))->assertOk()->assertSee('Money')->assertSee('Accounting')
+            ->assertSee('Paid his bill')->assertSee('Office rent')->assertSee('Correction by the accountant')->assertSee($rent->code);
+        $this->get(route('reports.transactions', ['module' => 'accounting']))->assertSee('Correction by the accountant')->assertDontSee('Office rent');
+        $this->get(route('reports.transactions', ['account' => $customer->id]))->assertSee('Paid his bill')->assertDontSee('Office rent');
+        $this->get(route('reports.transactions', ['export' => 'xlsx']))->assertOk();
+    }
+
+    public function test_materials_check_before_a_batch(): void
+    {
+        $this->admin();
+        $warehouse = \App\Models\Warehouse::create(['name' => 'Raw store']);
+        $kg = \App\Models\Unit::where('name', 'Kilogram')->value('id');
+        $sugar = \App\Models\Item::create(['type' => 'raw', 'name' => 'Sugar', 'unit_id' => $kg]);
+        $acid = \App\Models\Item::create(['type' => 'raw', 'name' => 'Citric Acid', 'unit_id' => $kg]);
+        $juice = \App\Models\Item::create(['type' => 'product', 'name' => 'Mango Juice', 'unit_id' => $kg]);
+        $recipe = \App\Models\Recipe::create(['item_id' => $juice->id, 'name' => 'Mango Juice']);
+        $recipe->lines()->createMany([['item_id' => $sugar->id, 'qty' => '2'], ['item_id' => $acid->id, 'qty' => '0.5']]);
+        \App\Services\Stock::receive($sugar->id, $warehouse->id, '100', '1', today_iso(), 'opening', null);
+        \App\Services\Stock::receive($acid->id, $warehouse->id, '10', '4', today_iso(), 'opening', null);
+
+        // 30 units need 60 kg sugar (have 100) and 15 kg acid (have 10): acid is short 5 kg = 20 USD; stock is enough for 20
+        $page = $this->get(route('production.materials', ['recipe' => $recipe->id, 'qty' => '30', 'warehouse' => $warehouse->id]))->assertOk();
+        $page->assertSee('Materials Check')->assertSee('Sugar')->assertSee('Citric Acid')->assertSee('Short')->assertSee('1 / 2')->assertSee('20.00 USD');
+        $this->assertStringContainsString('>20<', str_replace([' ', "\n"], '', $page->getContent()));
+        $this->get(route('production.materials', ['recipe' => $recipe->id, 'qty' => '30', 'warehouse' => $warehouse->id, 'export' => 'xlsx']))->assertOk();
+        $this->get(route('production.materials', ['recipe' => $recipe->id, 'qty' => '30', 'print' => 1]))->assertOk()->assertSee('Mango Juice');
+        $this->get(route('production.create', ['recipe' => $recipe->id, 'qty' => '30', 'warehouse' => $warehouse->id]))->assertOk()->assertSee('Materials PDF')->assertSee('Materials Excel');
+    }
 }

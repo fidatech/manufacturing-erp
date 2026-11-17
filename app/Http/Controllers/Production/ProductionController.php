@@ -57,6 +57,53 @@ class ProductionController extends Controller
         ]);
     }
 
+    /**
+     * Materials check: for a recipe and a number of batches, how much of each raw material
+     * is needed, how much is in stock and how much is short. Prints as PDF and downloads as Excel.
+     */
+    public function materials(Request $request): View
+    {
+        Gate::authorize('production.view');
+
+        $picked = $request->validate(['recipe' => ['nullable', 'integer'], 'qty' => ['nullable', 'numeric', 'gt:0'], 'warehouse' => ['nullable', 'integer']]);
+        $recipe = ! empty($picked['recipe']) ? Recipe::with(['lines.item.unit', 'item.unit'])->find($picked['recipe']) : null;
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $warehouseId = (int) ($picked['warehouse'] ?? 0) ?: null;
+        $qty = $picked['qty'] ?? null;
+
+        $rows = [];
+        $canMake = null;
+        $costShort = '0';
+        if ($recipe) {
+            foreach (ProductionService::needs($recipe, $qty ?: 1, $warehouseId) as $need) {
+                $short = Num::qty(Num::sub($need['needed'], $need['have']));
+                $short = Num::isPositive($short) ? $short : '0.0000';
+                $perUnit = $recipe->lines->firstWhere('item_id', $need['item']->id)->qty;
+                // whole units that the stock of this material is enough for
+                $possible = Num::isPositive($perUnit) ? explode('.', Num::div(Num::isPositive($need['have']) ? $need['have'] : '0', $perUnit))[0] : null;
+                if ($possible !== null) {
+                    $canMake = $canMake === null || Num::cmp($possible, $canMake) < 0 ? $possible : $canMake;
+                }
+                $shortCost = Num::money(Num::mul($short, $need['item']->avg_cost));
+                $costShort = Num::add($costShort, $shortCost);
+                $rows[] = $need + ['short' => $short, 'short_cost' => $shortCost];
+            }
+        }
+
+        return view('production.materials', [
+            'recipes' => Recipe::with('item')->where('is_active', true)->orderBy('name')->get(),
+            'recipe' => $recipe,
+            'qty' => $qty,
+            'warehouses' => $warehouses,
+            'warehouseId' => $warehouseId,
+            'rows' => $rows,
+            'canMake' => $canMake,
+            'costShort' => Num::money($costShort),
+            'water' => $recipe && $qty ? Num::qty(Num::mul($recipe->water(), $qty)) : '0',
+            'base' => Rates::base()->code,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('production.manage');
