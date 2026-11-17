@@ -27,7 +27,7 @@
             <input type="text" inputmode="decimal" dir="ltr" autocomplete="off" class="form-control text-end" name="lines[{{ $i }}][rate]" value="{{ $line['rate'] ?? '' }}" data-line-rate aria-label="{{ __('Exchange rate') }}">
         </div>
         <div class="ml-hint" dir="ltr" data-line-rate-hint></div>
-        <div class="ml-same" data-line-same><x-icon name="check" /> {{ __('same currency') }}</div>
+        <div class="form-control ml-same" data-line-same><x-icon name="check" /> {{ __('same currency') }}</div>
     </div>
     <div class="ml-field ml-other">
         <label class="ml-label">{{ __('In the person\'s currency') }}</label>
