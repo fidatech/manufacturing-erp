@@ -121,6 +121,7 @@ class TradeTest extends TestCase
 
     public function test_a_purchase_request_without_supplier_becomes_an_order_in_its_currency(): void
     {
+        $this->rate('PKR', '280');
         $acid = $this->item('Citric Acid');
         $usd = $this->account('supplier', 'Javed', 'USD');
         $pkr = $this->account('supplier', 'Lahore Chemicals', 'PKR');
@@ -153,6 +154,7 @@ class TradeTest extends TestCase
 
     public function test_a_sale_order_keeps_its_currency_quotation_and_bill_numbers(): void
     {
+        $this->rate('AFN', '70');
         $customer = $this->account('customer', 'Haji Sharif', 'AFN');
         $product = $this->item('Mango Juice', 'product');
         $this->get(route('sales.create', ['type' => 'order']))->assertOk()->assertSee('data-currency-pick', false)->assertSee('Quotation number')->assertSee('Bill number');
