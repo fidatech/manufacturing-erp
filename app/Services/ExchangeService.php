@@ -68,6 +68,21 @@ class ExchangeService
             : ['rate' => Num::round(Num::div($sell, $buy), 6), 'operation' => 'divide'];
     }
 
+    /** The rate of every currency on a date, for forms that work out an amount while typing: {currency id: rate or null}. */
+    public static function ratesOn(string $date): array
+    {
+        $rates = [];
+        foreach (Currency::all() as $currency) {
+            try {
+                $rates[$currency->id] = Rates::rate($currency->id, $date);
+            } catch (UserError) {
+                $rates[$currency->id] = null;
+            }
+        }
+
+        return $rates;
+    }
+
     /** The amount bought for an amount sold. */
     public static function convert(mixed $amount, mixed $rate, string $operation): string
     {

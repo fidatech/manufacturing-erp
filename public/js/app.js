@@ -755,6 +755,73 @@ limit();
 differ(sellCur);
 if (rate.value) summary(); else tableRate();
 });
+$$('form[data-money-lines]').forEach(function (form) {
+var rates = {};
+try { rates = JSON.parse(form.getAttribute('data-rates') || '{}') || {}; } catch (err) { rates = {}; }
+var other = $('select[name="other_id"]', form);
+var num = function (input) { var v = parseFloat(String(input ? input.value : '').replace(/,/g, '')); return isFinite(v) && v > 0 ? v : 0; };
+var show = function (v, d) { if (!(v > 0) || !isFinite(v)) return ''; var t = v.toFixed(d); if (d > 2) t = t.replace(/0+$/, '').replace(/\.$/, ''); return ERP.formatNumber(t); };
+var picked = function (select) { var o = select && select.options[select.selectedIndex]; return o && o.value ? o : null; };
+var line = function (row, from) {
+var money = picked($('select[data-money]', row));
+var person = picked(other);
+var amount = $('[data-line-amount]', row), rate = $('[data-line-rate]', row), op = $('[data-line-op]', row), out = $('[data-line-other]', row);
+var same = !money || !person || money.getAttribute('data-cur-id') === person.getAttribute('data-cur-id');
+$('[data-line-rate-box]', row).hidden = same;
+$('[data-line-same]', row).hidden = !same || !money || !person;
+if (from === 'other') { row.setAttribute('data-other-manual', ''); return; }
+if (from === 'rate') row.setAttribute('data-rate-manual', '');
+if (same) { out.value = show(num(amount), 2); out.readOnly = !!money && !!person; return; }
+out.readOnly = false;
+if (!row.hasAttribute('data-rate-manual') || !rate.value) {
+var m = parseFloat(rates[money.getAttribute('data-cur-id')]), p = parseFloat(rates[person.getAttribute('data-cur-id')]);
+if (m > 0 && p > 0) { op.value = p >= m ? 'multiply' : 'divide'; rate.value = show(p >= m ? p / m : m / p, 6); }
+}
+if (row.hasAttribute('data-other-manual') && from !== 'rate' && from !== 'amount') return;
+row.removeAttribute('data-other-manual');
+var r = num(rate), a = num(amount);
+out.value = a && r ? show(op.value === 'divide' ? a / r : a * r, 2) : '';
+};
+var total = function () {
+var sum = 0;
+$$('[data-line-other]', form).forEach(function (i) { sum += num(i); });
+var t = $('[data-lines-total]', form);
+if (t) t.textContent = ERP.formatNumber(sum.toFixed(2));
+var person = picked(other);
+$$('[data-cur-label="other"]', form).forEach(function (el) { el.textContent = person ? '(' + person.getAttribute('data-cur') + ')' : ''; });
+};
+var all = function (from) { $$('tr[data-row]', form).forEach(function (row) { line(row, from); }); total(); };
+var pickCash = function () {
+var person = picked(other);
+var first = $('tr[data-row] select[data-money]', form);
+if (!person || !first || first.value) return;
+var match = null;
+Array.prototype.forEach.call(first.options, function (o) {
+if (!o.value || o.getAttribute('data-cur-id') !== person.getAttribute('data-cur-id')) return;
+if (!match || (o.hasAttribute('data-cash') && !match.hasAttribute('data-cash'))) match = o;
+});
+if (match) { first.value = match.value; if (first._ssSync) first._ssSync(); }
+};
+form.addEventListener('input', function (e) {
+var row = e.target.closest('tr[data-row]');
+if (!row) return;
+line(row, e.target.hasAttribute('data-line-other') ? 'other' : (e.target.hasAttribute('data-line-rate') ? 'rate' : 'amount'));
+total();
+});
+form.addEventListener('change', function (e) {
+if (e.target === other) { pickCash(); all('person'); return; }
+var row = e.target.closest('tr[data-row]');
+if (!row) return;
+if (e.target.hasAttribute('data-money')) row.removeAttribute('data-rate-manual');
+line(row, e.target.hasAttribute('data-line-op') ? 'rate' : 'money');
+total();
+});
+form.addEventListener('click', function (e) {
+if (e.target.closest('[data-add-row], [data-remove-row]')) setTimeout(function () { all('row'); }, 0);
+});
+pickCash();
+all('start');
+});
 $$('form[data-money-form]').forEach(function (form) {
 var sync = function () {
 var cur = {};

@@ -368,3 +368,9 @@
 
 /* Monthly attendance sheet: narrow boxes for the four numbers. */
 .attendance-table input[data-days] { min-width: 76px; max-width: 110px; margin-inline-start: auto; }
+
+/* Money in / out lines: a narrow rate box with × or ÷ in front. */
+.money-lines .money-rate { flex-wrap: nowrap; min-width: 150px; }
+.money-lines .money-rate > .form-select { flex: 0 0 auto; width: auto; padding-inline-end: 1.6rem; background-position: right .4rem center; }
+.money-lines select[data-money] { min-width: 180px; }
+.money-lines input[data-line-amount], .money-lines input[data-line-other] { min-width: 110px; }

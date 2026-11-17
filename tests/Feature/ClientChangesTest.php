@@ -59,4 +59,40 @@ class ClientChangesTest extends TestCase
         $this->userWith(['hr.view']);
         $this->get(route('hr.documents.index'))->assertOk()->assertSee('Contract')->assertDontSee('Save file');
     }
+
+    public function test_money_in_can_take_several_currencies_with_their_own_rates(): void
+    {
+        $this->admin();
+        $this->rate('AFN', '70', today_iso());
+        $customer = $this->account('customer', 'Haji Sharif', 'AFN');
+
+        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-money-lines', false)->assertSee('Add another currency');
+
+        // 100 dollars at 71 afghani each, and 3,000 afghani in cash: 10,100 afghani off his account
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [
+            ['money_id' => $this->cash('USD')->id, 'amount' => '100', 'rate' => '71', 'operation' => 'multiply'],
+            ['money_id' => $this->cash('AFN')->id, 'amount' => '3,000'],
+            ['money_id' => '', 'amount' => ''],
+        ]])->assertRedirect(route('money.index'));
+
+        $this->assertSame('-10100.00', \App\Services\Ledger::balance($customer->id));
+        $this->assertSame('100.00', \App\Services\Ledger::balance($this->cash('USD')->id));
+        $this->assertSame('3000.00', \App\Services\Ledger::balance($this->cash('AFN')->id));
+        $entry = \App\Models\JournalEntry::latest('id')->firstOrFail();
+        $this->assertSame(3, $entry->lines()->count());
+        $this->assertStringContainsString('100.00 USD + 3,000.00 AFN', $entry->description);
+
+        // money out in two currencies at the rate of the day, the amount in his currency typed by hand on one line
+        $this->post(route('money.store', ['kind' => 'out']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [
+            ['money_id' => $this->cash('USD')->id, 'amount' => '10'],
+            ['money_id' => $this->cash('USD')->id, 'amount' => '5', 'other_amount' => '360'],
+        ]])->assertRedirect();
+        $this->assertSame('-9040.00', \App\Services\Ledger::balance($customer->id));   // 10 x 70 + 360 = 1,060 back to him
+
+        // a line without an account, or nothing at all, is refused and nothing is saved
+        $count = \App\Models\JournalEntry::count();
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => '', 'amount' => '50']]])->assertSessionHas('danger');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => '', 'amount' => '']]])->assertSessionHas('danger');
+        $this->assertSame($count, \App\Models\JournalEntry::count());
+    }
 }

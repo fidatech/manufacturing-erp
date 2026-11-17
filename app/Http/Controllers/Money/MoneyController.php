@@ -110,6 +110,7 @@ class MoneyController extends Controller
             'moneyAccounts' => Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get(),
             'others' => $this->others($kind, $group),
             'base' => Rates::base()->code,
+            'rates' => \App\Services\ExchangeService::ratesOn(old('date') ?: today_iso()),
         ]);
     }
 
@@ -120,16 +121,29 @@ class MoneyController extends Controller
         $kind = $this->kind($request);
         $group = $this->group($request);
 
+        // Money in and money out can take several cash boxes, banks or sarafi in one go, each in its own
+        // currency with its own rate (lines[]). The other screens send one money account (money_id).
+        if (! $request->has('lines')) {
+            $request->merge(['lines' => [[
+                'money_id' => $request->input('money_id'), 'amount' => $request->input('amount'), 'other_amount' => $request->input('other_amount'),
+            ]]]);
+        }
+
         $data = $request->validate([
             'date' => ['required', 'date'],
-            'money_id' => ['required', 'exists:accounts,id'],
-            'other_id' => ['required', 'exists:accounts,id', 'different:money_id'],
-            'amount' => ['required', 'numeric', 'gt:0'],
-            'other_amount' => ['nullable', 'numeric', 'gt:0'],
+            'other_id' => ['required', 'exists:accounts,id'],
+            'lines' => ['required', 'array'],
+            'lines.*.money_id' => ['nullable', 'exists:accounts,id'],
+            'lines.*.amount' => ['nullable', 'numeric', 'gt:0'],
+            'lines.*.rate' => ['nullable', 'numeric', 'gt:0'],
+            'lines.*.operation' => ['nullable', 'in:multiply,divide'],
+            'lines.*.other_amount' => ['nullable', 'numeric', 'gt:0'],
             'description' => ['nullable', 'string', 'max:500'],
-        ], [], ['money_id' => __('money account'), 'other_id' => __('account'), 'other_amount' => __('amount in the other currency')]);
+        ], [], [
+            'other_id' => __('account'), 'lines.*.money_id' => __('money account'), 'lines.*.amount' => __('amount'),
+            'lines.*.other_amount' => __('amount in the other currency'), 'lines.*.rate' => __('exchange rate'),
+        ]);
 
-        $money = Account::money()->findOrFail($data['money_id']);
         $other = Account::findOrFail($data['other_id']);
         if ($kind === 'transfer' && ! $other->type->is_money) {
             throw new UserError(__('Choose a cash box, bank or sarafi to move the money to.'));
@@ -139,21 +153,43 @@ class MoneyController extends Controller
         }
 
         $date = $data['date'];
-        $amount = Num::money($data['amount']);
-        $base = Rates::toBase($amount, $money->currency_id, $date);
-        $otherAmount = $this->otherAmount($money, $other, $amount, $base, $data['other_amount'] ?? null, $date);
-
         // money comes in: the money account is debited. Money goes out: it is credited.
         $moneySide = $kind === 'in' ? 'debit' : 'credit';
         $otherSide = $kind === 'in' ? 'credit' : 'debit';
         $type = ['in' => 'receipt', 'out' => 'payment', 'expense' => 'expense', 'transfer' => 'transfer'][$kind];
 
-        $description = trim(($data['description'] ?? '') ?: $this->heading($kind, $group).': '.$other->name);
+        $lines = [];
+        $otherTotal = '0';
+        $baseTotal = '0';
+        $parts = [];
+        foreach ($data['lines'] as $line) {
+            if (empty($line['money_id']) && empty($line['amount'])) {
+                continue;
+            }
+            if (empty($line['money_id']) || empty($line['amount'])) {
+                throw new UserError(__('Every line needs a money account and an amount.'));
+            }
+            $money = Account::money()->findOrFail($line['money_id']);
+            if ($money->id === $other->id) {
+                throw new UserError(__('The money cannot go to the same account it comes from.'));
+            }
+            $amount = Num::money($line['amount']);
+            $base = Rates::toBase($amount, $money->currency_id, $date);
+            $otherAmount = $this->otherAmount($money, $other, $amount, $base, $line, $date);
 
-        $entry = Ledger::post($type, $date, $description, [
-            ['account' => $money, $moneySide => $amount, 'base' => $base],
-            ['account' => $other, $otherSide => $otherAmount, 'base' => $base],
-        ]);
+            $lines[] = ['account' => $money, $moneySide => $amount, 'base' => $base];
+            $otherTotal = Num::add($otherTotal, $otherAmount);
+            $baseTotal = Num::add($baseTotal, $base);
+            $parts[] = money($amount, $money->currency->code);
+        }
+        if (! $lines) {
+            throw new UserError(__('Write at least one amount.'));
+        }
+        $lines[] = ['account' => $other, $otherSide => Num::money($otherTotal), 'base' => Num::money($baseTotal)];
+
+        $description = trim(($data['description'] ?? '') ?: $this->heading($kind, $group).': '.$other->name.(count($parts) > 1 ? ' ('.implode(' + ', $parts).')' : ''));
+
+        $entry = DB::transaction(fn () => Ledger::post($type, $date, $description, $lines));
         audit('created', $entry, $entry->number.' '.$description);
 
         return redirect()->to($request->input('return') === 'capital' ? route('capital') : route('money.index'))
@@ -275,14 +311,20 @@ class MoneyController extends Controller
         return $query->whereHas('type', fn ($q) => $q->where('is_money', false)->whereNotIn('nature', $kind === 'in' ? ['expense'] : ['income']))->get();
     }
 
-    /** What the amount is worth in the currency of the other account. */
-    private function otherAmount(Account $money, Account $other, string $amount, string $base, ?string $given, string $date): string
+    /**
+     * What the amount is worth in the currency of the other account: the amount written by hand,
+     * else the line's own rate (multiply or divide), else the rate of the day.
+     */
+    private function otherAmount(Account $money, Account $other, string $amount, string $base, array $line, string $date): string
     {
         if ($other->currency_id === $money->currency_id) {
             return $amount;
         }
-        if ($given !== null && $given !== '') {
-            return Num::money($given);
+        if (! empty($line['other_amount'])) {
+            return Num::money($line['other_amount']);
+        }
+        if (! empty($line['rate']) && ! empty($line['operation'])) {
+            return \App\Services\ExchangeService::convert($amount, $line['rate'], $line['operation']);
         }
 
         return $other->currency_id === Rates::base()->id ? $base : Rates::fromBase($base, $other->currency_id, $date);
