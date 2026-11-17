@@ -435,3 +435,9 @@
     .money-summary { position: static; }
 }
 @media (max-width: 575.98px) { .money-line { grid-template-columns: 1fr; } }
+
+/* soft coloured buttons */
+.btn-light-danger { background: rgba(var(--danger-rgb), .1); border: 1px solid transparent; color: var(--danger); }
+.btn-light-danger:hover, .btn-light-danger:focus { background: var(--danger); color: #fff; }
+.btn-light-success { background: rgba(var(--success-rgb), .12); border: 1px solid transparent; color: var(--success); }
+.btn-light-success:hover, .btn-light-success:focus { background: var(--success); color: #fff; }

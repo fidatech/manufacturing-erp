@@ -17,17 +17,63 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
- * Dead cash: money that will not come back and is taken out of the books as a loss.
- * Torn, burnt or false notes in a cash box, money lost with a sarafi, or a customer's debt
- * that will never be paid. The amount leaves that account and goes to the expense "Dead cash".
+ * Dead cash: customers who owe us and have not paid for a long time.
+ * The list shows how much each one owes, when he last paid and how many days ago.
+ * Money that will never come back can be written off: it leaves the customer's account
+ * and goes to the expense "Dead cash" (and can be cancelled).
  */
 class DeadCashController extends Controller
 {
+    public const DAYS = [30, 60, 90, 180, 365];
+
     public function index(Request $request): View
     {
         Gate::authorize('money.view');
 
-        $filters = $request->validate(['from' => ['nullable', 'date'], 'to' => ['nullable', 'date'], 'account' => ['nullable', 'integer']]);
+        $filters = $request->validate([
+            'days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'currency' => ['nullable', 'integer'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'from' => ['nullable', 'date'], 'to' => ['nullable', 'date'], 'account' => ['nullable', 'integer'],
+        ]);
+        $days = (int) ($filters['days'] ?? 90);
+        $today = \Carbon\CarbonImmutable::parse(today_iso());
+
+        // every customer who owes us, with the day he last paid (or, if he never paid, the day he first owed)
+        $customers = Account::ofType('customer')->with('currency')
+            ->when($filters['currency'] ?? null, fn ($q, $id) => $q->where('currency_id', $id))
+            ->when($filters['category'] ?? null, fn ($q, $c) => $q->where('meta->category', $c))
+            ->when($filters['q'] ?? null, fn ($q, $t) => $q->where(fn ($w) => $w->where('name', 'like', "%$t%")->orWhere('code', 'like', "%$t%")->orWhere('phone', 'like', "%$t%")))
+            ->get();
+        $ids = $customers->pluck('id')->all();
+        $balances = Ledger::balances($ids);
+        $lines = fn () => JournalLine::query()->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->whereIn('journal_lines.account_id', $ids)->where('journal_lines.is_void', false)->groupBy('journal_lines.account_id');
+        $lastPaid = $lines()->where('journal_lines.credit', '>', 0)->where('journal_entries.type', 'receipt')
+            ->selectRaw('journal_lines.account_id as id, MAX(journal_lines.date) as d')->pluck('d', 'id');
+        $lastSale = $lines()->where('journal_lines.debit', '>', 0)->selectRaw('journal_lines.account_id as id, MAX(journal_lines.date) as d')->pluck('d', 'id');
+        $firstOwed = $lines()->where('journal_lines.debit', '>', 0)->selectRaw('journal_lines.account_id as id, MIN(journal_lines.date) as d')->pluck('d', 'id');
+
+        $rows = $customers->map(function (Account $customer) use ($balances, $lastPaid, $lastSale, $firstOwed, $today) {
+            $owed = $balances[$customer->id]['own'] ?? '0.00';
+            if (! Num::isPositive($owed)) {
+                return null;
+            }
+            $since = $lastPaid[$customer->id] ?? $firstOwed[$customer->id] ?? null;
+            $sinceDay = $since ? substr((string) $since, 0, 10) : null;
+
+            return [
+                'account' => $customer,
+                'owed' => $owed,
+                'owed_base' => $balances[$customer->id]['base'] ?? '0.00',
+                'last_paid' => isset($lastPaid[$customer->id]) ? substr((string) $lastPaid[$customer->id], 0, 10) : null,
+                'last_sale' => isset($lastSale[$customer->id]) ? substr((string) $lastSale[$customer->id], 0, 10) : null,
+                'days' => $sinceDay ? (int) \Carbon\CarbonImmutable::parse($sinceDay)->diffInDays($today) : 0,
+            ];
+        })->filter()->filter(fn ($row) => $row['days'] >= $days)->sortByDesc('days')->values();
+
+        $byCurrency = $rows->groupBy(fn ($row) => $row['account']->currency->code)->map(fn ($group) => Num::money(Num::sum($group->pluck('owed'))));
 
         $query = JournalEntry::where('type', 'dead_cash')
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
@@ -39,6 +85,13 @@ class DeadCashController extends Controller
             ->selectRaw('COALESCE(SUM(base_debit), 0) - COALESCE(SUM(base_credit), 0) as total')->value('total') ?? '0');
 
         return view('money.dead-cash', [
+            'rows' => $rows,
+            'days' => $days,
+            'dayOptions' => self::DAYS,
+            'byCurrency' => $byCurrency,
+            'totalBase' => Num::money(Num::sum($rows->pluck('owed_base'))),
+            'currencies' => \App\Models\Currency::orderBy('id')->get(),
+            'categories' => \App\Models\Lookup::options('customer_category'),
             'entries' => $query->with(['lines.account.currency', 'creator'])->orderByDesc('date')->orderByDesc('id')->paginate(per_page(25))->withQueryString(),
             'filters' => $filters,
             'total' => $total,
@@ -58,7 +111,7 @@ class DeadCashController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ], [], ['account_id' => __('account'), 'reason' => __('reason')]);
 
-        $account = $this->accounts()->firstWhere('id', (int) $data['account_id']) ?? throw new UserError(__('Choose a cash box, bank, sarafi or customer.'));
+        $account = $this->accounts()->firstWhere('id', (int) $data['account_id']) ?? throw new UserError(__('Choose a customer.'));
         $amount = Num::money($data['amount']);
         $balance = Ledger::balance($account->id);
         if (Num::cmp($amount, $balance) > 0) {
@@ -86,11 +139,11 @@ class DeadCashController extends Controller
         return back()->with('success', __(':number was cancelled.', ['number' => $entry->number]));
     }
 
-    /** Where dead cash can come from: cash boxes, banks, sarafi and customers. */
+    /** Dead cash is written off customers' accounts. */
     private function accounts()
     {
         return Account::active()->whereNull('system_key')->with(['currency', 'type'])
-            ->whereHas('type', fn ($q) => $q->where('is_money', true)->orWhere('key', 'customer'))
+            ->whereHas('type', fn ($q) => $q->where('key', 'customer'))
             ->orderBy('name')->get();
     }
 }

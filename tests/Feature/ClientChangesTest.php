@@ -140,27 +140,39 @@ class ClientChangesTest extends TestCase
         $this->get(route('money.receipt', ['id' => \App\Models\JournalEntry::latest('id')->value('id')]))->assertOk()->assertSee('Money Receipt')->assertDontSee('TT Receipt');
     }
 
-    public function test_dead_cash_takes_lost_money_out_of_the_books(): void
+    public function test_dead_cash_lists_customers_who_have_not_paid_for_long(): void
     {
         $this->admin();
+        $this->rate('AFN', '70', '2026-01-01');
+        $old = $this->account('customer', 'Haji Sharif', 'USD', ['phone' => '0700111222']);
+        $recent = $this->account('customer', 'Gul Agha', 'USD');
+        $never = $this->account('customer', 'Wali Store', 'AFN');
+        $sales = $this->account('income', 'Juice sales', 'USD');
+        $salesAfn = $this->account('income', 'Juice sales AFN', 'AFN');
         $cash = $this->cash('USD');
-        $customer = $this->account('customer', 'Haji Sharif', 'USD');
-        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => $cash->id, 'amount' => '300']]]);
+        $day = fn (int $ago) => now()->subDays($ago)->toDateString();
+        \App\Services\Ledger::post('sale', $day(400), 'Sale', [['account' => $old, 'debit' => '500'], ['account' => $sales, 'credit' => '500']]);
+        \App\Services\Ledger::post('receipt', $day(200), 'Paid a little', [['account' => $cash, 'debit' => '100'], ['account' => $old, 'credit' => '100']]);
+        \App\Services\Ledger::post('sale', $day(20), 'Sale', [['account' => $recent, 'debit' => '80'], ['account' => $sales, 'credit' => '80']]);
+        \App\Services\Ledger::post('sale', $day(100), 'Sale', [['account' => $never, 'debit' => '7000', 'base' => '100'], ['account' => $salesAfn, 'credit' => '7000', 'base' => '100']]);
 
-        $this->get(route('dead-cash.index'))->assertOk()->assertSee('Dead Cash')->assertSee('Write off money');
-        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $cash->id, 'amount' => '20', 'reason' => 'Two torn 10 dollar notes'])->assertRedirect(route('dead-cash.index'));
-        $this->assertSame('280.00', \App\Services\Ledger::balance($cash->id));
-        $this->assertSame('20.00', \App\Services\Ledger::balance(\App\Models\Account::system('dead_cash')->id));
-        $this->get(route('dead-cash.index'))->assertSee('Two torn 10 dollar notes')->assertSee('20.00 USD');
+        // 90 days and more: Haji Sharif (last paid 200 days ago) and Wali Store (never paid, owes for 100 days)
+        $page = $this->get(route('dead-cash.index'))->assertOk()->assertSee('Customers who owe us and have not paid for a long time.');
+        $page->assertSee('Haji Sharif')->assertSee('400.00 USD')->assertSee('0700111222')->assertSee('200 days')
+            ->assertSee('Wali Store')->assertSee('Never paid')->assertSee('100 days')->assertDontSee('Gul Agha');
+        $this->get(route('dead-cash.index', ['days' => 180]))->assertSee('Haji Sharif')->assertDontSee('Wali Store');
+        $this->get(route('dead-cash.index', ['days' => 30, 'currency' => $this->currency('AFN')->id]))->assertSee('Wali Store')->assertDontSee('Haji Sharif');
+        $this->get(route('dead-cash.index', ['export' => 'xlsx']))->assertOk();
 
-        // more than the account has is refused
-        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $cash->id, 'amount' => '1000', 'reason' => 'x'])->assertSessionHas('danger');
-        $this->assertSame('280.00', \App\Services\Ledger::balance($cash->id));
-
-        // cancelling gives the money back
+        // a debt that will never come back can be written off, and the write-off cancelled
+        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $old->id, 'amount' => '400', 'reason' => 'Left the country'])->assertRedirect(route('dead-cash.index'));
+        $this->assertSame('0.00', \App\Services\Ledger::balance($old->id));
+        $this->get(route('dead-cash.index'))->assertDontSee('400.00 USD</td>', false)->assertSee('Written off')->assertSee('Left the country');
+        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $never->id, 'amount' => '9000', 'reason' => 'x'])->assertSessionHas('danger');
+        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $cash->id, 'amount' => '10', 'reason' => 'x'])->assertSessionHas('danger');
         $entry = \App\Models\JournalEntry::where('type', 'dead_cash')->firstOrFail();
         $this->delete(route('dead-cash.destroy', ['id' => $entry->id]))->assertRedirect();
-        $this->assertSame('300.00', \App\Services\Ledger::balance($cash->id));
+        $this->assertSame('400.00', \App\Services\Ledger::balance($old->id));
     }
 
     public function test_last_months_profit_is_shared_by_itself_once(): void
