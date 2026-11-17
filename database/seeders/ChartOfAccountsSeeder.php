@@ -28,6 +28,7 @@ class ChartOfAccountsSeeder extends Seeder
         ['stock_adjustment', 'Stock loss or gain', 'expense'],
         ['exchange_diff', 'Exchange rate difference', 'expense'],
         ['production_cost', 'Production cost', 'expense'],
+        ['dead_cash', 'Dead cash (money written off)', 'expense'],
     ];
 
     public function run(): void

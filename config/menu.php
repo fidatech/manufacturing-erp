@@ -39,6 +39,7 @@ return [
         ['label' => 'Money Out', 'route' => 'money.create', 'params' => ['kind' => 'out'], 'can' => 'money.manage'],
         ['label' => 'Currency Exchange', 'route' => 'exchange.index', 'active' => 'exchange.*', 'can' => 'money.view'],
         ['label' => 'Transfers', 'route' => 'money.create', 'params' => ['kind' => 'transfer', 'group' => 'transfer'], 'can' => 'money.manage'],
+        ['label' => 'Dead Cash', 'route' => 'dead-cash.index', 'active' => 'dead-cash.*', 'can' => 'money.view'],
         ['label' => 'Petty Cash', 'route' => 'petty-cash', 'can' => 'money.view'],
     ]],
 

@@ -59,9 +59,10 @@
                         <td class="text-nowrap">{{ fmt_date($entry->date) }}</td>
                         <td class="text-nowrap">{{ $entry->number }}</td>
                         <td>{{ $types[$entry->type] ?? $entry->type }}@if ($entry->isVoid()) <span class="badge-soft danger">{{ __('Cancelled') }}</span>@endif</td>
-                        <td>{{ $entry->description }}</td>
+                        <td>{{ $entry->description }}@if ($entry->reference)<div class="small text-muted" dir="ltr">{{ __('Ref.') }} {{ $entry->reference }}</div>@endif</td>
                         <td>@include('partials.entry-lines')</td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-light-secondary" href="{{ route('money.receipt', ['id' => $entry->id]) }}" target="_blank" rel="noopener" title="{{ __('Print receipt') }}"><x-icon name="print" /></a>
                             @if (! $entry->isVoid() && ! $entry->source_type)
                                 @can('money.manage')
                                     <form method="POST" action="{{ route('money.destroy', ['id' => $entry->id]) }}" class="d-inline" data-confirm="{{ __('Cancel this entry?') }}" data-confirm-text="{{ __('It stays in the day book but no longer counts.') }}" data-confirm-ok="{{ __('Cancel it') }}">

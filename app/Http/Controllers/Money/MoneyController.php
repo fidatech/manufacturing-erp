@@ -142,6 +142,7 @@ class MoneyController extends Controller
             'lines.*.operation' => ['nullable', 'in:multiply,divide'],
             'lines.*.other_amount' => ['nullable', 'numeric', 'gt:0'],
             'description' => ['nullable', 'string', 'max:500'],
+            'reference' => ['nullable', 'string', 'max:100'],
         ], [], [
             'other_id' => __('account'), 'lines.*.money_id' => __('money account'), 'lines.*.amount' => __('amount'),
             'lines.*.other_amount' => __('amount in the other currency'), 'lines.*.rate' => __('exchange rate'),
@@ -192,11 +193,43 @@ class MoneyController extends Controller
 
         $description = trim(($data['description'] ?? '') ?: $this->heading($kind, $group).': '.$other->name.(count($parts) > 1 ? ' ('.implode(' + ', $parts).')' : ''));
 
-        $entry = DB::transaction(fn () => Ledger::post($type, $date, $description, $lines));
+        $entry = DB::transaction(function () use ($type, $date, $description, $lines, $data) {
+            $entry = Ledger::post($type, $date, $description, $lines);
+            if (! empty($data['reference'])) {
+                $entry->update(['reference' => trim($data['reference'])]);
+            }
+
+            return $entry;
+        });
         audit('created', $entry, $entry->number.' '.$description);
 
         return redirect()->to($request->input('return') === 'capital' ? route('capital') : route('money.index'))
             ->with('success', __('Saved as :number.', ['number' => $entry->number]));
+    }
+
+    /**
+     * The receipt of one money entry, ready for the printer. A payment to a supplier with a TT number
+     * is a "TT receipt"; money received is a receipt, money paid a payment voucher.
+     */
+    public function receipt(Request $request): View
+    {
+        Gate::authorize('money.view');
+
+        $entry = JournalEntry::with(['lines.account.currency', 'lines.account.type', 'creator'])->whereIn('type', self::TYPES)->findOrFail($request->route('id'));
+        $people = $entry->lines->filter(fn ($line) => ! $line->account->type->is_money || $entry->type === 'transfer');
+        $person = $entry->type === 'transfer' ? $entry->lines->first(fn ($line) => Num::isPositive($line->debit))?->account : $people->first()?->account;
+        $moneyLines = $entry->lines->filter(fn ($line) => $line->account->type->is_money && $line->account->id !== $person?->id);
+        $isTt = $entry->type === 'payment' && $person?->type->key === 'supplier' && $entry->reference;
+
+        return view('money.receipt', [
+            'entry' => $entry,
+            'person' => $person,
+            'personLine' => $entry->lines->first(fn ($line) => $line->account->id === $person?->id),
+            'moneyLines' => $moneyLines,
+            'title' => $isTt ? __('TT Receipt') : ($entry->type === 'receipt' ? __('Money Receipt') : __('Payment Voucher')),
+            'isTt' => $isTt,
+            'logo' => \App\Http\Controllers\Setup\CompanyController::logoDataUri(),
+        ]);
     }
 
     /** Share profit between the shareholders by their percentage. They take it out later with "Money out". */

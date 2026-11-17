@@ -19,6 +19,7 @@ use App\Http\Controllers\Items\ItemController;
 use App\Http\Controllers\Lab\LabTestController;
 use App\Http\Controllers\Money\CapitalController;
 use App\Http\Controllers\Money\ExchangeController;
+use App\Http\Controllers\Money\DeadCashController;
 use App\Http\Controllers\Money\JournalController;
 use App\Http\Controllers\Money\MoneyController;
 use App\Http\Controllers\Money\PettyCashController;
@@ -193,6 +194,10 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::get('money/{kind}/create', [MoneyController::class, 'create'])->name('money.create');
     Route::post('money/{kind}', [MoneyController::class, 'store'])->name('money.store');
     Route::delete('money/{id}', [MoneyController::class, 'destroy'])->name('money.destroy')->whereNumber('id');
+    Route::get('money/{id}/receipt', [MoneyController::class, 'receipt'])->name('money.receipt')->whereNumber('id');
+    Route::get('dead-cash', [DeadCashController::class, 'index'])->name('dead-cash.index');
+    Route::post('dead-cash', [DeadCashController::class, 'store'])->name('dead-cash.store');
+    Route::delete('dead-cash/{id}', [DeadCashController::class, 'destroy'])->name('dead-cash.destroy')->whereNumber('id');
     Route::get('day-book', [JournalController::class, 'index'])->name('journal.index');
     Route::get('day-book/create', [JournalController::class, 'create'])->name('journal.create');
     Route::post('day-book', [JournalController::class, 'store'])->name('journal.store');

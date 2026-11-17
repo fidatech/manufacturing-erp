@@ -95,4 +95,47 @@ class ClientChangesTest extends TestCase
         $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => '', 'amount' => '']]])->assertSessionHas('danger');
         $this->assertSame($count, \App\Models\JournalEntry::count());
     }
+
+    public function test_supplier_advance_prints_a_tt_receipt_with_its_number(): void
+    {
+        $this->admin();
+        $supplier = $this->account('supplier', 'Karachi Packing Co', 'USD');
+        $this->post(route('money.store', ['kind' => 'out']), ['date' => today_iso(), 'other_id' => $supplier->id, 'reference' => 'TT-88412', 'description' => 'Advance for cartons', 'lines' => [
+            ['money_id' => $this->cash('USD')->id, 'amount' => '500'],
+        ]])->assertRedirect();
+        $entry = \App\Models\JournalEntry::latest('id')->firstOrFail();
+        $this->assertSame('TT-88412', $entry->reference);
+
+        $this->get(route('money.index'))->assertSee('TT-88412')->assertSee(route('money.receipt', ['id' => $entry->id]), false);
+        $this->get(route('money.receipt', ['id' => $entry->id]))->assertOk()
+            ->assertSee('TT Receipt')->assertSee('TT number')->assertSee('TT-88412')->assertSee('Karachi Packing Co')->assertSee('500.00 USD');
+
+        // money in from a customer is a normal receipt
+        $customer = $this->account('customer', 'Haji Sharif', 'USD');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => $this->cash('USD')->id, 'amount' => '40']]]);
+        $this->get(route('money.receipt', ['id' => \App\Models\JournalEntry::latest('id')->value('id')]))->assertOk()->assertSee('Money Receipt')->assertDontSee('TT Receipt');
+    }
+
+    public function test_dead_cash_takes_lost_money_out_of_the_books(): void
+    {
+        $this->admin();
+        $cash = $this->cash('USD');
+        $customer = $this->account('customer', 'Haji Sharif', 'USD');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => $cash->id, 'amount' => '300']]]);
+
+        $this->get(route('dead-cash.index'))->assertOk()->assertSee('Dead Cash')->assertSee('Write off money');
+        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $cash->id, 'amount' => '20', 'reason' => 'Two torn 10 dollar notes'])->assertRedirect(route('dead-cash.index'));
+        $this->assertSame('280.00', \App\Services\Ledger::balance($cash->id));
+        $this->assertSame('20.00', \App\Services\Ledger::balance(\App\Models\Account::system('dead_cash')->id));
+        $this->get(route('dead-cash.index'))->assertSee('Two torn 10 dollar notes')->assertSee('20.00 USD');
+
+        // more than the account has is refused
+        $this->post(route('dead-cash.store'), ['date' => today_iso(), 'account_id' => $cash->id, 'amount' => '1000', 'reason' => 'x'])->assertSessionHas('danger');
+        $this->assertSame('280.00', \App\Services\Ledger::balance($cash->id));
+
+        // cancelling gives the money back
+        $entry = \App\Models\JournalEntry::where('type', 'dead_cash')->firstOrFail();
+        $this->delete(route('dead-cash.destroy', ['id' => $entry->id]))->assertRedirect();
+        $this->assertSame('300.00', \App\Services\Ledger::balance($cash->id));
+    }
 }

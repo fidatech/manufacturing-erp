@@ -14,6 +14,7 @@ class EntryType
             'expense' => [__('Expense'), 'warning'],
             'transfer' => [__('Transfer'), 'info'],
             'exchange' => [__('Currency exchange'), 'info'],
+            'dead_cash' => [__('Dead cash'), 'danger'],
             'profit' => [__('Profit paid'), 'warning'],
             'sale' => [__('Sale'), 'primary'],
             'sale_return' => [__('Sale return'), 'danger'],

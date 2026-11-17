@@ -101,7 +101,14 @@
                     @enderror
                 </div>
             @endif
-            <div class="col-12">
+            @if ($multi)
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="f-reference">{{ $group === 'supplier' ? __('TT number') : __('Reference / TT number') }}</label>
+                    <input type="text" class="form-control" id="f-reference" name="reference" value="{{ old('reference') }}" maxlength="100" dir="ltr">
+                    <div class="form-text">{{ __('The number of the bank or sarafi transfer, a cheque number … It is printed on the receipt.') }}</div>
+                </div>
+            @endif
+            <div class="col-12 {{ $multi ? 'col-md-8' : '' }}">
                 <label class="form-label" for="f-description">{{ __('Note') }}</label>
                 <input type="text" class="form-control" id="f-description" name="description" value="{{ old('description') }}" maxlength="500">
             </div>
