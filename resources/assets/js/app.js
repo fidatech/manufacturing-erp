@@ -450,6 +450,8 @@
     // The rates pop-up opens by itself when today has no rate yet: once after signing in
     // (remembered for this browser tab), so closing it does not bring it back on every page.
     (function () {
+        var again = $('.modal[data-open-now]');
+        if (again) ERP.showModal(again);
         var modal = $('#ratesModal[data-auto-open]');
         if (!modal) return;
         var day = modal.getAttribute('data-auto-open');

@@ -396,6 +396,8 @@ if (select.hasAttribute('data-search') || select.options.length >= 9) ERP.search
 });
 };
 (function () {
+var again = $('.modal[data-open-now]');
+if (again) ERP.showModal(again);
 var modal = $('#ratesModal[data-auto-open]');
 if (!modal) return;
 var day = modal.getAttribute('data-auto-open');

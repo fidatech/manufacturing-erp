@@ -336,7 +336,8 @@ class ModulesTest extends TestCase
         $cash = $this->cash('USD');
 
         // only shareholders can be chosen
-        $this->get(route('capital'))->assertOk()->assertSee('Partner A')->assertDontSee('Zaki');
+        $this->get(route('capital'))->assertOk()->assertSee('Partner A')->assertDontSee('Zaki')
+            ->assertSee('data-bs-target="#capitalModal"', false)->assertSee('id="capitalModal"', false)->assertDontSee('data-open-now', false);
 
         $this->post(route('money.store', ['kind' => 'in']), ['group' => 'shareholder', 'return' => 'capital', 'date' => '2026-01-01', 'money_id' => $cash->id, 'other_id' => $owner->id, 'amount' => '10000'])
             ->assertRedirect(route('capital'));
