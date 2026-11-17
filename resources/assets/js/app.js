@@ -673,9 +673,9 @@
             var body = $('[data-rows-body' + pick + ']', form);
             var template = $('[data-row-template' + pick + ']', form);
             if (!body || !template) return;
-            var holder = document.createElement('tbody');
+            var holder = document.createElement('template');
             holder.innerHTML = template.innerHTML.replace(/__i__/g, String(rowCounter++));
-            var row = holder.firstElementChild;
+            var row = holder.content.firstElementChild;
             body.appendChild(row);
             enhance(row);
             var first = $('input:not([type="hidden"]), select', row);
@@ -884,43 +884,105 @@
     $$('form[data-money-lines]').forEach(function (form) {
         var rates = {};
         try { rates = JSON.parse(form.getAttribute('data-rates') || '{}') || {}; } catch (err) { rates = {}; }
+        var kind = form.getAttribute('data-kind');
+        var texts = {};
+        try { texts = JSON.parse(form.getAttribute('data-texts') || '{}') || {}; } catch (err) { texts = {}; }
+        var t = function (key) { return texts[key] || key; };
         var other = $('select[name="other_id"]', form);
         var num = function (input) { var v = parseFloat(String(input ? input.value : '').replace(/,/g, '')); return isFinite(v) && v > 0 ? v : 0; };
         var show = function (v, d) { if (!(v > 0) || !isFinite(v)) return ''; var t = v.toFixed(d); if (d > 2) t = t.replace(/0+$/, '').replace(/\.$/, ''); return ERP.formatNumber(t); };
+        var money2 = function (v) { var neg = v < 0; return (neg ? '-' : '') + ERP.formatNumber(Math.abs(v).toFixed(2)); };
         var picked = function (select) { var o = select && select.options[select.selectedIndex]; return o && o.value ? o : null; };
+        var rows = function () { return $$('.money-line[data-row]', form); };
+        var setText = function (sel, text, scope) { $$(sel, scope || form).forEach(function (el) { el.textContent = text; }); };
+        // how a balance reads for this account: "owes us" / "we owe", and its colour
+        var describe = function (o, v) {
+            if (Math.abs(v) < 0.005) return { words: '', tone: 'is-zero' };
+            var pos = v > 0;
+            return { words: o.getAttribute(pos ? 'data-pos' : 'data-neg') || '', tone: o.getAttribute(pos ? 'data-pos-tone' : 'data-neg-tone') || '' };
+        };
         var line = function (row, from) {
             var money = picked($('select[data-money]', row));
             var person = picked(other);
             var amount = $('[data-line-amount]', row), rate = $('[data-line-rate]', row), op = $('[data-line-op]', row), out = $('[data-line-other]', row);
+            var mCur = money ? money.getAttribute('data-cur') : '', pCur = person ? person.getAttribute('data-cur') : '';
+            $('[data-line-cur]', row).textContent = mCur || '—';
+            // what is in the cash box now; money out cannot take more than that
+            var avail = $('[data-line-available]', row);
+            if (money) {
+                var bal = parseFloat(money.getAttribute('data-balance') || '0');
+                var short = kind === 'out' && num(amount) > bal + 0.004;
+                avail.textContent = (short ? t('Only') + ' ' : t('Balance') + ': ') + money2(bal) + ' ' + mCur;
+                avail.classList.toggle('is-short', short);
+            } else { avail.textContent = ''; avail.classList.remove('is-short'); }
             var same = !money || !person || money.getAttribute('data-cur-id') === person.getAttribute('data-cur-id');
             $('[data-line-rate-box]', row).hidden = same;
             $('[data-line-same]', row).hidden = !same || !money || !person;
-            if (from === 'other') { row.setAttribute('data-other-manual', ''); return; }
+            var hint = $('[data-line-rate-hint]', row);
+            if (from === 'other') { row.setAttribute('data-other-manual', ''); hint.textContent = ''; return; }
             if (from === 'rate') row.setAttribute('data-rate-manual', '');
-            if (same) { out.value = show(num(amount), 2); out.readOnly = !!money && !!person; return; }
+            if (same) { out.value = show(num(amount), 2); out.readOnly = !!money && !!person; hint.textContent = ''; return; }
             out.readOnly = false;
             if (!row.hasAttribute('data-rate-manual') || !rate.value) {
                 var m = parseFloat(rates[money.getAttribute('data-cur-id')]), p = parseFloat(rates[person.getAttribute('data-cur-id')]);
                 if (m > 0 && p > 0) { op.value = p >= m ? 'multiply' : 'divide'; rate.value = show(p >= m ? p / m : m / p, 6); }
             }
+            var r = num(rate);
+            hint.textContent = r ? (op.value === 'divide' ? '1 ' + pCur + ' = ' + show(r, 6) + ' ' + mCur : '1 ' + mCur + ' = ' + show(r, 6) + ' ' + pCur) : '';
             if (row.hasAttribute('data-other-manual') && from !== 'rate' && from !== 'amount') return;
             row.removeAttribute('data-other-manual');
-            var r = num(rate), a = num(amount);
+            var a = num(amount);
             out.value = a && r ? show(op.value === 'divide' ? a / r : a * r, 2) : '';
         };
         var total = function () {
-            var sum = 0;
-            $$('[data-line-other]', form).forEach(function (i) { sum += num(i); });
-            var t = $('[data-lines-total]', form);
-            if (t) t.textContent = ERP.formatNumber(sum.toFixed(2));
+            var sum = 0, list = [];
             var person = picked(other);
-            $$('[data-cur-label="other"]', form).forEach(function (el) { el.textContent = person ? '(' + person.getAttribute('data-cur') + ')' : ''; });
+            var pCur = person ? person.getAttribute('data-cur') : '';
+            rows().forEach(function (row) {
+                var v = num($('[data-line-other]', row));
+                sum += v;
+                var money = picked($('select[data-money]', row)), a = num($('[data-line-amount]', row));
+                if (money && a) list.push([show(a, 2) + ' ' + money.getAttribute('data-cur'), v ? show(v, 2) + ' ' + pCur : '', money.getAttribute('data-cur') !== pCur]);
+            });
+            var totalEl = $('[data-lines-total]', form);
+            if (totalEl) totalEl.textContent = ERP.formatNumber(sum.toFixed(2));
+            setText('[data-person-cur]', pCur || '—');
+            // the person's account before and after this entry
+            var card = $('[data-person-card]', form);
+            if (card) card.hidden = !person;
+            setText('[data-sum-person]', person ? person.textContent.split(' · ')[0] : t('Choose who first'));
+            if (!person) { ['[data-sum-now]', '[data-sum-this]', '[data-sum-after]', '[data-sum-words]'].forEach(function (s) { setText(s, s === '[data-sum-words]' ? '' : '—'); }); }
+            else {
+                var now = parseFloat(person.getAttribute('data-balance') || '0');
+                var after = kind === 'in' ? now - sum : now + sum;
+                var dn = describe(person, now), da = describe(person, after);
+                setText('[data-person-cur-badge]', pCur);
+                var nowEl = $('[data-person-now]', form);
+                if (nowEl) { nowEl.textContent = t('Balance now') + ': ' + ERP.formatNumber(Math.abs(now).toFixed(2)) + ' ' + pCur + (dn.words ? ' · ' + dn.words : ''); nowEl.className = 'me-person-bal ' + dn.tone; }
+                var sumNow = $('[data-sum-now]', form), sumAfter = $('[data-sum-after]', form);
+                sumNow.textContent = ERP.formatNumber(Math.abs(now).toFixed(2)) + ' ' + pCur; sumNow.className = dn.tone;
+                setText('[data-sum-this]', (kind === 'in' ? '− ' : '+ ') + ERP.formatNumber(sum.toFixed(2)) + ' ' + pCur);
+                sumAfter.textContent = ERP.formatNumber(Math.abs(after).toFixed(2)) + ' ' + pCur; sumAfter.className = da.tone;
+                var words = $('[data-sum-words]', form);
+                words.textContent = Math.abs(after) < 0.005 ? t('Settled: nothing left between you.') : (da.words ? da.words.charAt(0).toUpperCase() + da.words.slice(1) + ' ' + ERP.formatNumber(Math.abs(after).toFixed(2)) + ' ' + pCur : '');
+                words.className = 'ms-words ' + da.tone;
+            }
+            var ul = $('[data-sum-lines]', form);
+            if (ul) {
+                ul.innerHTML = '';
+                list.forEach(function (it) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('span'); a.textContent = it[0]; li.appendChild(a);
+                    if (it[2] && it[1]) { var b = document.createElement('span'); b.className = 'ms-conv'; b.textContent = '→ ' + it[1]; li.appendChild(b); }
+                    ul.appendChild(li);
+                });
+            }
         };
-        var all = function (from) { $$('tr[data-row]', form).forEach(function (row) { line(row, from); }); total(); };
+        var all = function (from) { rows().forEach(function (row) { line(row, from); }); total(); };
         // choosing the person fills the first empty line with the cash box of the same currency
         var pickCash = function () {
             var person = picked(other);
-            var first = $('tr[data-row] select[data-money]', form);
+            var first = $('.money-line[data-row] select[data-money]', form);
             if (!person || !first || first.value) return;
             var match = null;
             Array.prototype.forEach.call(first.options, function (o) {
@@ -930,14 +992,14 @@
             if (match) { first.value = match.value; if (first._ssSync) first._ssSync(); }
         };
         form.addEventListener('input', function (e) {
-            var row = e.target.closest('tr[data-row]');
+            var row = e.target.closest('.money-line[data-row]');
             if (!row) return;
             line(row, e.target.hasAttribute('data-line-other') ? 'other' : (e.target.hasAttribute('data-line-rate') ? 'rate' : 'amount'));
             total();
         });
         form.addEventListener('change', function (e) {
             if (e.target === other) { pickCash(); all('person'); return; }
-            var row = e.target.closest('tr[data-row]');
+            var row = e.target.closest('.money-line[data-row]');
             if (!row) return;
             if (e.target.hasAttribute('data-money')) row.removeAttribute('data-rate-manual');
             line(row, e.target.hasAttribute('data-line-op') ? 'rate' : 'money');

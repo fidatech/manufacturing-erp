@@ -102,13 +102,18 @@ class MoneyController extends Controller
         $kind = $this->kind($request);
         $group = $this->group($request);
 
+        $moneyAccounts = Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get();
+        $others = $this->others($kind, $group);
+
         return view('money.form', [
             'kind' => $kind,
             'group' => $group,
             'quickOther' => $this->quickOther($kind, $group),
             'heading' => $this->heading($kind, $group),
-            'moneyAccounts' => Account::money()->active()->with(['currency', 'type'])->orderBy('name')->get(),
-            'others' => $this->others($kind, $group),
+            'moneyAccounts' => $moneyAccounts,
+            'others' => $others,
+            // balance of every account on the screen, shown while choosing
+            'balances' => Ledger::balances($moneyAccounts->pluck('id')->merge($others->pluck('id'))->all()),
             'base' => Rates::base()->code,
             'rates' => \App\Services\ExchangeService::ratesOn(old('date') ?: today_iso()),
         ]);

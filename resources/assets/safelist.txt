@@ -7,7 +7,7 @@
 #r-eye #r-eye-slash
 
 # toast colours are built in JavaScript as "is-" + type
-is-success is-danger is-warning is-info
+is-success is-danger is-warning is-info is-short is-in is-out
 
 # screen icons chosen in PHP lists (AccountController::SCREENS, ItemController)
 #s-user-group #s-truck-field #s-building-columns #s-money-bill-transfer #s-vault #s-handshake

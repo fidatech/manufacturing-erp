@@ -66,7 +66,8 @@ class ClientChangesTest extends TestCase
         $this->rate('AFN', '70', today_iso());
         $customer = $this->account('customer', 'Haji Sharif', 'AFN');
 
-        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-money-lines', false)->assertSee('Add another currency');
+        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-money-lines', false)->assertSee('Add another currency')
+            ->assertSee('Balance after')->assertSee('data-balance=', false)->assertSee('data-pos="owes us"', false);
 
         // 100 dollars at 71 afghani each, and 3,000 afghani in cash: 10,100 afghani off his account
         $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [
