@@ -181,6 +181,7 @@ Route::middleware('auth')->group(function () use ($crud) {
 
     // Money and day book
     Route::get('money', [MoneyController::class, 'index'])->name('money.index');
+    Route::get('expenses', [\App\Http\Controllers\Money\ExpenseController::class, 'index'])->name('expenses.index');
     Route::get('petty-cash', PettyCashController::class)->name('petty-cash');
     Route::get('capital', CapitalController::class)->name('capital');
     Route::get('exchange', [ExchangeController::class, 'index'])->name('exchange.index');

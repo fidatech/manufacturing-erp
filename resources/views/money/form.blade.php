@@ -19,7 +19,8 @@
 @endphp
 
 @section('content')
-<x-page-header :title="$heading" icon="money-bill-wave" :crumbs="[[__('Money'), route('money.index')], [$heading]]" />
+@php $back = $kind === 'expense' ? route('expenses.index') : route('money.index'); @endphp
+<x-page-header :title="$heading" icon="money-bill-wave" :crumbs="[[$kind === 'expense' ? __('Expenses') : __('Money'), $back], [$heading]]" />
 
 <form method="POST" action="{{ route('money.store', ['kind' => $kind]) }}" class="money-entry" @if ($multi) data-money-lines data-kind="{{ $kind }}" data-rates="{{ json_encode($rates) }}" data-texts="{{ json_encode(['Only' => __('Only'), 'Balance' => __('Balance'), 'Balance now' => __('Balance now'), 'Choose who first' => __('Choose who first'), 'Settled: nothing left between you.' => __('Settled: nothing left between you.')]) }}" @else data-money-form @endif>
     @csrf
@@ -147,7 +148,7 @@
                 </div>
                 @unless ($multi)
                     <div class="card-footer d-flex gap-2 justify-content-end">
-                        <a class="btn btn-light-secondary" href="{{ route('money.index') }}">{{ __('Cancel') }}</a>
+                        <a class="btn btn-light-secondary" href="{{ $back }}">{{ __('Cancel') }}</a>
                         <button type="submit" class="btn btn-primary"><x-icon name="check" class="me-1" /> {{ __('Save') }}</button>
                     </div>
                 @endunless
@@ -176,7 +177,7 @@
                     </div>
                     <div class="card-footer d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg"><x-icon name="check" class="me-1" /> {{ __('Save') }}</button>
-                        <a class="btn btn-light-secondary" href="{{ route('money.index') }}">{{ __('Cancel') }}</a>
+                        <a class="btn btn-light-secondary" href="{{ $back }}">{{ __('Cancel') }}</a>
                     </div>
                 </div>
             </div>

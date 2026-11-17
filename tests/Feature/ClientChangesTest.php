@@ -23,11 +23,17 @@ class ClientChangesTest extends TestCase
         $this->post(route('money.store', ['kind' => 'expense']), ['date' => '2026-10-20', 'money_id' => $this->cash('AFN')->id, 'other_id' => $fuel->id, 'amount' => '7000', 'description' => 'Generator diesel']);
         $this->post(route('money.store', ['kind' => 'expense']), ['date' => '2026-11-02', 'money_id' => $this->cash('USD')->id, 'other_id' => $rent->id, 'amount' => '300', 'description' => 'November rent']);
 
-        $list = fn (array $query) => $this->get(route('money.index', ['type' => 'expense'] + $query))->assertOk();
-        $list([])->assertSee('All categories')->assertSee('All currencies')->assertSee('October rent')->assertSee('Generator diesel')->assertSee('700.00 USD');
+        $list = fn (array $query) => $this->get(route('expenses.index', $query + ['from' => '2026-10-01', 'to' => '2026-11-30']))->assertOk();
+        $list([])->assertSee('Expenses')->assertSee('By category')->assertSee('New expense')->assertSee('All categories')->assertSee('All currencies')->assertSee('October rent')->assertSee('Generator diesel')->assertSee('700.00 USD');
         $list(['category' => $rent->id])->assertSee('October rent')->assertSee('November rent')->assertDontSee('Generator diesel')->assertSee('600.00 USD');
         $list(['currency' => $this->currency('AFN')->id])->assertSee('Generator diesel')->assertDontSee('October rent')->assertSee('100.00 USD');
         $list(['from' => '2026-10-01', 'to' => '2026-10-31'])->assertSee('October rent')->assertSee('Generator diesel')->assertDontSee('November rent');
+        $this->get(route('expenses.index', ['from' => '2026-10-01', 'to' => '2026-11-30', 'export' => 'xlsx']))->assertOk();
+
+        // the money page no longer mixes expenses in; its old link opens the expenses page
+        $this->get(route('money.index'))->assertOk()->assertDontSee('October rent')->assertDontSee('Expense category');
+        $this->get(route('money.index', ['type' => 'expense']))->assertRedirect(route('expenses.index'));
+        $this->post(route('money.store', ['kind' => 'expense']), ['date' => '2026-11-03', 'money_id' => $this->cash('USD')->id, 'other_id' => $rent->id, 'amount' => '5', 'description' => 'Lock'])->assertRedirect(route('expenses.index'));
     }
 
     public function test_employee_documents_are_kept_inside_human_resources(): void

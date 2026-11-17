@@ -24,15 +24,6 @@
                 </select>
             </div>
             <div class="col-6 col-md-auto">
-                <label class="form-label small mb-1">{{ __('Expense category') }}</label>
-                <select class="form-select" name="category">
-                    <option value="">{{ __('All categories') }}</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}" @selected((string) ($filters['category'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-6 col-md-auto">
                 <label class="form-label small mb-1">{{ __('Currency') }}</label>
                 <select class="form-select" name="currency">
                     <option value="">{{ __('All currencies') }}</option>
@@ -44,12 +35,6 @@
             <div class="col-auto"><button class="btn btn-light-secondary" type="submit">{{ __('Show') }}</button></div>
         </form>
 
-        @if ($spent !== null)
-            <div class="alert alert-light border d-flex justify-content-between flex-wrap gap-2 mb-3">
-                <span>{{ __('Expenses shown, in :base', ['base' => $base]) }}</span>
-                <strong class="fs-5">{{ money($spent, $base) }}</strong>
-            </div>
-        @endif
 
         <table class="table table-hover w-100">
             <thead><tr><th>{{ __('Date') }}</th><th>{{ __('No.') }}</th><th>{{ __('Kind') }}</th><th>{{ __('Details') }}</th><th>{{ __('Accounts') }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>

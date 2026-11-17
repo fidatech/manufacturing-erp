@@ -1171,5 +1171,13 @@
     "Write off :name": ":name سوځول",
     "Use this only when the money will never come back. It is taken off the customer's account and counted as a loss.": "یوازې هغه وخت یې وکاروئ چې پیسې هېڅکله بېرته نه راځي. د مشتري له حساب کمېږي او د تاوان په توګه حسابېږي.",
     "e.g. the customer left the country": "لکه مشتري له هېواده ووت",
-    "Choose a customer.": "یو مشتري وټاکئ."
+    "Choose a customer.": "یو مشتري وټاکئ.",
+    "Money spent on rent, fuel, salaries and other costs.": "هغه پیسې چې په کرایه، تېلو، معاشونو او نورو لګښتونو لګول شوې.",
+    "New expense": "نوی لګښت",
+    "Paid in": "ورکړل شوې په",
+    "Spent from :from to :to": "لګښت له :from تر :to",
+    ":count expense|:count expenses": ":count لګښت|:count لګښتونه",
+    "By category (:base)": "د ډلې له مخې (:base)",
+    "No expenses in these days.": "په دې ورځو کې لګښت نشته.",
+    "Amount (:base)": "اندازه (:base)"
 }

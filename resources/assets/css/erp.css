@@ -441,3 +441,8 @@
 .btn-light-danger:hover, .btn-light-danger:focus { background: var(--danger); color: #fff; }
 .btn-light-success { background: rgba(var(--success-rgb), .12); border: 1px solid transparent; color: var(--success); }
 .btn-light-success:hover, .btn-light-success:focus { background: var(--success); color: #fff; }
+
+/* expenses by category */
+.exp-cat + .exp-cat { margin-top: 12px; }
+.exp-bar { height: 6px; border-radius: 6px; background: var(--hover); margin-top: 6px; overflow: hidden; }
+.exp-bar > span { display: block; height: 100%; border-radius: 6px; background: var(--danger); opacity: .75; }

@@ -1171,5 +1171,13 @@
     "Write off :name": "سوخت کردن :name",
     "Use this only when the money will never come back. It is taken off the customer's account and counted as a loss.": "فقط زمانی استفاده کنید که پول هرگز برنمی‌گردد. از حساب مشتری کم و به عنوان زیان حساب می‌شود.",
     "e.g. the customer left the country": "مثلاً مشتری کشور را ترک کرد",
-    "Choose a customer.": "یک مشتری انتخاب کنید."
+    "Choose a customer.": "یک مشتری انتخاب کنید.",
+    "Money spent on rent, fuel, salaries and other costs.": "پولی که برای کرایه، تیل، معاشات و سایر مصارف خرج شده.",
+    "New expense": "مصرف جدید",
+    "Paid in": "پرداخت به",
+    "Spent from :from to :to": "مصرف از :from تا :to",
+    ":count expense|:count expenses": ":count مصرف|:count مصرف",
+    "By category (:base)": "به تفکیک دسته (:base)",
+    "No expenses in these days.": "در این روزها مصرفی نیست.",
+    "Amount (:base)": "مبلغ (:base)"
 }

@@ -231,7 +231,7 @@ class ModulesTest extends TestCase
         $this->get(route('permissions'))->assertOk()->assertSee('Administrator');
         $this->get(route('assets.write-off', ['kind' => 'depreciation']))->assertOk();
         $this->get(route('assets.write-off', ['kind' => 'amortization']))->assertOk();
-        $this->get(route('money.index', ['type' => 'expense']))->assertOk();
+        $this->get(route('expenses.index'))->assertOk();
     }
 
     public function test_depreciation_and_amortization_are_run_separately(): void
@@ -361,7 +361,7 @@ class ModulesTest extends TestCase
             [route('sales.index', ['type' => 'invoice', 'view' => 'dispatch']), 'Dispatch Planning'],
             [route('purchases.index', ['type' => 'invoice', 'view' => 'grn']), 'Goods Received Notes'],
             [route('money.index'), 'Transactions'],
-            [route('money.index', ['type' => 'expense']), 'Expenses'],
+            [route('expenses.index'), 'Expenses'],
             [route('money.create', ['kind' => 'in']), 'Money In'],
             [route('money.create', ['kind' => 'out', 'group' => 'shareholder']), 'Withdrawals'],
             [route('exchange.index'), 'Currency Exchange'],

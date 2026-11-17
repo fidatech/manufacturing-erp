@@ -51,7 +51,7 @@ return [
         ['label' => 'Liability Payments', 'route' => 'money.create', 'params' => ['kind' => 'out', 'group' => 'liability'], 'can' => 'money.manage'],
         ['label' => 'Depreciation', 'route' => 'assets.write-off', 'params' => ['kind' => 'depreciation'], 'can' => 'assets.view'],
         ['label' => 'Amortization', 'route' => 'assets.write-off', 'params' => ['kind' => 'amortization'], 'can' => 'assets.view'],
-        ['label' => 'Expenses', 'route' => 'money.index', 'params' => ['type' => 'expense'], 'can' => 'money.view'],
+        ['label' => 'Expenses', 'route' => 'expenses.index', 'can' => 'money.view'],
         ['label' => 'Day Book (Roznamcha)', 'route' => 'journal.index', 'active' => 'journal.*', 'can' => 'journal.view'],
     ]],
 
