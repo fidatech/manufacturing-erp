@@ -97,7 +97,7 @@ class MoneyTest extends TestCase
         $this->assertSame('300.00', Ledger::balance($rent->id));
         $this->assertBooksBalance();
 
-        $this->get(route('money.index'))->assertOk()->assertSee('October rent');
+        $this->get(route('expenses.index', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()->assertSee('October rent');
         $this->get(route('journal.index', ['from' => '2026-10-27', 'to' => '2026-10-27']))->assertOk()->assertSee('October rent');
 
         // an expense must go to an expense category
