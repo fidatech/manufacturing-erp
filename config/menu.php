@@ -26,7 +26,6 @@ return [
     ['label' => 'Accounts', 'icon' => 'address-book', 'children' => [
         ['label' => 'Cash', 'route' => 'accounts.index', 'params' => ['type' => 'cash'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Customers', 'route' => 'accounts.index', 'params' => ['type' => 'customer'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
-        ['label' => 'Customer Categories', 'route' => 'lookups.index', 'params' => ['type' => 'customer_category'], 'active' => 'lookups.*', 'can' => 'accounts.view'],
         ['label' => 'Suppliers', 'route' => 'accounts.index', 'params' => ['type' => 'supplier'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Banks', 'route' => 'accounts.index', 'params' => ['type' => 'bank'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Sarafi', 'route' => 'accounts.index', 'params' => ['type' => 'sarafi'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
@@ -165,6 +164,7 @@ return [
         ['label' => 'Product Categories', 'route' => 'item-categories.index', 'active' => 'item-categories.*', 'can' => 'items.view'],
         ['label' => 'Expense Categories', 'route' => 'accounts.index', 'params' => ['type' => 'expense'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Income Categories', 'route' => 'accounts.index', 'params' => ['type' => 'income'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
+        ['label' => 'Customer Categories', 'route' => 'lookups.index', 'params' => ['type' => 'customer_category'], 'active' => 'lookups.*', 'can' => 'accounts.view'],
         ['label' => 'Asset Categories', 'route' => 'lookups.index', 'params' => ['type' => 'asset_category'], 'active' => 'lookups.*', 'can' => 'setup.view'],
         ['label' => 'Units', 'route' => 'units.index', 'active' => 'units.*', 'can' => 'setup.view'],
         ['label' => 'Account Types', 'route' => 'account-types.index', 'active' => 'account-types.*', 'can' => 'setup.view'],
