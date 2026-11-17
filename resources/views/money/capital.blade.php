@@ -11,13 +11,9 @@
     <div class="col-6 col-xl-3"><div class="card stat-card mb-0"><div class="sc-top"><div><div class="sc-label">{{ __('Capital put in') }}</div><div class="sc-value">{{ money($cards['in']) }}</div></div><span class="sc-icon icon-soft success"><x-icon name="arrow-down" /></span></div><div class="sc-foot">{{ $base }}</div></div></div>
     <div class="col-6 col-xl-3"><div class="card stat-card mb-0"><div class="sc-top"><div><div class="sc-label">{{ __('Taken out') }}</div><div class="sc-value">{{ money($cards['out']) }}</div></div><span class="sc-icon icon-soft danger"><x-icon name="arrow-up" /></span></div><div class="sc-foot">{{ $base }}</div></div></div>
     <div class="col-6 col-xl-3"><div class="card stat-card mb-0"><div class="sc-top"><div><div class="sc-label">{{ __('Profit shared') }}</div><div class="sc-value">{{ money($cards['profit']) }}</div></div><span class="sc-icon icon-soft warning"><x-icon name="chart-pie" /></span></div><div class="sc-foot">{{ $base }}</div></div></div>
-    <div class="col-6 col-xl-3"><div class="card stat-card mb-0"><div class="sc-top"><div><div class="sc-label">{{ __('Owners\' money in   <button type="submit" class="btn btn-primary w-100"><x-icon name="check" class="me-1" /> {{ __('Save capital') }}</button>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </form>
-@endcan
+    <div class="col-6 col-xl-3"><div class="card stat-card mb-0"><div class="sc-top"><div><div class="sc-label">{{ __('Owners\' money in the company now') }}</div><div class="sc-value">{{ money($cards['balance']) }}</div></div><span class="sc-icon icon-soft primary"><x-icon name="handshake" /></span></div><div class="sc-foot">{{ $base }}</div></div></div>
+</div>
+
 
 <div class="card mb-4">
     <div class="card-header"><h5 class="card-title">{{ __('Capital received') }}</h5></div>
@@ -76,7 +72,7 @@
 </div>
 @can('money.manage')
     {{-- opens again by itself when the form came back with an error --}}
-    <div class="modal fade" id="capitalModal" tabindex="-1" aria-hidden="true" @if ($errors->any()) data-open-now @endif>
+    <div class="modal fade" id="capitalModal" tabindex="-1" aria-hidden="true"{!! $errors->any() ? ' data-open-now' : '' !!}>
         <div class="modal-dialog modal-dialog-centered modal-lg">
         <form method="POST" action="{{ route('money.store', ['kind' => 'in']) }}" class="modal-content" data-money-form data-auto-money>
             @csrf

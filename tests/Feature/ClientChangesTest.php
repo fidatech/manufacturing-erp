@@ -96,6 +96,29 @@ class ClientChangesTest extends TestCase
         $this->assertSame($count, \App\Models\JournalEntry::count());
     }
 
+    public function test_customer_and_supplier_paid_in_other_currencies_are_converted_to_their_own(): void
+    {
+        $this->admin();
+        $this->rate('AFN', '70', today_iso());
+
+        // AFN customer pays 100 USD: the dollars go to the USD cash box, his AFN account goes down by 7,000
+        $customer = $this->account('customer', 'Haji Sharif', 'AFN');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [
+            ['money_id' => $this->cash('USD')->id, 'amount' => '100'],
+        ]])->assertRedirect();
+        $this->assertSame('-7000.00', \App\Services\Ledger::balance($customer->id));
+        $this->assertSame('100.00', \App\Services\Ledger::balance($this->cash('USD')->id));
+
+        // USD supplier, no dollars in cash: 14,000 AFN paid, divided by 70 = 200 USD off what we owe him
+        $supplier = $this->account('supplier', 'Karachi Packing Co', 'USD');
+        $this->post(route('money.store', ['kind' => 'in']), ['date' => today_iso(), 'other_id' => $customer->id, 'lines' => [['money_id' => $this->cash('AFN')->id, 'amount' => '20000']]]);
+        $this->post(route('money.store', ['kind' => 'out']), ['date' => today_iso(), 'other_id' => $supplier->id, 'lines' => [
+            ['money_id' => $this->cash('AFN')->id, 'amount' => '14,000', 'rate' => '70', 'operation' => 'divide'],
+        ]])->assertRedirect();
+        $this->assertSame('200.00', \App\Services\Ledger::balance($supplier->id));
+        $this->assertSame('6000.00', \App\Services\Ledger::balance($this->cash('AFN')->id));
+    }
+
     public function test_supplier_advance_prints_a_tt_receipt_with_its_number(): void
     {
         $this->admin();
