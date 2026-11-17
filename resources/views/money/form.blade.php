@@ -134,7 +134,7 @@
                     <div class="row g-3">
                         @if ($multi)
                             <div class="col-12 col-md-5">
-                                <label class="form-label" for="f-reference">{{ $group === 'supplier' ? __('TT number') : __('Reference / TT number') }}</label>
+                                <label class="form-label" for="f-reference">{{ $group === 'supplier' ? __('TT number') : __('Reference') }}</label>
                                 <input type="text" class="form-control" id="f-reference" name="reference" value="{{ old('reference') }}" maxlength="100" dir="ltr">
                                 <div class="form-text">{{ __('The number of the bank or sarafi transfer, a cheque number … It is printed on the receipt.') }}</div>
                             </div>
