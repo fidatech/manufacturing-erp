@@ -15,6 +15,16 @@ class Account extends Model
 
     protected $casts = ['meta' => 'array', 'is_active' => 'boolean'];
 
+    protected static function booted(): void
+    {
+        // every account gets its chart of accounts code by itself (see App\Support\AccountCodes)
+        static::creating(function (Account $account) {
+            if (blank($account->code)) {
+                $account->code = \App\Support\AccountCodes::for($account);
+            }
+        });
+    }
+
     public function type(): BelongsTo
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');

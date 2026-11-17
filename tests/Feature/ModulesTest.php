@@ -401,6 +401,22 @@ class ModulesTest extends TestCase
         $this->put(route('company.update'), ['logo' => UploadedFile::fake()->create('logo.pdf', 50, 'application/pdf')])->assertSessionHasErrors('logo');
 
         $this->put(route('company.update'), ['company_name' => 'Kanozay Foods', 'remove_logo' => '1'])->assertRedirect();
+
+        // a black and white logo for papers: printed instead of the colour one, which stays in the menu
+        $this->put(route('company.update'), ['company_name' => 'Kanozay Foods', 'logo' => UploadedFile::fake()->image('logo.png', 120, 60)])->assertRedirect();
+        $colour = \App\Http\Controllers\Setup\CompanyController::logoDataUri();
+        $this->put(route('company.update'), ['company_name' => 'Kanozay Foods', 'company_address' => 'Bagrami, Kabul', 'company_address_local' => 'بگرامی، کابل',
+            'print_logo' => UploadedFile::fake()->image('bw.png', 90, 40)])->assertRedirect();
+        $this->get(route('company.logo', ['print' => 1]))->assertOk();
+        $this->assertNotSame($colour, \App\Http\Controllers\Setup\CompanyController::logoDataUri());
+        $this->get(route('company.edit'))->assertOk()->assertSee('Black and white logo for papers')->assertSee('بگرامی، کابل');
+        $this->get(route('reports.profit', ['print' => 1]))->assertOk()->assertSee('Bagrami, Kabul')->assertDontSee('بگرامی، کابل');
+        // in Dari the paper shows the Dari address
+        $this->post(route('preferences.locale'), ['locale' => 'fa']);
+        $this->get(route('reports.profit', ['print' => 1]))->assertOk()->assertSee('بگرامی، کابل');
+        $this->post(route('preferences.locale'), ['locale' => 'en']);
+        $this->put(route('company.update'), ['company_name' => 'Kanozay Foods', 'remove_print_logo' => '1', 'remove_logo' => '1'])->assertRedirect();
+        $this->get(route('company.logo', ['print' => 1]))->assertNotFound();
         $this->get(route('company.logo'))->assertNotFound();
     }
 

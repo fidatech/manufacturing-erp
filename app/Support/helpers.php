@@ -130,3 +130,14 @@ if (! function_exists('per_page')) {
         return request()->boolean('print') || request()->filled('export') ? 5000 : $usual;
     }
 }
+
+if (! function_exists('company_address')) {
+    /** The company's address for a paper: the Dari / Pashto one when the page reads right to left. */
+    function company_address(): ?string
+    {
+        $local = setting('company_address_local');
+        $english = setting('company_address');
+
+        return text_dir() === 'rtl' ? ($local ?: $english) : ($english ?: $local);
+    }
+}

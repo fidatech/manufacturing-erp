@@ -60,8 +60,8 @@
             @if (setting('company_phone'))
                 <div class="muted">{{ __('Phone') }}: <span dir="ltr">{{ setting('company_phone') }}</span></div>
             @endif
-            @if (setting('company_address'))
-                <div class="muted">{{ __('Address') }}: {{ setting('company_address') }}</div>
+            @if (company_address())
+                <div class="muted">{{ __('Address') }}: {{ company_address() }}</div>
             @endif
         </div>
     </div>

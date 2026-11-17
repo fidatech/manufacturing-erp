@@ -29,7 +29,7 @@ class AccountController extends CrudController
 
     protected string $singular = 'Account';
 
-    protected array $search = ['name', 'phone', 'company'];
+    protected array $search = ['name', 'code', 'phone', 'company'];
 
     protected array $with = ['currency', 'type'];
 
@@ -249,6 +249,7 @@ class AccountController extends CrudController
     {
         $type = $this->type();
         $columns = [
+            'Code' => fn (Account $a) => $a->code,
             'Name' => fn (Account $a) => $a->name.($a->company ? ' · '.$a->company : ''),
             'Currency' => fn (Account $a) => $a->currency->code,
         ];

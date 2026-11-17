@@ -50,6 +50,9 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #111;padding:6p
         </div>
         <div class="r">
             <div class="fa" dir="rtl">{{ setting('company_name_local') }}</div>
+            @if (setting('company_address_local'))
+                <div class="muted" dir="rtl">{{ setting('company_address_local') }}</div>
+            @endif
             <div><strong>{{ $names[0] }}</strong> · <span dir="rtl">{{ $names[1] }}</span></div>
         </div>
     </div>

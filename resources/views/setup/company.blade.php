@@ -37,6 +37,23 @@
                 @enderror
                 <div class="form-text">{{ __('PNG, JPG or WebP, up to 300 KB. It is shown in the menu and printed on bills.') }}</div>
             </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label" for="f-print-logo">{{ __('Black and white logo for papers') }}</label>
+                <input type="file" class="form-control @error('print_logo') is-invalid @enderror" id="f-print-logo" name="print_logo" accept="image/png,image/jpeg,image/webp">
+                @error('print_logo')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+                <div class="form-text">{{ __('Printed on receipts, bills, statements and reports instead of the colour logo. Without it the colour logo is printed.') }}</div>
+            </div>
+            @if ($hasPrintLogo)
+                <div class="col-12 col-md-6">
+                    <img src="{{ \App\Http\Controllers\Setup\CompanyController::printLogoUrl() }}" alt="{{ __('Black and white logo for papers') }}" class="erp-logo-preview">
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="f-remove-print-logo" name="remove_print_logo" value="1">
+                        <label class="form-check-label" for="f-remove-print-logo">{{ __('Remove the black and white logo') }}</label>
+                    </div>
+                </div>
+            @endif
             @if ($hasLogo)
                 <div class="col-12 col-md-6">
                     <img src="{{ \App\Http\Controllers\Setup\CompanyController::logoUrl() }}" alt="{{ __('Logo') }}" class="erp-logo-preview">

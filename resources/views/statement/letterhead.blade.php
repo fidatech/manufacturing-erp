@@ -2,7 +2,7 @@
     Company heading of a printed statement or report. Hidden on the screen, shown on paper.
     $heading = name of the paper, $period = the dates it covers, $note = small extra line.
 --}}
-@php $logo = \App\Http\Controllers\Setup\CompanyController::logoUrl(); @endphp
+@php $logo = \App\Http\Controllers\Setup\CompanyController::printLogoUrl(); @endphp
 <div class="letterhead">
     <div class="letterhead-company">
         @if ($logo)
@@ -13,7 +13,7 @@
             @if (setting('company_name_local'))
                 <div class="letterhead-local" dir="auto">{{ setting('company_name_local') }}</div>
             @endif
-            <div class="letterhead-contact">{{ implode(' · ', array_filter([setting('company_phone'), setting('company_email'), setting('company_address')])) }}</div>
+            <div class="letterhead-contact">{{ implode(' · ', array_filter([setting('company_phone'), setting('company_email'), company_address()])) }}</div>
         </div>
     </div>
     <div class="letterhead-doc">

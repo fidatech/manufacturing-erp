@@ -24,7 +24,7 @@ class ChartController extends Controller
         Gate::authorize('accounts.view');
 
         $balances = Ledger::balances();
-        $types = AccountType::with(['accounts' => fn ($q) => $q->with('currency')->orderBy('name')])->orderBy('sort')->get();
+        $types = AccountType::with(['accounts' => fn ($q) => $q->with('currency')->orderByRaw('code IS NULL')->orderBy('code')->orderBy('name')])->orderBy('sort')->get();
 
         $groups = [];
         foreach (['asset', 'liability', 'equity', 'income', 'expense'] as $nature) {

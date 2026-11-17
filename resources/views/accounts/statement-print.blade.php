@@ -92,8 +92,8 @@ tr{break-inside:avoid}
                 @if ($contact)
                     <div class="small" dir="ltr">{{ implode(' · ', $contact) }}</div>
                 @endif
-                @if (setting('company_address'))
-                    <div class="small">{{ setting('company_address') }}</div>
+                @if (company_address())
+                    <div class="small">{{ company_address() }}</div>
                 @endif
             </div>
         </div>

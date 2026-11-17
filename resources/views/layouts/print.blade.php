@@ -79,8 +79,8 @@ body{margin:0;padding:18px;background:#eef0f3;color:#111827;font-size:13px;-webk
                 @if ($contact)
                     <div class="paper-small" dir="ltr">{{ implode(' · ', $contact) }}</div>
                 @endif
-                @if (setting('company_address'))
-                    <div class="paper-small">{{ setting('company_address') }}</div>
+                @if (company_address())
+                    <div class="paper-small">{{ company_address() }}</div>
                 @endif
             </div>
         </div>

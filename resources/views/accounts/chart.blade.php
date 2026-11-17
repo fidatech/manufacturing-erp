@@ -8,7 +8,7 @@
         <div class="card-header"><h5 class="card-title">{{ $natures[$nature] }}</h5></div>
         <div class="card-body">
             <table class="table table-hover w-100">
-                <thead><tr><th>{{ __('Account') }}</th><th>{{ __('Kind') }}</th><th class="text-end">{{ __('Balance') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Code') }}</th><th>{{ __('Account') }}</th><th>{{ __('Kind') }}</th><th class="text-end">{{ __('Balance') }}</th><th class="text-end">{{ __('In :base', ['base' => $base]) }}</th><th class="text-end no-print">{{ __('Actions') }}</th></tr></thead>
                 <tbody>
                     @php
                         $total = '0';
@@ -23,6 +23,7 @@
                                 $total = \App\Support\Num::add($total, $shown);
                             @endphp
                             <tr>
+                                <td class="text-nowrap" dir="ltr">{{ $account->code }}</td>
                                 <td>{{ $account->name }}@unless ($account->is_active) <span class="badge-soft warning">{{ __('Off') }}</span>@endunless</td>
                                 <td>{{ __($type->name) }}</td>
                                 <td class="text-end text-nowrap">{{ $account->balanceHtml($own) }}</td>
@@ -31,7 +32,7 @@
                             </tr>
                         @endforeach
                     @endforeach
-                    <tr class="fw-bold"><td colspan="3">{{ __('Total') }}</td><td class="text-end text-nowrap">{{ money($total, $base) }}</td><td></td></tr>
+                    <tr class="fw-bold"><td colspan="4">{{ __('Total') }}</td><td class="text-end text-nowrap">{{ money($total, $base) }}</td><td></td></tr>
                 </tbody>
             </table>
             @can('accounts.manage')
