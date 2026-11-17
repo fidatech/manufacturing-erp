@@ -44,7 +44,7 @@
                     <tr>
                         <td class="text-nowrap"><a href="{{ route('purchases.show', ['id' => $purchase->id]) }}" class="fw-semibold">{{ $purchase->number }}</a></td>
                         <td class="text-nowrap">{{ fmt_date($purchase->date) }}</td>
-                        <td>{{ $purchase->supplier->name }}</td>
+                        <td>{{ $purchase->supplier?->name ?? __('Not chosen yet') }}@if ($purchase->quotation_no || $purchase->supplier_invoice_no)<div class="small text-muted">{{ collect([$purchase->quotation_no ? __('Quotation').' '.$purchase->quotation_no : null, $purchase->supplier_invoice_no ? __('Bill').' '.$purchase->supplier_invoice_no : null])->filter()->join(' · ') }}</div>@endif</td>
                         @if ($grn)
                             <td>{{ $purchase->grn_number }}</td>
                             <td>{{ fmt_date($purchase->received_date) }}</td>

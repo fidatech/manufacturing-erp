@@ -30,6 +30,13 @@
         <div class="row g-3 mb-3">
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Date') }}</div><strong>{{ fmt_date($sale->date) }}</strong></div>
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Customer') }}</div><strong><a href="{{ route('statement', ['id' => $sale->customer_id]) }}">{{ $sale->customer->name }}</a></strong></div>
+            <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Currency') }}</div><strong>{{ $sale->currency->code }}</strong></div>
+            @if ($sale->quotation_no)
+                <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Quotation number') }}</div><strong>{{ $sale->quotation_no }}</strong></div>
+            @endif
+            @if ($sale->bill_no)
+                <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Bill number') }}</div><strong>{{ $sale->bill_no }}</strong></div>
+            @endif
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Warehouse') }}</div><strong>{{ $sale->warehouse->name }}</strong></div>
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Status') }}</div>@include('sales.status')</div>
             @if ($sale->parent)

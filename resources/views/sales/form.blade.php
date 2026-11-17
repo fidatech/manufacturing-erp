@@ -24,7 +24,10 @@
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-12 col-md-5">
+                <div class="col-12 col-md-2">
+                    @include('partials.currency-pick', ['selected' => old('currency_id', $from?->currency_id)])
+                </div>
+                <div class="col-12 col-md-4">
                     <label class="form-label" for="f-customer">{{ __('Customer') }} <span class="text-danger">*</span></label>
                     <select class="form-select" id="f-customer" name="customer_id" {{ quick_add('accounts', __('New customer'), 'accounts.create', ['type' => 'customer']) }} required data-search data-party>
                         <option value="">{{ __('Choose…') }}</option>
@@ -34,7 +37,7 @@
                     </select>
                     <div class="form-text">{{ __('Prices are in the currency of the customer\'s account.') }}</div>
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                     <label class="form-label" for="f-warehouse">{{ $type === 'return' ? __('Put the goods back in') : __('Take the goods from') }} <span class="text-danger">*</span></label>
                     <select class="form-select" id="f-warehouse" name="warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         @if ($warehouses->count() !== 1)
@@ -48,6 +51,16 @@
                         <div class="form-text text-danger">{{ __('Add a warehouse first (Setup > Warehouses).') }}</div>
                     @endif
                 </div>
+                @if ($type !== 'return')
+                    <div class="col-12 col-md-3">
+                        <label class="form-label" for="f-quote">{{ __('Quotation number') }}</label>
+                        <input type="text" class="form-control" id="f-quote" name="quotation_no" value="{{ old('quotation_no', $from?->quotation_no ?? ($from?->type === 'quotation' ? $from->number : null)) }}" maxlength="60">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label" for="f-bill">{{ __('Bill number') }}</label>
+                        <input type="text" class="form-control" id="f-bill" name="bill_no" value="{{ old('bill_no', $from?->bill_no) }}" maxlength="60">
+                    </div>
+                @endif
             </div>
         </div>
     </div>

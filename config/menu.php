@@ -57,6 +57,7 @@ return [
     ]],
 
     ['label' => 'Purchases', 'icon' => 'cart-flatbed', 'children' => [
+        ['label' => 'Purchase Requests', 'route' => 'purchases.index', 'params' => ['type' => 'request'], 'active' => 'purchases.*', 'can' => 'purchases.view'],
         ['label' => 'Purchase Orders', 'route' => 'purchases.index', 'params' => ['type' => 'order'], 'active' => 'purchases.*', 'can' => 'purchases.view'],
         ['label' => 'Supplier Quotations', 'route' => 'purchases.index', 'params' => ['type' => 'quotation'], 'active' => 'purchases.*', 'can' => 'purchases.view'],
         ['label' => 'Purchase Invoices', 'route' => 'purchases.index', 'params' => ['type' => 'invoice'], 'active' => 'purchases.*', 'can' => 'purchases.view'],

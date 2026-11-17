@@ -17,16 +17,16 @@ use Illuminate\View\View;
 
 class PurchaseController extends Controller
 {
-    public const TYPES = ['invoice', 'order', 'quotation', 'return'];
+    public const TYPES = ['invoice', 'order', 'quotation', 'request', 'return'];
 
     public static function names(): array
     {
-        return ['invoice' => __('Purchases'), 'order' => __('Purchase orders'), 'quotation' => __('Supplier quotations'), 'return' => __('Purchase returns')];
+        return ['invoice' => __('Purchases'), 'order' => __('Purchase orders'), 'quotation' => __('Supplier quotations'), 'request' => __('Purchase requests'), 'return' => __('Purchase returns')];
     }
 
     public static function singular(string $type): string
     {
-        return ['invoice' => __('Purchase'), 'order' => __('Purchase order'), 'quotation' => __('Supplier quotation'), 'return' => __('Purchase return')][$type];
+        return ['invoice' => __('Purchase'), 'order' => __('Purchase order'), 'quotation' => __('Supplier quotation'), 'request' => __('Purchase request'), 'return' => __('Purchase return')][$type];
     }
 
     public function index(Request $request): View
@@ -41,7 +41,7 @@ class PurchaseController extends Controller
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
             ->when($request->boolean('waiting'), fn ($q) => $q->where('status', 'posted')->whereNull('received_date'))
-            ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('supplier_invoice_no', 'like', "%$term%")->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%$term%"))))
+            ->when($filters['q'] ?? null, fn ($q, $term) => $q->where(fn ($i) => $i->where('number', 'like', "%$term%")->orWhere('supplier_invoice_no', 'like', "%$term%")->orWhere('quotation_no', 'like', "%$term%")->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%$term%"))))
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(per_page(25))->withQueryString();
 
@@ -64,6 +64,7 @@ class PurchaseController extends Controller
             'warehouses' => Warehouse::where('is_active', true)->orderBy('name')->get(),
             'items' => Item::where('is_active', true)->with('unit')->orderBy('name')->get(),
             'moneyAccounts' => Account::money()->active()->with('currency')->orderBy('name')->get(),
+            'currencies' => \App\Models\Currency::where('is_active', true)->orderBy('id')->get(),
             'base' => Rates::base()->code,
         ]);
     }
@@ -75,7 +76,9 @@ class PurchaseController extends Controller
         $data = $request->validate([
             'type' => ['required', 'in:'.implode(',', self::TYPES)],
             'date' => ['required', 'date'],
-            'supplier_id' => ['required', 'exists:accounts,id'],
+            'supplier_id' => ['required_unless:type,request', 'nullable', 'exists:accounts,id'],
+            'currency_id' => ['nullable', 'exists:currencies,id'],
+            'quotation_no' => ['nullable', 'string', 'max:60'],
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'supplier_invoice_no' => ['nullable', 'string', 'max:60'],
             'parent_id' => ['nullable', 'exists:purchases,id'],
@@ -101,7 +104,7 @@ class PurchaseController extends Controller
         $purchase = PurchaseService::create($data);
 
         // the quotation or order this paper was made from is now done
-        if (! empty($data['parent_id']) && in_array($data['type'], ['order', 'invoice'], true)) {
+        if (! empty($data['parent_id']) && in_array($data['type'], ['quotation', 'order', 'invoice'], true)) {
             Purchase::where('id', $data['parent_id'])->whereIn('type', PurchaseService::OPEN_TYPES)->where('status', 'open')->update(['status' => 'converted']);
         }
 

@@ -29,7 +29,10 @@ class SaleService
     {
         return DB::transaction(function () use ($data) {
             $type = $data['type'];
-            $customer = Account::with('type')->findOrFail($data['customer_id']);
+            $customer = Account::with(['type', 'currency'])->findOrFail($data['customer_id']);
+            if (! empty($data['currency_id']) && (int) $data['currency_id'] !== $customer->currency_id) {
+                throw new UserError(__(':name has an account in :code. Choose that currency or another account of the customer.', ['name' => $customer->name, 'code' => $customer->currency->code]));
+            }
             $date = $data['date'];
             $rate = Rates::rate($customer->currency_id, $date);
 
@@ -68,6 +71,8 @@ class SaleService
                 'warehouse_id' => $data['warehouse_id'],
                 'currency_id' => $customer->currency_id,
                 'rate' => $rate,
+                'quotation_no' => $data['quotation_no'] ?? null,
+                'bill_no' => $data['bill_no'] ?? null,
                 'status' => in_array($type, self::OPEN_TYPES, true) ? 'open' : 'posted',
                 'subtotal' => $subtotal,
                 'discount' => $discount,

@@ -26,17 +26,20 @@
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-12 col-md-5">
-                    <label class="form-label" for="f-supplier">{{ __('Supplier') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="f-supplier" name="supplier_id" {{ quick_add('accounts', __('New supplier'), 'accounts.create', ['type' => 'supplier']) }} required data-search data-party>
-                        <option value="">{{ __('Choose…') }}</option>
+                <div class="col-12 col-md-2">
+                    @include('partials.currency-pick', ['selected' => old('currency_id', $from?->currency_id)])
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="f-supplier">{{ __('Supplier') }} @if ($type !== 'request')<span class="text-danger">*</span>@endif</label>
+                    <select class="form-select" id="f-supplier" name="supplier_id" {{ quick_add('accounts', __('New supplier'), 'accounts.create', ['type' => 'supplier']) }} @required($type !== 'request') data-search data-party>
+                        <option value="">{{ $type === 'request' ? __('Not chosen yet') : __('Choose…') }}</option>
                         @foreach ($suppliers as $supplier)
                             <option value="{{ $supplier->id }}" data-cur="{{ $supplier->currency->code }}" @selected((string) old('supplier_id', $from?->supplier_id) === (string) $supplier->id)>{{ $supplier->name }} ({{ $supplier->currency->code }})</option>
                         @endforeach
                     </select>
                     <div class="form-text">{{ __('Prices are in the currency of the supplier\'s account.') }}</div>
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                     <label class="form-label" for="f-warehouse">{{ __('Warehouse') }} <span class="text-danger">*</span></label>
                     <select class="form-select" id="f-warehouse" name="warehouse_id" {{ quick_add('setup', __('New warehouse'), 'warehouses.create') }} required>
                         @if ($warehouses->count() !== 1)
@@ -50,10 +53,16 @@
                         <div class="form-text text-danger">{{ __('Add a warehouse first (Setup > Warehouses).') }}</div>
                     @endif
                 </div>
-                @if ($type === 'invoice')
+                @if (in_array($type, ['quotation', 'order', 'invoice'], true))
+                    <div class="col-12 col-md-3">
+                        <label class="form-label" for="f-quote">{{ __('Quotation number') }}</label>
+                        <input type="text" class="form-control" id="f-quote" name="quotation_no" value="{{ old('quotation_no', $from?->quotation_no ?? ($from?->type === 'quotation' ? $from->number : null)) }}" maxlength="60">
+                    </div>
+                @endif
+                @if (in_array($type, ['order', 'invoice'], true))
                     <div class="col-12 col-md-3">
                         <label class="form-label" for="f-inv">{{ __('Supplier\'s bill number') }}</label>
-                        <input type="text" class="form-control" id="f-inv" name="supplier_invoice_no" value="{{ old('supplier_invoice_no') }}" maxlength="60">
+                        <input type="text" class="form-control" id="f-inv" name="supplier_invoice_no" value="{{ old('supplier_invoice_no', $from?->supplier_invoice_no) }}" maxlength="60">
                     </div>
                 @endif
             </div>
@@ -103,7 +112,7 @@
 
     @if ($type === 'invoice')
         <div class="card mb-4">
-            <div class="card-header"><div><h5 class="card-title">{{ __('Other costs of this purchase') }}</h5><div class="small text-muted">{{ __('Transport, customs and similar. They are added to the cost of the goods.') }}</div></div></div>
+            <div class="card-header"><div><h5 class="card-title">{{ __('Other costs of this purchase') }}</h5><div class="small text-muted">{{ __('Transport, customs and similar. They are added to the cost of the goods, shared by the weight of the items.') }}</div></div></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table w-100 keep-table" data-rows>

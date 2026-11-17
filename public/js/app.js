@@ -659,6 +659,31 @@ $$('[data-party-cur]', form).forEach(function (el) { el.textContent = code; });
 document.addEventListener('change', function (e) {
 if (e.target.matches && e.target.matches('select[data-party]')) showCurrency(e.target.closest('form'));
 });
+var pickCurrency = function (pick) {
+var form = pick.closest('form');
+var party = $('select[data-party]', form);
+var chosen = pick.options[pick.selectedIndex];
+var code = chosen && chosen.value ? chosen.getAttribute('data-code') : '';
+if (party) {
+Array.prototype.forEach.call(party.options, function (o) { if (o.value) o.hidden = !!code && o.getAttribute('data-cur') !== code; });
+var now = party.options[party.selectedIndex];
+if (now && now.hidden) { party.value = ''; party.dispatchEvent(new Event('change', { bubbles: true })); }
+if (party._ssSync) party._ssSync();
+}
+if (!party || !party.value) $$('[data-party-cur]', form).forEach(function (el) { el.textContent = code; });
+};
+document.addEventListener('change', function (e) {
+if (e.target.matches && e.target.matches('select[data-currency-pick]')) pickCurrency(e.target);
+if (e.target.matches && e.target.matches('select[data-party]')) {
+var pick = $('select[data-currency-pick]', e.target.closest('form'));
+var o = e.target.options[e.target.selectedIndex];
+if (pick && o && o.value) {
+var match = Array.prototype.filter.call(pick.options, function (c) { return c.getAttribute('data-code') === o.getAttribute('data-cur'); })[0];
+if (match && pick.value !== match.value) { pick.value = match.value; if (pick._ssSync) pick._ssSync(); }
+}
+}
+});
+$$('select[data-currency-pick]').forEach(function (pick) { if (pick.value) pickCurrency(pick); });
 $$('form[data-totals]').forEach(function (form) { recalc(form); showCurrency(form); });
 $$('form[data-exchange]').forEach(function (form) {
 var rates = {};

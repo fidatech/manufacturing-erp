@@ -11,20 +11,22 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Purchases.
+ *   request  what the factory needs to buy, before a supplier is chosen: nothing is posted
  *   quotation  a supplier's price offer: nothing is posted
  *   order    a purchase order (PO): a promise, nothing is posted
  *   invoice  the supplier's bill: we owe the supplier, stock value rises;
  *            the goods enter the warehouse when they arrive (GRN)
  *   return   goods sent back: stock leaves, the supplier owes us
  *
- * Transport, customs and other costs are added to the cost of the goods.
+ * Transport, customs and other costs are added to the cost of the goods, shared by weight
+ * (the weight of one unit of each item); items without a weight share them by value.
  */
 class PurchaseService
 {
-    public const PREFIX = ['quotation' => 'PQ', 'order' => 'PO', 'invoice' => 'PI', 'return' => 'PR'];
+    public const PREFIX = ['request' => 'PRQ', 'quotation' => 'PQ', 'order' => 'PO', 'invoice' => 'PI', 'return' => 'PR'];
 
     /** Papers that are only an offer or a promise: nothing is posted. */
-    public const OPEN_TYPES = ['quotation', 'order'];
+    public const OPEN_TYPES = ['request', 'quotation', 'order'];
 
     /**
      * @param  array  $data  type, date, supplier_id, warehouse_id, lines[], costs[], discount, paid, paid_from_id, received, ...
@@ -33,9 +35,20 @@ class PurchaseService
     {
         return DB::transaction(function () use ($data) {
             $type = $data['type'];
-            $supplier = Account::with('type')->findOrFail($data['supplier_id']);
+            $supplier = empty($data['supplier_id']) ? null : Account::with('type')->findOrFail($data['supplier_id']);
+            if ($supplier && $supplier->type->key !== 'supplier') {
+                throw new UserError(__('Choose a supplier.'));
+            }
+            if (! $supplier && $type !== 'request') {
+                throw new UserError(__('Choose a supplier.'));
+            }
+            // the paper's currency is the supplier account's currency; a request without a supplier uses the one chosen
+            $currencyId = $supplier?->currency_id ?? (int) ($data['currency_id'] ?? 0 ?: Rates::base()->id);
+            if ($supplier && ! empty($data['currency_id']) && (int) $data['currency_id'] !== $supplier->currency_id) {
+                throw new UserError(__(':name has an account in :code. Choose that currency or another account of the supplier.', ['name' => $supplier->name, 'code' => $supplier->currency->code]));
+            }
             $date = $data['date'];
-            $rate = Rates::rate($supplier->currency_id, $date);
+            $rate = Rates::rate($currencyId, $date);
 
             $lines = [];
             $subtotal = '0';
@@ -76,11 +89,12 @@ class PurchaseService
                 'type' => $type,
                 'number' => Sequence::next(self::PREFIX[$type]),
                 'date' => $date,
-                'supplier_id' => $supplier->id,
+                'supplier_id' => $supplier?->id,
                 'warehouse_id' => $data['warehouse_id'],
-                'currency_id' => $supplier->currency_id,
+                'currency_id' => $currencyId,
                 'rate' => $rate,
                 'supplier_invoice_no' => $data['supplier_invoice_no'] ?? null,
+                'quotation_no' => $data['quotation_no'] ?? null,
                 'status' => in_array($type, self::OPEN_TYPES, true) ? 'open' : 'posted',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
@@ -127,11 +141,15 @@ class PurchaseService
             $costsBase = Num::money($costsBase);
             $valueBase = Num::money(Num::add($totalBase, $costsBase));
 
-            // every line carries its share of the bill and of the extra costs
+            // every line carries its share of the bill (by value) and of the extra costs (by weight)
             $qtySum = Num::sum(array_column($lines, 'qty'));
-            foreach ($lines as &$line) {
-                $share = Num::isPositive($subtotal) ? Num::div($line['total'], $subtotal) : Num::div($line['qty'], $qtySum);
-                $line['unit_cost_base'] = Num::round(Num::div(Num::mul($valueBase, $share), $line['qty']), 6);
+            $weights = self::weights($lines);
+            $weightSum = Num::sum($weights);
+            foreach ($lines as $n => &$line) {
+                $valueShare = Num::isPositive($subtotal) ? Num::div($line['total'], $subtotal) : Num::div($line['qty'], $qtySum);
+                $costShare = Num::isPositive($weightSum) ? Num::div($weights[$n], $weightSum) : $valueShare;
+                $lineBase = Num::add(Num::mul($totalBase, $valueShare), Num::mul($costsBase, $costShare));
+                $line['unit_cost_base'] = Num::round(Num::div($lineBase, $line['qty']), 6);
             }
             unset($line);
             $purchase->lines()->createMany($lines);
@@ -154,6 +172,41 @@ class PurchaseService
 
             return $purchase;
         });
+    }
+
+    /**
+     * Weight of each line: quantity x the weight of one unit. Items counted in kg, grams or tons need no weight.
+     * When an item has no weight, all lines share the costs by value instead (returns zeros).
+     *
+     * @return array<int, string>
+     */
+    public static function weights(array $lines): array
+    {
+        $items = Item::with('unit')->whereIn('id', array_column($lines, 'item_id'))->get()->keyBy('id');
+        $weights = [];
+        foreach ($lines as $n => $line) {
+            $item = $items[$line['item_id']] ?? null;
+            $each = Num::isPositive($item?->weight ?? 0) ? (string) $item->weight : self::kilosInUnit($item);
+            if (! Num::isPositive($each)) {
+                return array_fill_keys(array_keys($lines), '0');
+            }
+            $weights[$n] = Num::mul($line['qty'], $each);
+        }
+
+        return $weights;
+    }
+
+    /** Kilograms in one unit for items counted by weight (kg, gram, ton); "0" for anything else. */
+    private static function kilosInUnit(?Item $item): string
+    {
+        $unit = mb_strtolower(trim((string) ($item?->unit?->symbol ?: $item?->unit?->name)));
+
+        return match (true) {
+            in_array($unit, ['kg', 'kgs', 'kilo', 'kilogram', 'kilograms', 'کیلو', 'کیلوگرام'], true) => '1',
+            in_array($unit, ['g', 'gram', 'grams', 'گرام'], true) => '0.001',
+            in_array($unit, ['t', 'ton', 'tons', 'tonne', 'تن'], true) => '1000',
+            default => '0',
+        };
     }
 
     /** The goods arrived (GRN): they enter the warehouse now. */

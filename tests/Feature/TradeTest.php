@@ -56,7 +56,7 @@ class TradeTest extends TestCase
 
     public function test_every_trade_and_stock_page_opens(): void
     {
-        foreach (['invoice', 'order', 'return'] as $type) {
+        foreach (['invoice', 'order', 'request', 'quotation', 'return'] as $type) {
             $this->get(route('purchases.index', ['type' => $type]))->assertOk();
             $this->get(route('purchases.create', ['type' => $type]))->assertOk();
         }
@@ -96,6 +96,74 @@ class TradeTest extends TestCase
 
         $this->get(route('purchases.show', ['id' => $purchase->id]))->assertOk()->assertSee('Transport')->assertSee($purchase->grn_number);
         $this->get(route('stock.card', ['id' => $acid->id]))->assertOk()->assertSee($purchase->number);
+    }
+
+    public function test_extra_purchase_costs_are_shared_by_weight(): void
+    {
+        $this->rate('AFN', '70');
+        $this->account('supplier', 'Javed', 'USD');
+        $acid = $this->item('Citric Acid');                                                       // counted in kg
+        $cartons = $this->item('Carton 12 x 1 L', 'raw', ['unit_id' => Unit::where('name', 'Piece')->value('id'), 'weight' => '0.5']);
+
+        // 100 kg acid (200 USD) and 200 cartons of half a kilo (100 kg, 100 USD); transport 7,000 AFN = 100 USD
+        $supplier = Account::ofType('supplier')->firstOrFail();
+        $this->post(route('purchases.store'), ['type' => 'invoice', 'date' => '2026-10-01', 'supplier_id' => $supplier->id, 'warehouse_id' => $this->warehouse->id, 'received' => '1',
+            'lines' => [['item_id' => $acid->id, 'qty' => '100', 'price' => '2'], ['item_id' => $cartons->id, 'qty' => '200', 'price' => '0.5']],
+            'costs' => [['name' => 'Transport', 'amount' => '7000', 'paid_from_id' => $this->cash('AFN')->id]],
+        ])->assertRedirect();
+
+        // same weight on each side, so 50 USD of transport each (by value it would be 66.67 and 33.33)
+        $this->assertSame('2.500000', Num::round($acid->fresh()->avg_cost, 6));      // (200 + 50) / 100
+        $this->assertSame('0.750000', Num::round($cartons->fresh()->avg_cost, 6));   // (100 + 50) / 200
+        $this->assertSame('400.00', Ledger::balance(Account::system('inventory')->id));
+        $this->assertBooksBalance();
+    }
+
+    public function test_a_purchase_request_without_supplier_becomes_an_order_in_its_currency(): void
+    {
+        $acid = $this->item('Citric Acid');
+        $usd = $this->account('supplier', 'Javed', 'USD');
+        $pkr = $this->account('supplier', 'Lahore Chemicals', 'PKR');
+        $this->get(route('purchases.create', ['type' => 'request']))->assertOk()->assertSee('Not chosen yet')->assertSee('data-currency-pick', false);
+
+        $this->post(route('purchases.store'), ['type' => 'request', 'date' => '2026-10-01', 'currency_id' => $this->currency('PKR')->id, 'warehouse_id' => $this->warehouse->id,
+            'lines' => [['item_id' => $acid->id, 'qty' => '500']]])->assertRedirect();
+        $request = Purchase::where('type', 'request')->firstOrFail();
+        $this->assertNull($request->supplier_id);
+        $this->assertSame('open', $request->status);
+        $this->assertStringStartsWith('PRQ', $request->number);
+        $this->assertSame($this->currency('PKR')->id, $request->currency_id);
+        $this->get(route('purchases.index', ['type' => 'request']))->assertOk()->assertSee($request->number)->assertSee('Not chosen yet');
+        $this->get(route('purchases.show', ['id' => $request->id]))->assertOk()->assertSee('Turn into an order');
+        $this->get(route('purchases.create', ['type' => 'order', 'from' => $request->id]))->assertOk()->assertSee('Citric Acid');
+
+        // an order in PKR cannot go to the USD supplier
+        $order = ['type' => 'order', 'date' => '2026-10-02', 'currency_id' => $this->currency('PKR')->id, 'warehouse_id' => $this->warehouse->id, 'parent_id' => $request->id,
+            'quotation_no' => 'Q-551', 'supplier_invoice_no' => 'B-77', 'lines' => [['item_id' => $acid->id, 'qty' => '500', 'price' => '300']]];
+        $this->post(route('purchases.store'), $order + ['supplier_id' => $usd->id])->assertSessionHas('danger');
+        $this->post(route('purchases.store'), $order + ['supplier_id' => $pkr->id])->assertRedirect();
+        $po = Purchase::where('type', 'order')->firstOrFail();
+        $this->assertSame(['Q-551', 'B-77'], [$po->quotation_no, $po->supplier_invoice_no]);
+        $this->assertSame('converted', $request->fresh()->status);
+        $this->get(route('purchases.show', ['id' => $po->id]))->assertSee('Q-551')->assertSee('B-77')->assertSee('PKR');
+
+        // other papers still need a supplier
+        $this->post(route('purchases.store'), ['type' => 'order', 'date' => '2026-10-02', 'warehouse_id' => $this->warehouse->id, 'lines' => [['item_id' => $acid->id, 'qty' => '1', 'price' => '1']]])->assertSessionHasErrors('supplier_id');
+    }
+
+    public function test_a_sale_order_keeps_its_currency_quotation_and_bill_numbers(): void
+    {
+        $customer = $this->account('customer', 'Haji Sharif', 'AFN');
+        $product = $this->item('Mango Juice', 'product');
+        $this->get(route('sales.create', ['type' => 'order']))->assertOk()->assertSee('data-currency-pick', false)->assertSee('Quotation number')->assertSee('Bill number');
+
+        $order = ['type' => 'order', 'date' => '2026-10-02', 'customer_id' => $customer->id, 'warehouse_id' => $this->warehouse->id, 'quotation_no' => 'SQ-12', 'bill_no' => '4471',
+            'lines' => [['item_id' => $product->id, 'qty' => '10', 'price' => '900']]];
+        $this->post(route('sales.store'), $order + ['currency_id' => $this->currency('USD')->id])->assertSessionHas('danger');
+        $this->post(route('sales.store'), $order + ['currency_id' => $this->currency('AFN')->id])->assertRedirect();
+        $sale = Sale::where('type', 'order')->firstOrFail();
+        $this->assertSame(['SQ-12', '4471'], [$sale->quotation_no, $sale->bill_no]);
+        $this->get(route('sales.show', ['id' => $sale->id]))->assertSee('SQ-12')->assertSee('4471');
     }
 
     public function test_goods_on_the_way_enter_the_warehouse_when_received(): void

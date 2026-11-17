@@ -4,6 +4,10 @@
 <x-page-header :title="$title" icon="cart-flatbed" :crumbs="[[\App\Http\Controllers\Trade\PurchaseController::names()[$purchase->type], route('purchases.index', ['type' => $purchase->type])], [$purchase->number]]">
     <a class="btn btn-outline-soft" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" rel="noopener"><x-icon name="print" class="me-1" /> {{ __('Print') }}</a>
     @can('purchases.manage')
+        @if ($purchase->type === 'request' && $purchase->status === 'open')
+            <a class="btn btn-outline-soft" href="{{ route('purchases.create', ['type' => 'quotation', 'from' => $purchase->id]) }}">{{ __('Turn into a quotation') }}</a>
+            <a class="btn btn-outline-soft" href="{{ route('purchases.create', ['type' => 'order', 'from' => $purchase->id]) }}">{{ __('Turn into an order') }}</a>
+        @endif
         @if ($purchase->type === 'quotation' && $purchase->status === 'open')
             <a class="btn btn-outline-soft" href="{{ route('purchases.create', ['type' => 'order', 'from' => $purchase->id]) }}">{{ __('Turn into an order') }}</a>
         @endif
@@ -41,9 +45,13 @@
     <div class="card-body">
         <div class="row g-3 mb-3">
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Date') }}</div><strong>{{ fmt_date($purchase->date) }}</strong></div>
-            <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Supplier') }}</div><strong><a href="{{ route('statement', ['id' => $purchase->supplier_id]) }}">{{ $purchase->supplier->name }}</a></strong></div>
+            <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Supplier') }}</div><strong>@if ($purchase->supplier)<a href="{{ route('statement', ['id' => $purchase->supplier_id]) }}">{{ $purchase->supplier->name }}</a>@else<span class="text-muted">{{ __('Not chosen yet') }}</span>@endif</strong></div>
+            <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Currency') }}</div><strong>{{ $purchase->currency->code }}</strong></div>
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Warehouse') }}</div><strong>{{ $purchase->warehouse->name }}</strong></div>
             <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Status') }}</div>@include('purchases.status')</div>
+            @if ($purchase->quotation_no)
+                <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Quotation number') }}</div><strong>{{ $purchase->quotation_no }}</strong></div>
+            @endif
             @if ($purchase->supplier_invoice_no)
                 <div class="col-6 col-md-3"><div class="small text-muted">{{ __('Supplier\'s bill number') }}</div><strong>{{ $purchase->supplier_invoice_no }}</strong></div>
             @endif

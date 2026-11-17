@@ -89,6 +89,7 @@ class ItemController extends CrudController
                 'quick' => ['setup', 'New unit', 'units.create'],
                 'options' => Unit::orderBy('name')->pluck('name', 'id')->all(), 'help' => 'Stock, purchases and sales of this item use this unit.'],
             ['name' => 'packing', 'label' => 'Packing', 'rules' => ['nullable', 'string', 'max:100'], 'help' => 'For example: Can 20 kg'],
+            ['name' => 'weight', 'label' => 'Weight of one unit (kg)', 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0'], 'default' => 0, 'help' => 'Transport and other purchase costs are shared by weight. Empty for items counted in kg.'],
         ];
         if ($kind === 'product') {
             $fields[] = ['name' => 'sale_price', 'label' => __('Usual sale price (:base)', ['base' => $base]), 'type' => 'decimal', 'rules' => ['nullable', 'numeric', 'min:0'], 'default' => 0];
@@ -137,6 +138,7 @@ class ItemController extends CrudController
         }
         $data['sale_price'] = Num::money($data['sale_price'] ?? ($record->sale_price ?? 0));
         $data['min_stock'] = Num::qty($data['min_stock'] ?? 0);
+        $data['weight'] = Num::qty($data['weight'] ?? 0);
 
         return $data;
     }

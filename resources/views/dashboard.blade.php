@@ -240,7 +240,7 @@
                     <table class="table w-100 keep-table mb-0 dash-table">
                         <tbody>
                             @foreach ($waiting as $purchase)
-                                <tr><td><a href="{{ route('purchases.show', ['id' => $purchase->id]) }}">{{ $purchase->number }}</a> · {{ $purchase->supplier->name }}</td><td class="text-end text-nowrap">{{ fmt_date($purchase->date) }}</td></tr>
+                                <tr><td><a href="{{ route('purchases.show', ['id' => $purchase->id]) }}">{{ $purchase->number }}</a> · {{ $purchase->supplier?->name }}</td><td class="text-end text-nowrap">{{ fmt_date($purchase->date) }}</td></tr>
                             @endforeach
                         </tbody>
                     </table>

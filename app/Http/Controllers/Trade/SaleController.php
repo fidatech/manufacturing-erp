@@ -66,6 +66,7 @@ class SaleController extends Controller
             'warehouses' => Warehouse::where('is_active', true)->orderBy('name')->get(),
             'items' => Item::where('is_active', true)->with('unit')->orderBy('type')->orderBy('name')->get(),
             'moneyAccounts' => Account::money()->active()->with('currency')->orderBy('name')->get(),
+            'currencies' => \App\Models\Currency::where('is_active', true)->orderBy('id')->get(),
             'base' => Rates::base()->code,
             // [customer id => [item id => price]] so the form can fill in a customer's own prices
             'prices' => \App\Models\PriceList::all()->groupBy('customer_id')->map(fn ($rows) => $rows->mapWithKeys(fn ($row) => [$row->item_id => \App\Support\Num::format($row->price, 6, true)]))->all(),
@@ -80,6 +81,9 @@ class SaleController extends Controller
             'type' => ['required', 'in:'.implode(',', self::TYPES)],
             'date' => ['required', 'date'],
             'customer_id' => ['required', 'exists:accounts,id'],
+            'currency_id' => ['nullable', 'exists:currencies,id'],
+            'quotation_no' => ['nullable', 'string', 'max:60'],
+            'bill_no' => ['nullable', 'string', 'max:60'],
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'parent_id' => ['nullable', 'exists:sales,id'],
             'discount' => ['nullable', 'numeric', 'min:0'],
