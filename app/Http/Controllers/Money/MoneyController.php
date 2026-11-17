@@ -132,6 +132,9 @@ class MoneyController extends Controller
         $data = $request->validate([
             'date' => ['required', 'date'],
             'other_id' => ['required', 'exists:accounts,id'],
+            // the one-line screens send these: their mistakes are shown on their own boxes
+            'money_id' => ['sometimes', 'nullable', 'exists:accounts,id'],
+            'amount' => ['sometimes', 'required', 'numeric', 'gt:0'],
             'lines' => ['required', 'array'],
             'lines.*.money_id' => ['nullable', 'exists:accounts,id'],
             'lines.*.amount' => ['nullable', 'numeric', 'gt:0'],

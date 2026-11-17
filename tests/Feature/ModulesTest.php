@@ -223,9 +223,9 @@ class ModulesTest extends TestCase
         $this->assertSame('7050.00', Ledger::balance($this->cash('AFN')->id));
 
         // the cash boxes are marked so the form can pick the one of the chosen person's currency
-        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-auto-money', false)->assertSee('data-cash', false);
-        $this->get(route('money.create', ['kind' => 'out']))->assertOk()->assertSee('data-auto-money', false);
-        $this->get(route('money.create', ['kind' => 'expense']))->assertOk()->assertDontSee('data-auto-money', false);
+        $this->get(route('money.create', ['kind' => 'in']))->assertOk()->assertSee('data-money-lines', false)->assertSee('data-cash', false);
+        $this->get(route('money.create', ['kind' => 'out']))->assertOk()->assertSee('data-money-lines', false);
+        $this->get(route('money.create', ['kind' => 'expense']))->assertOk()->assertDontSee('data-money-lines', false)->assertSee('data-money-form', false);
 
         $this->get(route('petty-cash'))->assertOk()->assertSee('Cash AFN')->assertSee('7,050.00')->assertSee('Currency exchange');
         $this->get(route('permissions'))->assertOk()->assertSee('Administrator');
