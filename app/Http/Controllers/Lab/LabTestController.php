@@ -70,7 +70,6 @@ class LabTestController extends Controller
             'production_batch_id' => ['nullable', 'exists:production_batches,id'],
             'item_id' => ['nullable', 'exists:items,id'],
             'batch_no' => ['nullable', 'string', 'max:60'],
-            'tested_by' => ['nullable', 'string', 'max:150'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'lines' => ['required', 'array'],
             'lines.*.parameter' => ['nullable', 'string', 'max:150'],
@@ -107,7 +106,7 @@ class LabTestController extends Controller
                 'production_batch_id' => $batch?->id,
                 'results' => $results,
                 'status' => $passed ? 'passed' : 'failed',
-                'tested_by' => ($data['tested_by'] ?? null) ?: $request->user()->name,
+                'tested_by' => $request->user()->name,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $request->user()->id,
             ]);

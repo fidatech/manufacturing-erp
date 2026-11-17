@@ -45,7 +45,8 @@
                 @endif
                 <div class="col-6 col-md-3">
                     <label class="form-label" for="f-by">{{ __('Tested by') }}</label>
-                    <input type="text" class="form-control" id="f-by" name="tested_by" value="{{ old('tested_by', auth()->user()->name) }}" maxlength="150">
+                    {{-- the tester is the person signed in: the test is saved under his or her name --}}
+                    <input type="text" class="form-control" id="f-by" value="{{ auth()->user()->name }}" readonly>
                 </div>
             </div>
         </div>

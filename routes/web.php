@@ -10,6 +10,7 @@ use App\Http\Controllers\Assets\AssetController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Hr\AttendanceController;
+use App\Http\Controllers\Hr\EmployeeDocumentController;
 use App\Http\Controllers\Hr\HrRecordController;
 use App\Http\Controllers\Hr\PayrollController;
 use App\Http\Controllers\Inventory\StockController;
@@ -149,6 +150,10 @@ Route::middleware('auth')->group(function () use ($crud) {
     Route::post('assets/{id}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose')->whereNumber('id');
 
     // Human resource
+    Route::get('hr/documents', [EmployeeDocumentController::class, 'index'])->name('hr.documents.index');
+    Route::post('hr/documents', [EmployeeDocumentController::class, 'store'])->name('hr.documents.store');
+    Route::get('hr/documents/{id}', [EmployeeDocumentController::class, 'show'])->name('hr.documents.show')->whereNumber('id');
+    Route::delete('hr/documents/{id}', [EmployeeDocumentController::class, 'destroy'])->name('hr.documents.destroy')->whereNumber('id');
     Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('attendance', [AttendanceController::class, 'store'])->name('attendance.store');
     $crud('hr/{screen}', HrRecordController::class, 'hr');

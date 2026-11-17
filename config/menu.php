@@ -26,6 +26,7 @@ return [
     ['label' => 'Accounts', 'icon' => 'address-book', 'children' => [
         ['label' => 'Cash', 'route' => 'accounts.index', 'params' => ['type' => 'cash'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Customers', 'route' => 'accounts.index', 'params' => ['type' => 'customer'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
+        ['label' => 'Customer Categories', 'route' => 'lookups.index', 'params' => ['type' => 'customer_category'], 'active' => 'lookups.*', 'can' => 'accounts.view'],
         ['label' => 'Suppliers', 'route' => 'accounts.index', 'params' => ['type' => 'supplier'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Banks', 'route' => 'accounts.index', 'params' => ['type' => 'bank'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
         ['label' => 'Sarafi', 'route' => 'accounts.index', 'params' => ['type' => 'sarafi'], 'active' => 'accounts.*', 'can' => 'accounts.view'],
@@ -70,7 +71,6 @@ return [
         ['label' => 'Delivery Notes', 'route' => 'sales.index', 'params' => ['type' => 'invoice', 'view' => 'delivery'], 'active' => 'sales.*', 'can' => 'sales.view'],
         ['label' => 'Customers Price Lists', 'route' => 'price-lists.index', 'active' => 'price-lists.*', 'can' => 'sales.view'],
         ['label' => 'Dispatch Planning', 'route' => 'sales.index', 'params' => ['type' => 'invoice', 'view' => 'dispatch'], 'active' => 'sales.*', 'can' => 'sales.view'],
-        ['label' => 'Sales Collections', 'route' => 'money.create', 'params' => ['kind' => 'in', 'group' => 'customer'], 'can' => 'money.manage'],
         ['label' => 'Sale Returns', 'route' => 'sales.index', 'params' => ['type' => 'return'], 'active' => 'sales.*', 'can' => 'sales.view'],
     ]],
 
@@ -106,6 +106,7 @@ return [
         ['label' => 'Departments', 'route' => 'lookups.index', 'params' => ['type' => 'department'], 'active' => 'lookups.*', 'can' => 'hr.view'],
         ['label' => 'Designations', 'route' => 'lookups.index', 'params' => ['type' => 'designation'], 'active' => 'lookups.*', 'can' => 'hr.view'],
         ['label' => 'Employees', 'route' => 'accounts.index', 'params' => ['type' => 'employee'], 'active' => 'accounts.*', 'can' => 'hr.view'],
+        ['label' => 'Employee Documents', 'route' => 'hr.documents.index', 'active' => 'hr.documents.*', 'can' => 'hr.view'],
         ['label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance.*', 'can' => 'hr.view'],
         ['label' => 'Payroll', 'route' => 'payroll.index', 'active' => 'payroll.*', 'can' => 'hr.view'],
         ['label' => 'Leave Management', 'route' => 'hr.index', 'params' => ['screen' => 'leave'], 'active' => 'hr.*', 'can' => 'hr.view'],

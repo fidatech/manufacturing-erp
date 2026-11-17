@@ -90,6 +90,7 @@ class AccountController extends CrudController
         return Account::query()->where('account_type_id', $this->type()->id)->whereNull('system_key')
             ->when($currency > 0, fn (Builder $query) => $query->where('currency_id', $currency))
             ->when(in_array($request->query('active'), ['yes', 'no'], true), fn (Builder $query) => $query->where('is_active', $request->query('active') === 'yes'))
+            ->when($this->type()->key === 'customer' && $request->filled('category'), fn (Builder $query) => $query->where('meta->category', (string) $request->query('category')))
             // debit = the balance is on the debit side (they owe us, we have it); credit = the other way round
             ->when(in_array($side, ['debit', 'credit'], true), fn (Builder $query) => $query->whereIn('id', function ($lines) use ($side) {
                 $lines->from('journal_lines')->select('account_id')->where('is_void', false)->groupBy('account_id')
@@ -101,13 +102,18 @@ class AccountController extends CrudController
     {
         $sides = self::sides($this->type());
 
-        return [
+        $filters = [
             ['name' => 'currency', 'label' => __('All currencies'), 'value' => (string) $request->query('currency'),
                 'options' => Currency::orderBy('code')->pluck('code', 'id')->all()],
             ['name' => 'side', 'label' => __('Debit and credit'), 'value' => (string) $request->query('side'),
                 'options' => ['debit' => __('Debit').' · '.$sides['debit'], 'credit' => __('Credit').' · '.$sides['credit']]],
             ['name' => 'active', 'label' => __('Active and not active'), 'value' => (string) $request->query('active'), 'options' => ['yes' => __('Active'), 'no' => __('Not active')]],
         ];
+        if ($this->type()->key === 'customer') {
+            $filters[] = ['name' => 'category', 'label' => __('All categories'), 'value' => (string) $request->query('category'), 'options' => \App\Models\Lookup::options('customer_category')];
+        }
+
+        return $filters;
     }
 
     protected function fields(?Model $record): array
@@ -182,6 +188,10 @@ class AccountController extends CrudController
     private static function extraFields(string $key): array
     {
         return match ($key) {
+            'customer' => [
+                ['name' => 'category', 'label' => 'Customer category', 'type' => 'select', 'options' => \App\Models\Lookup::options('customer_category'), 'rules' => ['nullable', 'string', 'max:150'],
+                    'quick' => ['accounts', 'New customer category', 'lookups.create', ['type' => 'customer_category']]],
+            ],
             'bank' => [
                 ['name' => 'bank_name', 'label' => 'Bank', 'rules' => ['nullable', 'string', 'max:150']],
                 ['name' => 'account_number', 'label' => 'Account number', 'rules' => ['nullable', 'string', 'max:100']],
@@ -256,6 +266,9 @@ class AccountController extends CrudController
 
         if ($type->is_party) {
             $columns['Phone'] = fn (Account $a) => $a->phone;
+        }
+        if ($type->key === 'customer') {
+            $columns['Category'] = fn (Account $a) => $a->metaValue('category');
         }
         if ($type->key === 'employee') {
             $columns['Department'] = fn (Account $a) => $a->metaValue('department');

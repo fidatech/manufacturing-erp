@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             AssetCategorySeeder::class,
             WarehouseSeeder::class,
             ProductCategorySeeder::class,
+            CustomerCategorySeeder::class,
             DepartmentSeeder::class,
             DesignationSeeder::class,
         ]);

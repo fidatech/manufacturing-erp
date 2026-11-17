@@ -31,6 +31,7 @@ class LookupController extends CrudController
         'document_type' => ['Document Types', 'Document Type', 'folder-tree', 'documents'],
         'asset_category' => ['Asset Categories', 'Asset Category', 'layer-group', 'setup'],
         'qc_parameter' => ['Test Parameters', 'Test Parameter', 'list-check', 'lab'],
+        'customer_category' => ['Customer Categories', 'Customer Category', 'tags', 'accounts'],
     ];
 
     protected function kind(): string

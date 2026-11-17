@@ -6,6 +6,7 @@ use App\Exceptions\UserError;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Services\Ledger;
 use App\Services\Rates;
 use App\Support\Num;
@@ -48,17 +49,42 @@ class MoneyController extends Controller
     {
         Gate::authorize('money.view');
 
-        $filters = $request->validate(['from' => ['nullable', 'date'], 'to' => ['nullable', 'date'], 'type' => ['nullable', 'in:'.implode(',', self::TYPES)]]);
+        $filters = $request->validate([
+            'from' => ['nullable', 'date'], 'to' => ['nullable', 'date'], 'type' => ['nullable', 'in:'.implode(',', self::TYPES)],
+            'category' => ['nullable', 'integer'], 'currency' => ['nullable', 'integer'],
+        ]);
+        $category = (int) ($filters['category'] ?? 0);
+        $currency = (int) ($filters['currency'] ?? 0);
 
-        $entries = JournalEntry::with(['lines.account.currency', 'lines.account.type', 'creator'])
+        $query = JournalEntry::query()
             ->whereIn('type', self::TYPES)
             ->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type))
             ->when($filters['from'] ?? null, fn ($q, $date) => $q->whereDate('date', '>=', $date))
             ->when($filters['to'] ?? null, fn ($q, $date) => $q->whereDate('date', '<=', $date))
+            // an expense category, or any account of the entry
+            ->when($category > 0, fn ($q) => $q->whereHas('lines', fn ($l) => $l->where('account_id', $category)))
+            // the currency the money moved in
+            ->when($currency > 0, fn ($q) => $q->whereHas('lines', fn ($l) => $l->whereHas('account', fn ($a) => $a->where('currency_id', $currency))));
+
+        // expenses: what the chosen ones cost in the main currency (cancelled ones do not count)
+        $spent = null;
+        if (($filters['type'] ?? null) === 'expense') {
+            $spent = Num::money(JournalLine::where('is_void', false)->whereIn('journal_entry_id', (clone $query)->whereNull('voided_at')->select('id'))
+                ->whereHas('account.type', fn ($t) => $t->where('nature', 'expense'))
+                ->when($category > 0, fn ($l) => $l->where('account_id', $category))
+                ->selectRaw('COALESCE(SUM(base_debit), 0) - COALESCE(SUM(base_credit), 0) as total')->value('total') ?? '0');
+        }
+
+        $entries = $query->with(['lines.account.currency', 'lines.account.type', 'creator'])
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(per_page(25))->withQueryString();
 
-        return view('money.index', ['entries' => $entries, 'filters' => $filters, 'types' => self::typeNames()]);
+        return view('money.index', [
+            'entries' => $entries, 'filters' => $filters, 'types' => self::typeNames(), 'spent' => $spent,
+            'base' => Rates::base()->code,
+            'categories' => Account::ofType('expense')->orderBy('name')->get(['id', 'name']),
+            'currencies' => \App\Models\Currency::orderBy('code')->pluck('code', 'id')->all(),
+        ]);
     }
 
     public static function typeNames(): array

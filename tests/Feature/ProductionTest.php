@@ -188,6 +188,9 @@ class ProductionTest extends TestCase
         ]])->assertRedirect()->assertSessionHas('warning');
         $this->assertSame('failed', $batch->fresh()->qc_status);
         $this->get(route('production.index', ['qc' => 'failed']))->assertOk()->assertSee($batch->batch_no);
+        // the tester is the person signed in, whatever is sent
+        $this->assertSame(auth()->user()->name, \App\Models\LabTest::latest('id')->value('tested_by'));
+        $this->get(route('lab.create', ['batch' => $batch->id]))->assertSee('value="'.e(auth()->user()->name).'" readonly', false);
         $this->get(route('dashboard'))->assertOk()->assertSee('Batches for the laboratory');
 
         // tested again after correction: passed

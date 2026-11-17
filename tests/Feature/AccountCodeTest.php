@@ -42,4 +42,23 @@ class AccountCodeTest extends TestCase
         $this->get(route('accounts.index', ['type' => 'customer', 'q' => '1200-002']))->assertOk()->assertSee('Junaid')->assertDontSee('Haji Sharif');
         $this->get(route('statement', ['id' => $supplier->id]))->assertOk()->assertSee('2100-001-AFN');
     }
+
+    public function test_customers_have_categories(): void
+    {
+        $this->admin();
+        $afn = $this->currency('AFN')->id;
+
+        $this->post(route('lookups.store', ['type' => 'customer_category']), ['name' => 'Wholesaler'])->assertRedirect();
+        $this->get(route('accounts.create', ['type' => 'customer']))->assertOk()->assertSee('Customer category')->assertSee('Wholesaler');
+        $this->post(route('accounts.store', ['type' => 'customer']), ['name' => 'Haji Sharif', 'is_active' => '1', 'category' => 'Wholesaler', 'currencies' => [$afn => ['on' => '1']]])->assertRedirect();
+        $this->post(route('accounts.store', ['type' => 'customer']), ['name' => 'Corner Shop', 'is_active' => '1', 'currencies' => [$afn => ['on' => '1']]])->assertRedirect();
+        $this->assertSame('Wholesaler', Account::where('name', 'Haji Sharif')->firstOrFail()->metaValue('category'));
+
+        $this->get(route('accounts.index', ['type' => 'customer']))->assertOk()->assertSee('All categories')->assertSee('Corner Shop');
+        $this->get(route('accounts.index', ['type' => 'customer', 'category' => 'Wholesaler']))->assertOk()->assertSee('Haji Sharif')->assertDontSee('Corner Shop');
+
+        // the menu has the list of categories, and no "Sales Collections" any more
+        $this->get(route('lookups.index', ['type' => 'customer_category']))->assertOk()->assertSee('Customer Categories')->assertSee('Wholesaler');
+        $this->get(route('dashboard'))->assertDontSee('Sales Collections');
+    }
 }
