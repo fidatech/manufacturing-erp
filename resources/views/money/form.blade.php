@@ -72,7 +72,7 @@
                                 <div>{{ $labels[1] }}</div>
                                 <div>{{ __('Amount') }}</div>
                                 <div>{{ __('Exchange rate') }}</div>
-                                <div>{{ __('In the person\'s currency') }}</div>
+                                <div>{{ __('Converted') }} <span data-person-cur-head></span></div>
                                 <div></div>
                             </div>
                             <div data-rows-body="lines">

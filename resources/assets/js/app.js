@@ -947,6 +947,7 @@
             var totalEl = $('[data-lines-total]', form);
             if (totalEl) totalEl.textContent = ERP.formatNumber(sum.toFixed(2));
             setText('[data-person-cur]', pCur || '—');
+            setText('[data-person-cur-head]', pCur ? '(' + pCur + ')' : '');
             // the person's account before and after this entry
             var card = $('[data-person-card]', form);
             if (card) card.hidden = !person;

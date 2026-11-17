@@ -384,10 +384,11 @@
 .money-line:first-child, [data-rows-body] > .money-line:first-child { border-top: 0; }
 [data-rows-body] > .money-line:last-child { border-radius: 0 0 11px 11px; }
 .money-line-head { background: var(--hover); padding-block: 10px; border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
-.money-line-head > div { align-self: end; line-height: 1.35; }
+.money-line-head > div { align-self: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .money-line:not(.money-line-head):hover { background: color-mix(in srgb, var(--hover) 60%, transparent); }
 .ml-label { display: none; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
-.ml-hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; min-height: 1em; }
+.ml-hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+.ml-hint:empty { display: none; }
 .ml-hint.is-short { color: var(--danger); font-weight: 600; }
 .ml-rate .ml-hint { text-align: end; }
 .ml-same { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--success); background: rgba(var(--success-rgb), .07); border-style: dashed; border-color: rgba(var(--success-rgb), .35); cursor: default; }
@@ -397,7 +398,7 @@
 .ml-remove { display: flex; justify-content: flex-end; padding-top: 2px; }
 .money-rate { flex-wrap: nowrap; }
 .money-rate[hidden] { display: none; }
-.money-rate > .form-select { flex: 0 0 auto; width: auto; padding-inline-end: 1.6rem; background-position: right .4rem center; font-weight: 700; }
+.money-rate > .form-select { flex: 0 0 64px; width: 64px; min-width: 0; padding-inline-end: 1.6rem; background-position: right .4rem center; font-weight: 700; }
 [dir="rtl"] .money-rate > .form-select { background-position: left .4rem center; }
 .money-lines-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
 .money-lines-total { display: flex; align-items: baseline; gap: 14px; padding: 10px 16px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); }

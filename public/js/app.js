@@ -846,6 +846,7 @@ if (money && a) list.push([show(a, 2) + ' ' + money.getAttribute('data-cur'), v 
 var totalEl = $('[data-lines-total]', form);
 if (totalEl) totalEl.textContent = ERP.formatNumber(sum.toFixed(2));
 setText('[data-person-cur]', pCur || '—');
+setText('[data-person-cur-head]', pCur ? '(' + pCur + ')' : '');
 var card = $('[data-person-card]', form);
 if (card) card.hidden = !person;
 setText('[data-sum-person]', person ? person.textContent.split(' · ')[0] : t('Choose who first'));
