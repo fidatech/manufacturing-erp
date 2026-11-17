@@ -89,7 +89,7 @@ class MoneyTest extends TestCase
 
         $this->post(route('money.store', ['kind' => 'in']), ['date' => '2026-10-27', 'money_id' => $cash->id, 'other_id' => $customer->id, 'amount' => '2200'])->assertRedirect(route('money.index'));
         $this->post(route('money.store', ['kind' => 'out']), ['date' => '2026-10-27', 'money_id' => $cash->id, 'other_id' => $supplier->id, 'amount' => '500'])->assertRedirect(route('money.index'));
-        $this->post(route('money.store', ['kind' => 'expense']), ['date' => '2026-10-27', 'money_id' => $cash->id, 'other_id' => $rent->id, 'amount' => '300', 'description' => 'October rent'])->assertRedirect(route('money.index'));
+        $this->post(route('money.store', ['kind' => 'expense']), ['date' => '2026-10-27', 'money_id' => $cash->id, 'other_id' => $rent->id, 'amount' => '300', 'description' => 'October rent'])->assertRedirect(route('expenses.index'));
 
         $this->assertSame('1400.00', Ledger::balance($cash->id));
         $this->assertSame('-2200.00', Ledger::balance($customer->id)); // we hold the customer's money in advance
